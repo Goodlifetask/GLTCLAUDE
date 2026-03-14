@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Sans:wght@400;500;600;700&family=Lora:ital@1&family=JetBrains+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Theme: Warm Corporate (default) ─────────────────────────────────────── */
+:root,
+[data-theme="warm_corporate"] {
+  --color-primary:      #F0A202;
+  --color-primary-dark: #F18805;
+  --color-accent:       #D95D39;
+  --color-bg:           #FFFFFF;
+  --color-bg-dark:      #202C59;
+  --color-surface:      #FFF8EC;
+  --color-text:         #1A1A2E;
+  --color-text-muted:   #581F18;
+  --color-border:       #E8D5B0;
+}
+
+/* ─── Theme: Blue Spectrum ─────────────────────────────────────────────────── */
+[data-theme="blue_spectrum"] {
+  --color-primary:      #3F8EFC;
+  --color-primary-dark: #2667FF;
+  --color-accent:       #3B28CC;
+  --color-bg:           #FFFFFF;
+  --color-bg-dark:      #1A1A2E;
+  --color-surface:      #EFF6FF;
+  --color-text:         #0F172A;
+  --color-text-muted:   #475569;
+  --color-border:       #BFDBFE;
+}
+
+/* ─── Theme: India ─────────────────────────────────────────────────────────── */
+[data-theme="india"] {
+  --color-primary:      #FF8000;
+  --color-primary-dark: #E67300;
+  --color-accent:       #008000;
+  --color-bg:           #FFFFFF;
+  --color-bg-dark:      #1A1A1A;
+  --color-surface:      #FFF5E6;
+  --color-text:         #1A1A1A;
+  --color-text-muted:   #444444;
+  --color-border:       #FFD9B3;
+}
+
+/* ─── Theme: USA ───────────────────────────────────────────────────────────── */
+[data-theme="usa"] {
+  --color-primary:      #0157AE;
+  --color-primary-dark: #000654;
+  --color-accent:       #D42729;
+  --color-bg:           #FFFFFF;
+  --color-bg-dark:      #000654;
+  --color-surface:      #F0F4FF;
+  --color-text:         #000654;
+  --color-text-muted:   #4A4A6A;
+  --color-border:       #C5D3E8;
+}
+
+/* ─── Base Styles ──────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: white;
+  }
+}
+
+/* ─── Component Styles ─────────────────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-white rounded-md border border-[var(--color-border)] shadow-card;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+           bg-[var(--color-primary)] text-white font-semibold text-sm
+           transition-all duration-150 hover:bg-[var(--color-primary-dark)]
+           focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+           bg-transparent border border-[var(--color-border)] text-[var(--color-text)]
+           font-semibold text-sm transition-all duration-150
+           hover:bg-[var(--color-surface)] focus-visible:ring-2
+           focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2;
+  }
+
+  .input {
+    @apply w-full px-4 py-3 rounded-sm border border-[var(--color-border)]
+           bg-white text-[var(--color-text)] text-sm
+           placeholder:text-gray-400 transition-colors duration-150
+           focus:outline-none focus:border-[var(--color-primary)]
+           focus:ring-1 focus:ring-[var(--color-primary)];
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-pending  { @apply badge bg-yellow-100 text-yellow-800; }
+  .badge-completed { @apply badge bg-green-100 text-green-800; }
+  .badge-overdue  { @apply badge bg-red-100 text-red-800; }
+  .badge-snoozed  { @apply badge bg-blue-100 text-blue-800; }
+}

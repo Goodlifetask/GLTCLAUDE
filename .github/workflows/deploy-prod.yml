@@ -1,0 +1,209 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.2.3)'
+        required: true
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false  # Never cancel in-flight prod deploys
+
+env:
+  AWS_REGION:       us-east-1
+  ECR_REGISTRY:     ${{ secrets.ECR_REGISTRY }}
+  ECS_CLUSTER:      glt-prod-cluster
+  API_SERVICE:      glt-api-service
+  WORKER_SERVICE:   glt-worker-service
+
+jobs:
+  # ─── Gate: Require Approval ───────────────────────────────────────────────────
+  approve:
+    name: Require Production Approval
+    runs-on: ubuntu-latest
+    environment: production  # GitHub Environment with required reviewers
+    steps:
+      - run: echo "Production deployment approved ✅"
+
+  # ─── Build & Push Docker Images ───────────────────────────────────────────────
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [approve]
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.ECR_REGISTRY }}/glt-api
+          tags: |
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file:    ./services/api/Dockerfile
+          push:    true
+          tags:    ${{ steps.meta.outputs.tags }}
+          labels:  ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/glt-api:buildcache
+          cache-to:   type=registry,ref=${{ env.ECR_REGISTRY }}/glt-api:buildcache,mode=max
+
+  # ─── Database Migration ───────────────────────────────────────────────────────
+  migrate:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: '9'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run migrations (zero-downtime, additive only)
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: pnpm --filter @glt/api prisma migrate deploy
+
+  # ─── Deploy API (Blue-Green) ──────────────────────────────────────────────────
+  deploy-api:
+    name: Deploy API Service (Blue-Green)
+    runs-on: ubuntu-latest
+    needs: [migrate]
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition glt-api \
+            --query taskDefinition \
+            > task-def.json
+
+      - name: Update image in task definition
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        id: task-def
+        with:
+          task-definition: task-def.json
+          container-name:  glt-api
+          image:           ${{ env.ECR_REGISTRY }}/glt-api:${{ needs.build-and-push.outputs.image-tag }}
+
+      - name: Deploy to ECS (rolling update — 10% canary first)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition:      ${{ steps.task-def.outputs.task-definition }}
+          service:              ${{ env.API_SERVICE }}
+          cluster:              ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+          deployment-config:    CANARY_10PERCENT_5MINUTES
+
+  # ─── Health Check ─────────────────────────────────────────────────────────────
+  health-check:
+    name: Production Health Check
+    runs-on: ubuntu-latest
+    needs: [deploy-api]
+    steps:
+      - name: Wait for deployment to stabilise
+        run: sleep 30
+
+      - name: API health check
+        run: |
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.PROD_API_URL }}/health)
+            if [ "$STATUS" -eq "200" ]; then
+              echo "✅ Health check passed (attempt $i)"
+              exit 0
+            fi
+            echo "⚠️  Attempt $i: status $STATUS"
+            sleep 15
+          done
+          echo "❌ Health check failed"
+          exit 1
+
+  # ─── Deploy Web (Vercel) ──────────────────────────────────────────────────────
+  deploy-web:
+    name: Deploy Web (Vercel)
+    runs-on: ubuntu-latest
+    needs: [deploy-api]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Vercel production
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token:   ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id:  ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+          vercel-args:    '--prod'
+          working-directory: apps/web
+
+  # ─── Tag Release ─────────────────────────────────────────────────────────────
+  tag-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [health-check, deploy-web]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:  v${{ github.run_number }}
+          name:      Release v${{ github.run_number }}
+          body:      |
+            🚀 **Production deployment successful**
+
+            - **Git SHA:** ${{ github.sha }}
+            - **Deployed by:** ${{ github.actor }}
+            - **Time:** ${{ github.event.head_commit.timestamp }}
+
+            **Changes:**
+            ${{ github.event.head_commit.message }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,82 @@
+{
+  "expo": {
+    "name": "GoodLifeTask",
+    "slug": "goodlifetask",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "goodlifetask",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#202C59"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.goodlifetask.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "GoodLifeTask needs location access to trigger location-based reminders.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "GoodLifeTask needs background location to monitor geofences for reminders.",
+        "NSFaceIDUsageDescription": "GoodLifeTask uses Face ID to securely unlock the app.",
+        "NSContactsUsageDescription": "GoodLifeTask needs contact access to create call and email reminders."
+      },
+      "entitlements": {
+        "com.apple.developer.siri": true,
+        "com.apple.developer.location.push": true
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#202C59"
+      },
+      "package": "com.goodlifetask.app",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ],
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#F0A202",
+          "sounds": ["./assets/notification.wav"],
+          "androidMode": "default"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "GoodLifeTask needs location access for geofence reminders."
+        }
+      ],
+      "expo-secure-store",
+      "expo-local-authentication"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
+    }
+  }
+}

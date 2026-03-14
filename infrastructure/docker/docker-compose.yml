@@ -1,0 +1,90 @@
+version: '3.9'
+
+# GoodLifeTask — Local Development Stack
+# Usage: pnpm infra:dev
+
+services:
+
+  # ─── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: glt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       goodlifetask
+      POSTGRES_USER:     glt_user
+      POSTGRES_PASSWORD: glt_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glt_user -d goodlifetask"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+
+  # ─── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: glt-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass glt_redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "glt_redis_password", "ping"]
+      interval: 10s
+      timeout:  5s
+      retries:  5
+
+  # ─── PgAdmin (Dev only) ───────────────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: glt-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@goodlifetask.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT:      5050
+    ports:
+      - "5050:5050"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ["tools"]
+
+  # ─── Redis Commander (Dev only) ───────────────────────────────────────────────
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: glt-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS:     "local:redis:6379:0:glt_redis_password"
+      HTTP_USER:       admin
+      HTTP_PASSWORD:   admin
+    ports:
+      - "8081:8081"
+    depends_on:
+      redis:
+        condition: service_healthy
+    profiles: ["tools"]
+
+  # ─── MailHog (Dev email testing) ─────────────────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: glt-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    profiles: ["tools"]
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
