@@ -448,34 +448,38 @@ function CreateReminderModal({ onClose }: { onClose: () => void }) {
   const [parsed, setParsed] = useState<VoiceParsedReminder | null>(null);
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef('');
+  const isStoppingRef = useRef(false);
 
   const isVoiceSupported = typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   useEffect(() => {
-    return () => { recognitionRef.current?.abort(); };
+    return () => {
+      isStoppingRef.current = true;
+      recognitionRef.current?.abort();
+    };
   }, []);
 
   const startListening = () => {
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRec) return;
     finalTranscriptRef.current = '';
+    isStoppingRef.current = false;
     setTranscript('');
     setVoiceState('listening');
 
     const rec = new SpeechRec();
-    rec.continuous = false;
+    rec.continuous = true;      // keep listening until user clicks Stop
     rec.interimResults = true;
     rec.lang = 'en-US';
 
     rec.onresult = (e: any) => {
-      let interim = '', final = '';
+      let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalTranscriptRef.current += e.results[i][0].transcript + ' ';
         else interim += e.results[i][0].transcript;
       }
-      if (final) finalTranscriptRef.current = final;
-      setTranscript(final || interim);
+      setTranscript((finalTranscriptRef.current + interim).trim());
     };
 
     rec.onend = () => {
@@ -485,21 +489,42 @@ function CreateReminderModal({ onClose }: { onClose: () => void }) {
         setParsed(result);
         setTranscript(text);
         setVoiceState('confirm');
+      } else if (!isStoppingRef.current) {
+        // Browser auto-stopped without speech — restart to keep listening
+        try { rec.start(); } catch (_) { setVoiceState('idle'); }
       } else {
         setVoiceState('idle');
       }
     };
 
     rec.onerror = (e: any) => {
-      if (e.error !== 'no-speech') toast.error('Voice recognition failed. Please try again.');
-      setVoiceState('idle');
+      if (e.error === 'not-allowed') {
+        toast.error('Microphone access denied — allow it in your browser settings and try again.');
+        setVoiceState('idle');
+      } else if (e.error === 'service-not-available') {
+        toast.error('Speech service unavailable — use Chrome or Edge with an internet connection.');
+        setVoiceState('idle');
+      } else if (e.error === 'audio-capture') {
+        toast.error('No microphone found — plug one in and try again.');
+        setVoiceState('idle');
+      } else if (e.error === 'network') {
+        toast.error('Network error — check your connection and try again.');
+        setVoiceState('idle');
+      } else if (e.error !== 'no-speech') {
+        toast.error('Voice recognition failed. Please try again.');
+        setVoiceState('idle');
+      }
+      // 'no-speech' is non-fatal with continuous=true; onend will restart
     };
 
     recognitionRef.current = rec;
     rec.start();
   };
 
-  const stopListening = () => { recognitionRef.current?.stop(); };
+  const stopListening = () => {
+    isStoppingRef.current = true;
+    recognitionRef.current?.stop();
+  };
 
   const applyParsed = () => {
     if (!parsed) return;
