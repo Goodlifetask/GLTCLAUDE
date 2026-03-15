@@ -59,10 +59,22 @@
 - CI: `.github/workflows/ci.yml`
 - Deploy: `.github/workflows/deploy-prod.yml`
 
+## Voice Input Feature (completed 2026-03-15)
+- `apps/web/lib/voice-parser.ts` — NEW: pure NLP parser, converts transcript → `{ type, title, date, time, priority }`
+- `apps/web/app/(app)/dashboard/page.tsx` — voice input added to `CreateReminderModal`
+  - Mic button (🎤) in modal header, hidden on unsupported browsers
+  - Three UI states: idle → listening (pulsing, live transcript) → confirm (parsed card + fill/retry)
+  - `continuous = true` so mic waits for user to finish speaking
+  - `getUserMedia` preflight to trigger browser permission prompt
+  - Per-error-code toasts: `not-allowed`, `service-not-available`, `audio-capture`, `network`
+- **Commits**: `115ece2`, `297e66d`, `ff0e90d`
+- **Known limitation**: requires mic enabled in Windows → Privacy → Microphone AND allowed for localhost:3000 in Chrome
+
 ## Recently Edited Files
+- `apps/web/lib/voice-parser.ts` — voice NLP parser (new file)
+- `apps/web/app/(app)/dashboard/page.tsx` — voice input in CreateReminderModal
 - `package.json` — added `"packageManager": "pnpm@9.15.9"` (needed by Turbo 2.x)
 - `CLAUDE.md` — created project instructions
-- `SESSION.md` — this file
 
 ## Open Issues / Decisions Pending
 1. **pnpm bin resolution bug**: workspace `.bin` scripts are broken due to `node-linker=hoisted`. Workaround documented in CLAUDE.md. Need team decision on fix strategy.
