@@ -725,6 +725,46 @@ model Language {
   @@map("languages")
 }
 
+// ─── TRANSLATIONS ────────────────────────────────────────────────────────────
+
+// A translatable string key in the app (menu item, heading, button label, etc.)
+model TranslationKey {
+  id           String   @id @default(uuid()) @db.Uuid
+  key          String   @unique @db.VarChar(255)    // e.g. "nav.dashboard", "btn.save"
+  namespace    String   @default("common") @db.VarChar(50) // nav | page | btn | form | badge | msg | table
+  description  String?  @db.Text                   // human-readable description of where/what
+  defaultValue String   @map("default_value") @db.Text   // English (source) string
+  isStatic     Boolean  @default(true) @map("is_static")  // false = dynamic (user-generated content)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  translations Translation[]
+
+  @@index([namespace])
+  @@index([isActive])
+  @@map("translation_keys")
+}
+
+// A translated value for a specific key + language code
+model Translation {
+  id          String   @id @default(uuid()) @db.Uuid
+  keyId       String   @map("key_id") @db.Uuid
+  langCode    String   @map("lang_code") @db.VarChar(20)  // BCP-47, e.g. "en", "fr", "ar"
+  value       String   @db.Text                            // translated string
+  isApproved  Boolean  @default(true) @map("is_approved") // false = needs review
+  updatedBy   String?  @map("updated_by") @db.VarChar(255) // admin email who last edited
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  translationKey TranslationKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@unique([keyId, langCode])
+  @@index([langCode])
+  @@index([keyId])
+  @@map("translations")
+}
+
 model ApiKey {
   id          String    @id @default(uuid()) @db.Uuid
   name        String    @db.VarChar(100)

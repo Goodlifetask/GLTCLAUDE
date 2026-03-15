@@ -204,6 +204,58 @@ export interface ReminderList {
   icon?: string;
 }
 
+// ─── Translations ────────────────────────────────────────────────────────────
+
+export interface TranslationKey {
+  id: string;
+  key: string;
+  namespace: string;
+  description?: string | null;
+  defaultValue: string;
+  isStatic: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TranslationEntry {
+  keyId: string;
+  key: string;
+  namespace: string;
+  description?: string | null;
+  defaultValue: string;
+  translation: string | null;
+  isApproved: boolean;
+  updatedBy?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface TranslationsForLangResponse {
+  langCode: string;
+  total: number;
+  translated: number;
+  missing: number;
+  data: TranslationEntry[];
+}
+
+export interface TranslationKeysResponse {
+  data: TranslationKey[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface UpsertTranslationPayload {
+  keyId: string;
+  langCode: string;
+  value: string;
+}
+
+export interface BulkUpsertTranslationsPayload {
+  langCode: string;
+  translations: Array<{ keyId: string; value: string }>;
+}
+
 // ─── Subscription ────────────────────────────────────────────────────────────
 
 export interface Subscription {
@@ -294,5 +346,22 @@ export const adminApi = {
       request<{ success: boolean; data: { userId: string; email: string; tempPassword: string } }>(
         'POST', `/admin/users/${id}/reset-password`, {},
       ),
+  },
+
+  translations: {
+    keys: (params?: { namespace?: string; search?: string; page?: number; limit?: number }) =>
+      request<TranslationKeysResponse>('GET', '/admin/translations/keys' + queryString(params as Record<string, string | number | boolean | undefined>)),
+    forLanguage: (langCode: string, params?: { namespace?: string; search?: string; onlyMissing?: boolean }) =>
+      request<TranslationsForLangResponse>('GET', `/admin/translations/language/${langCode}` + queryString(params as Record<string, string | number | boolean | undefined>)),
+    upsert: (payload: UpsertTranslationPayload) =>
+      request<{ success: boolean }>('PUT', '/admin/translations/', payload),
+    bulkUpsert: (payload: BulkUpsertTranslationsPayload) =>
+      request<{ success: boolean; upserted: number }>('PUT', '/admin/translations/bulk', payload),
+    createKey: (data: { key: string; namespace: string; defaultValue: string; description?: string; isStatic?: boolean }) =>
+      request<{ success: boolean; data: TranslationKey }>('POST', '/admin/translations/keys', data),
+    updateKey: (id: string, data: Partial<TranslationKey>) =>
+      request<{ success: boolean; data: TranslationKey }>('PATCH', `/admin/translations/keys/${id}`, data),
+    exportLang: (langCode: string) =>
+      request<Record<string, string>>('GET', `/admin/translations/export/${langCode}`),
   },
 };

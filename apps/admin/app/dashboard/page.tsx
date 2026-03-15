@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '../../components/AdminSidebar';
-import { adminApi, AdminStats, AdminUser, UserRole, CountryItem } from '../../lib/api';
+import { adminApi, AdminStats, AdminUser, UserRole, CountryItem, TranslationEntry, TranslationsForLangResponse } from '../../lib/api';
 
 // ── DATA ──
 const USERS = [
@@ -1768,6 +1768,285 @@ function LanguagePage() {
   );
 }
 
+// ── TRANSLATIONS PAGE ────────────────────────────────────────────────────────
+const NAMESPACES = ['all', 'nav', 'page', 'btn', 'form', 'badge', 'msg', 'table', 'common'];
+
+function TranslationsPage() {
+  const [languages, setLanguages] = useState<Array<{ code: string; name: string; isRtl: boolean }>>([]);
+  const [selectedLang, setSelectedLang] = useState('');
+  const [namespace, setNamespace] = useState('all');
+  const [search, setSearch] = useState('');
+  const [onlyMissing, setOnlyMissing] = useState(false);
+  const [data, setData] = useState<TranslationsForLangResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [editRow, setEditRow] = useState<TranslationEntry | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  // Load languages from countries data
+  useEffect(() => {
+    adminApi.admin.countries().then(res => {
+      const langs: Array<{ code: string; name: string; isRtl: boolean }> = [];
+      const seen = new Set<string>();
+      res.data.forEach(country => {
+        country.languages?.forEach(l => {
+          if (!seen.has(l.code) && l.isActive) {
+            seen.add(l.code);
+            langs.push({ code: l.code, name: l.name, isRtl: l.isRtl });
+          }
+        });
+      });
+      langs.sort((a, b) => a.name.localeCompare(b.name));
+      setLanguages(langs);
+      if (langs.length > 0) setSelectedLang(langs[0].code);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!selectedLang) return;
+    setLoading(true);
+    const params: Record<string, string | boolean> = {};
+    if (namespace !== 'all') params.namespace = namespace;
+    if (search.trim()) params.search = search.trim();
+    if (onlyMissing) params.onlyMissing = true;
+    adminApi.translations.forLanguage(selectedLang, params as Parameters<typeof adminApi.translations.forLanguage>[1]).then(res => {
+      setData(res);
+    }).catch(() => setData(null)).finally(() => setLoading(false));
+  }, [selectedLang, namespace, search, onlyMissing]);
+
+  function showToast(msg: string, ok: boolean) {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  async function handleSave() {
+    if (!editRow) return;
+    setSaving(true);
+    try {
+      await adminApi.translations.upsert({ keyId: editRow.keyId, langCode: selectedLang, value: editValue });
+      // update local state
+      setData(prev => {
+        if (!prev) return prev;
+        const newData = prev.data.map(r =>
+          r.keyId === editRow.keyId
+            ? { ...r, translation: editValue, isApproved: true }
+            : r
+        );
+        const wasNew = editRow.translation === null;
+        return { ...prev, data: newData, translated: prev.translated + (wasNew ? 1 : 0), missing: prev.missing - (wasNew ? 1 : 0) };
+      });
+      setEditRow(null);
+      showToast('Translation saved', true);
+    } catch {
+      showToast('Failed to save', false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const json = await adminApi.translations.exportLang(selectedLang);
+      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `translations-${selectedLang}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast('Export failed', false);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const pct = data ? Math.round((data.translated / Math.max(data.total, 1)) * 100) : 0;
+  const selectedLangObj = languages.find(l => l.code === selectedLang);
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <div className="page-title">Translations</div>
+          <div className="page-desc">Manage and override translations for any language. All app text, labels, and messages.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost btn-sm" onClick={handleExport} disabled={!selectedLang || exporting}>
+            {exporting ? '⏳' : '⬇'} Export JSON
+          </button>
+        </div>
+      </div>
+
+      {/* Controls row */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Language picker */}
+        <select
+          value={selectedLang}
+          onChange={e => setSelectedLang(e.target.value)}
+          style={{ padding: '7px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--bg-card)', fontSize: 13, minWidth: 160 }}
+        >
+          {languages.map(l => (
+            <option key={l.code} value={l.code}>{l.name} ({l.code})</option>
+          ))}
+        </select>
+
+        {/* Namespace tabs */}
+        <div style={{ display: 'flex', gap: 4, background: 'var(--bg-muted)', borderRadius: 'var(--r-md)', padding: 3 }}>
+          {NAMESPACES.map(ns => (
+            <button
+              key={ns}
+              onClick={() => setNamespace(ns)}
+              style={{
+                padding: '4px 10px', borderRadius: 'var(--r-sm)', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+                background: namespace === ns ? 'var(--bg-card)' : 'transparent',
+                color: namespace === ns ? 'var(--brand)' : 'var(--text-muted)',
+                boxShadow: namespace === ns ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >{ns}</button>
+          ))}
+        </div>
+
+        {/* Search */}
+        <input
+          type="text"
+          placeholder="Search key or value…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ padding: '7px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--bg-card)', fontSize: 13, width: 220 }}
+        />
+
+        {/* Only missing toggle */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={onlyMissing} onChange={e => setOnlyMissing(e.target.checked)} />
+          Missing only
+        </label>
+      </div>
+
+      {/* Coverage bar */}
+      {data && (
+        <div style={{ marginBottom: 20, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12 }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                {selectedLangObj?.name || selectedLang}
+                {selectedLangObj?.isRtl && <span style={{ marginLeft: 6, fontSize: 10, background: '#f59e0b22', color: '#f59e0b', padding: '1px 6px', borderRadius: 4 }}>RTL</span>}
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>{data.translated} / {data.total} translated</span>
+            </div>
+            <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-muted)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#10b981' : pct > 50 ? 'var(--brand)' : '#f59e0b', borderRadius: 4, transition: 'width 0.3s' }} />
+            </div>
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: pct === 100 ? '#10b981' : 'var(--brand)', minWidth: 52, textAlign: 'right' }}>{pct}%</div>
+          {data.missing > 0 && (
+            <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: 'var(--r-sm)', padding: '4px 10px', fontSize: 12, fontWeight: 600 }}>
+              {data.missing} missing
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Loading translations…</div>
+        ) : !data || data.data.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>No entries found.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-muted)', borderBottom: '1px solid var(--border)' }}>
+                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', width: '22%' }}>Key</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', width: '8%' }}>Category</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', width: '28%' }}>English Default</th>
+                <th style={{ padding: '10px 8px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', width: '30%' }}>Translation</th>
+                <th style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', width: '7%' }}>Status</th>
+                <th style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', width: '5%' }}>Edit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.data.map((row, i) => (
+                <tr key={row.keyId} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? 'transparent' : 'var(--bg-muted)' }}>
+                  <td style={{ padding: '9px 14px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{row.key}</td>
+                  <td style={{ padding: '9px 8px' }}>
+                    <span style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{row.namespace}</span>
+                  </td>
+                  <td style={{ padding: '9px 8px', color: 'var(--text-secondary)', fontSize: 12 }}>{row.defaultValue}</td>
+                  <td style={{ padding: '9px 8px' }}>
+                    {row.translation !== null ? (
+                      <span style={{ color: 'var(--text-primary)', direction: selectedLangObj?.isRtl ? 'rtl' : 'ltr' }}>{row.translation}</span>
+                    ) : (
+                      <span style={{ color: '#d97706', fontStyle: 'italic', fontSize: 11 }}>— not translated —</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '9px 8px', textAlign: 'center' }}>
+                    {row.translation !== null ? (
+                      <span style={{ background: '#d1fae5', color: '#065f46', borderRadius: 20, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>✓</span>
+                    ) : (
+                      <span style={{ background: '#fef3c7', color: '#92400e', borderRadius: 20, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>Missing</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '9px 8px', textAlign: 'center' }}>
+                    <button
+                      onClick={() => { setEditRow(row); setEditValue(row.translation ?? ''); }}
+                      style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: 'var(--text-muted)' }}
+                    >✏</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Edit modal */}
+      {editRow && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--r-xl)', padding: 28, width: 500, maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Edit Translation</div>
+              <button onClick={() => setEditRow(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)' }}>×</button>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace', marginBottom: 6 }}>{editRow.key}</div>
+            <div style={{ background: 'var(--bg-muted)', borderRadius: 'var(--r-md)', padding: '8px 12px', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 14 }}>
+              <strong>English:</strong> {editRow.defaultValue}
+            </div>
+            {editRow.description && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>ℹ {editRow.description}</div>
+            )}
+            <textarea
+              value={editValue}
+              onChange={e => setEditValue(e.target.value)}
+              rows={3}
+              dir={selectedLangObj?.isRtl ? 'rtl' : 'ltr'}
+              placeholder={`Translation in ${selectedLangObj?.name || selectedLang}…`}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: 'var(--bg-card)', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', direction: selectedLangObj?.isRtl ? 'rtl' : 'ltr' }}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => setEditRow(null)}>Cancel</button>
+              <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving || !editValue.trim()}>
+                {saving ? 'Saving…' : 'Save Translation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: toast.ok ? '#10b981' : '#ef4444', color: '#fff', padding: '10px 18px', borderRadius: 'var(--r-lg)', fontSize: 13, fontWeight: 500, boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
+          {toast.ok ? '✓' : '✕'} {toast.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NotifsPage() {
   return (
     <div>
@@ -2619,7 +2898,7 @@ function BillingPage() {
 const PAGE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard', analytics: 'Analytics', logs: 'Activity Logs',
   users: 'User Management', roles: 'Roles & Permissions', subs: 'Subscriptions',
-  categories: 'Categories', themes: 'Themes & UI', language: 'Languages', notifs: 'Push Notifications',
+  categories: 'Categories', themes: 'Themes & UI', language: 'Languages', translations: 'Translations', notifs: 'Push Notifications',
   webads: 'Web Ad Manager', mobileads: 'Mobile Ads', billing: 'Billing & Revenue',
   integrations: 'Integrations', voice: 'Voice Assistants', calsync: 'Calendar Sync',
   emailint: 'Email Clients', apikeys: 'API Keys',
@@ -2669,6 +2948,7 @@ export default function AdminDashboard() {
       case 'categories':   return <CategoriesPage showToast={showToast} />;
       case 'themes':       return <ThemesPage />;
       case 'language':     return <LanguagePage />;
+      case 'translations': return <TranslationsPage />;
       case 'notifs':       return <NotifsPage />;
       case 'webads':       return <WebAdsPage />;
       case 'mobileads':    return <MobileAdsPage />;

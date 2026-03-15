@@ -11,6 +11,7 @@ import { adminRoutes } from './admin';
 import { countriesRoutes } from './countries';
 import { familyRoutes } from './family';
 import { teamRoutes } from './team';
+import { translationsRoutes } from './translations';
 
 export async function registerRoutes(server: FastifyInstance) {
   await server.register(authRoutes,         { prefix: '/v1/auth' });
@@ -25,4 +26,5 @@ export async function registerRoutes(server: FastifyInstance) {
   await server.register(countriesRoutes,    { prefix: '/v1/countries' });
   await server.register(familyRoutes,       { prefix: '/v1/family' });
   await server.register(teamRoutes,         { prefix: '/v1/team' });
+  await server.register(translationsRoutes, { prefix: '/v1/admin/translations' });
 }

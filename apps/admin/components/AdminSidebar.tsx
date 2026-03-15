@@ -16,6 +16,7 @@ const NAV = [
     { label: 'Categories', icon: '⊛', page: 'categories', badge: null, badgeClass: null },
     { label: 'Themes & UI', icon: '◑', page: 'themes', badge: null, badgeClass: null },
     { label: 'Languages', icon: '⊕', page: 'language', badge: null, badgeClass: null },
+    { label: 'Translations', icon: '⟺', page: 'translations', badge: null, badgeClass: null },
     { label: 'Notifications', icon: '◉', page: 'notifs', badge: null, badgeClass: null },
   ]},
   { section: 'Monetisation', items: [
