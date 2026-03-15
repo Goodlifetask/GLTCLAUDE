@@ -460,9 +460,19 @@ function CreateReminderModal({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  const startListening = () => {
+  const startListening = async () => {
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRec) return;
+
+    // Explicitly request mic permission so the browser shows the allow/deny prompt
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop()); // release immediately — just needed the permission
+    } catch {
+      toast.error('Microphone access denied — click the 🔒 icon in your address bar to allow it, then try again.');
+      return;
+    }
+
     finalTranscriptRef.current = '';
     isStoppingRef.current = false;
     setTranscript('');
