@@ -78,12 +78,16 @@ export const api = {
       client.post('/auth/logout').then((r) => r.data),
     magicLink: (email: string) =>
       client.post('/auth/magic-link', { email }).then((r) => r.data),
+    forgotPassword: (email: string) =>
+      client.post('/auth/forgot-password', { email }).then((r) => r.data),
+    resetPassword: (token: string, password: string) =>
+      client.post('/auth/reset-password', { token, password }).then((r) => r.data),
   },
 
   users: {
     me: () =>
       client.get('/users/me').then((r) => r.data),
-    updateProfile: (data: Partial<{ name: string; locale: string; timezone: string; theme: string }>) =>
+    updateProfile: (data: Partial<{ name: string; locale: string; timezone: string; theme: string; persona: string; occupation: string; profileCategory: string; profileSubType: string; taskPreferences: string[] }>) =>
       client.patch('/users/me', data).then((r) => r.data),
     uploadAvatar: (file: File) => {
       const form = new FormData();
@@ -98,6 +102,13 @@ export const api = {
       client.post('/users/me/export').then((r) => r.data),
     deleteAccount: () =>
       client.delete('/users/me/delete').then((r) => r.data),
+    changePassword: (currentPassword: string, newPassword: string) =>
+      client.patch('/users/me/password', { currentPassword, newPassword }).then((r) => r.data),
+  },
+
+  countries: {
+    list: () =>
+      client.get('/countries').then((r) => r.data),
   },
 
   reminders: {
@@ -157,6 +168,56 @@ export const api = {
       client.post('/subscriptions/checkout', { plan, success_url: successUrl, cancel_url: cancelUrl }).then((r) => r.data),
     openPortal: () =>
       client.post('/subscriptions/portal').then((r) => r.data),
+  },
+
+  family: {
+    create: (data: { name: string; avatarUrl?: string }) =>
+      client.post('/family', data).then((r) => r.data),
+    get: () =>
+      client.get('/family/me').then((r) => r.data),
+    update: (data: { name?: string; avatarUrl?: string }) =>
+      client.patch('/family/me', data).then((r) => r.data),
+    invite: (data: { email: string; role?: string }) =>
+      client.post('/family/invite', data).then((r) => r.data),
+    acceptInvite: (token: string) =>
+      client.post('/family/invite/accept', { token }).then((r) => r.data),
+    removeMember: (memberId: string) =>
+      client.delete(`/family/members/${memberId}`).then((r) => r.data),
+    reminders: (params?: Record<string, unknown>) =>
+      client.get('/family/reminders', { params }).then((r) => r.data),
+    createReminder: (data: Record<string, unknown>) =>
+      client.post('/family/reminders', data).then((r) => r.data),
+  },
+
+  team: {
+    workspaces: {
+      list: () =>
+        client.get('/team/workspaces').then((r) => r.data),
+      create: (data: { name: string; description?: string; avatarUrl?: string }) =>
+        client.post('/team/workspaces', data).then((r) => r.data),
+      get: (id: string) =>
+        client.get(`/team/workspaces/${id}`).then((r) => r.data),
+      update: (id: string, data: { name?: string; description?: string; avatarUrl?: string }) =>
+        client.patch(`/team/workspaces/${id}`, data).then((r) => r.data),
+      invite: (id: string, data: { email: string; role?: string }) =>
+        client.post(`/team/workspaces/${id}/invite`, data).then((r) => r.data),
+      removeMember: (id: string, memberId: string) =>
+        client.delete(`/team/workspaces/${id}/members/${memberId}`).then((r) => r.data),
+    },
+    projects: {
+      list: (workspaceId: string) =>
+        client.get(`/team/workspaces/${workspaceId}/projects`).then((r) => r.data),
+      create: (workspaceId: string, data: { name: string; description?: string; color?: string; icon?: string; dueDate?: string }) =>
+        client.post(`/team/workspaces/${workspaceId}/projects`, data).then((r) => r.data),
+      update: (workspaceId: string, projectId: string, data: Record<string, unknown>) =>
+        client.patch(`/team/workspaces/${workspaceId}/projects/${projectId}`, data).then((r) => r.data),
+    },
+    reminders: {
+      list: (workspaceId: string, params?: Record<string, unknown>) =>
+        client.get(`/team/workspaces/${workspaceId}/reminders`, { params }).then((r) => r.data),
+      create: (workspaceId: string, data: Record<string, unknown>) =>
+        client.post(`/team/workspaces/${workspaceId}/reminders`, data).then((r) => r.data),
+    },
   },
 };
 

@@ -77,7 +77,7 @@ export async function authRoutes(server: FastifyInstance) {
         httpOnly: true,
         secure:   process.env['NODE_ENV'] !== 'development',
         sameSite: 'strict',
-        path:     '/v1/auth/refresh',
+        path:     '/',
         maxAge:   2592000, // 30 days
       });
 
@@ -116,7 +116,7 @@ export async function authRoutes(server: FastifyInstance) {
       httpOnly: true,
       secure:   process.env['NODE_ENV'] !== 'development',
       sameSite: 'strict',
-      path:     '/v1/auth/refresh',
+      path:     '/',
       maxAge:   2592000,
     });
 
@@ -147,7 +147,7 @@ export async function authRoutes(server: FastifyInstance) {
       httpOnly: true,
       secure:   process.env['NODE_ENV'] !== 'development',
       sameSite: 'strict',
-      path:     '/v1/auth/refresh',
+      path:     '/',
       maxAge:   2592000,
     });
 
@@ -163,6 +163,34 @@ export async function authRoutes(server: FastifyInstance) {
     });
   });
 
+  // POST /v1/auth/forgot-password
+  server.post(
+    '/forgot-password',
+    { config: { rateLimit: { max: 5, timeWindow: '15 minutes' } } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { email } = z.object({ email: z.string().email() }).parse(request.body);
+      await authService.forgotPassword(email);
+      return reply.status(202).send({
+        data: { message: 'If this email is registered, a password reset link has been sent.' },
+      });
+    },
+  );
+
+  // POST /v1/auth/reset-password
+  server.post(
+    '/reset-password',
+    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const schema = z.object({
+        token:    z.string().min(1),
+        password: z.string().min(8).max(128),
+      });
+      const { token, password } = schema.parse(request.body);
+      await authService.resetPassword(token, password);
+      return reply.send({ data: { message: 'Password reset successfully. Please log in.' } });
+    },
+  );
+
   // POST /v1/auth/logout
   server.post(
     '/logout',
@@ -176,7 +204,7 @@ export async function authRoutes(server: FastifyInstance) {
         await authService.logout(rawToken);
       }
 
-      reply.clearCookie('refresh_token', { path: '/v1/auth/refresh' });
+      reply.clearCookie('refresh_token', { path: '/' });
       return reply.status(204).send();
     },
   );

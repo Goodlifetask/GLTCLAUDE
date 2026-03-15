@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/auth';
 import { api } from '../../lib/api';
 
-const PUBLIC_PATHS = ['/login', '/register', '/verify'];
+const PUBLIC_PATHS = ['/login', '/register', '/verify', '/onboarding'];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, setUser, setLoading, logout } = useAuthStore();

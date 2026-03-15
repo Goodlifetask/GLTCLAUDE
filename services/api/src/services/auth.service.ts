@@ -175,6 +175,96 @@ export class AuthService {
     logger.info({ userId: user.id, email }, 'Magic link generated (email queued)');
   }
 
+  // ─── Password Reset (self-service) ───────────────────────────────
+
+  async forgotPassword(email: string): Promise<void> {
+    // Always return silently — never reveal whether the email exists
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+    if (!user || !user.isActive) return;
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken:   tokenHash,
+        passwordResetExpires: expires,
+      },
+    });
+
+    // TODO: send actual email with reset URL containing rawToken
+    logger.info({ userId: user.id, email }, `Password reset token generated (token: ${rawToken})`);
+  }
+
+  async resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        passwordResetToken:   tokenHash,
+        passwordResetExpires: { gt: new Date() },
+        isActive: true,
+      },
+    });
+
+    if (!user) {
+      const err = new Error('Password reset link is invalid or has expired') as Error & { statusCode: number; code: string };
+      err.statusCode = 400;
+      err.code = 'INVALID_TOKEN';
+      throw err;
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordResetToken:   null,
+        passwordResetExpires: null,
+      },
+    });
+
+    // Revoke all existing refresh tokens so old sessions are invalidated
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data:  { revokedAt: new Date() },
+    });
+
+    logger.info({ userId: user.id }, 'Password reset completed');
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user || !user.passwordHash) {
+      const err = new Error('Cannot change password for this account') as Error & { statusCode: number; code: string };
+      err.statusCode = 400;
+      err.code = 'INVALID_OPERATION';
+      throw err;
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      const err = new Error('Current password is incorrect') as Error & { statusCode: number; code: string };
+      err.statusCode = 400;
+      err.code = 'INVALID_PASSWORD';
+      throw err;
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data:  { passwordHash },
+    });
+
+    logger.info({ userId }, 'Password changed');
+  }
+
   async verifyMagicLink(token: string): Promise<{ user: User; tokens: AuthTokens }> {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const redis = (this.server as any).redis;

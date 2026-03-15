@@ -18,6 +18,7 @@ enum UserPlan {
   free
   pro
   team
+  family
 }
 
 enum AuthProvider {
@@ -125,6 +126,15 @@ enum GeofenceTrigger {
   both
 }
 
+enum UserRole {
+  user
+  super_admin
+  administrator
+  moderator
+  support_agent
+  read_only
+}
+
 enum AdminRole {
   super_admin
   administrator
@@ -139,6 +149,42 @@ enum TeamMemberRole {
   member
 }
 
+enum UserPersona {
+  student
+  teacher
+  nurse
+  doctor
+  engineer
+  carpenter
+  chef
+  developer
+  manager
+  entrepreneur
+  parent
+  retiree
+  other
+}
+
+enum FamilyMemberRole {
+  owner
+  adult
+  child
+}
+
+enum FamilyInviteStatus {
+  pending
+  accepted
+  declined
+  expired
+}
+
+enum ReminderShareScope {
+  private
+  family
+  team
+  specific
+}
+
 // ─── USERS ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -148,17 +194,29 @@ model User {
   passwordHash String?      @map("password_hash") @db.VarChar(255)
   avatarUrl    String?      @map("avatar_url") @db.VarChar(500)
   plan         UserPlan     @default(free)
+  role         UserRole     @default(user)
   authProvider AuthProvider @default(email) @map("auth_provider")
   locale       String       @default("en") @db.VarChar(10)
   timezone     String       @default("UTC") @db.VarChar(50)
   theme        ThemePreference @default(warm_corporate)
   isActive     Boolean      @default(true) @map("is_active")
 
+  // Individual profile / persona
+  persona          UserPersona?
+  occupation       String?   @db.VarChar(100)   // free-text job title
+  profileCategory  String?   @map("profile_category") @db.VarChar(60)
+  profileSubType   String?   @map("profile_sub_type")  @db.VarChar(100)
+  taskPreferences  Json      @default("[]")     @map("task_preferences")
+
   // 2FA / biometric
   totpSecret   String?      @map("totp_secret") @db.VarChar(255) // encrypted
 
   // Settings JSON (notification prefs, quiet hours, etc.)
   settings     Json         @default("{}")
+
+  // Password reset
+  passwordResetToken   String?   @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpires DateTime? @map("password_reset_expires")
 
   // Timestamps
   createdAt    DateTime     @default(now()) @map("created_at")
@@ -181,9 +239,14 @@ model User {
   refreshTokens       RefreshToken[]
   teamMemberships     TeamMembership[]
   ownedWorkspaces     TeamWorkspace[]
+  familyMemberships   FamilyMember[]
+  ownedFamilies       Family[]         @relation("FamilyOwner")
+  reminderShares      ReminderShare[]
+  assignedReminders   Reminder[]       @relation("AssignedReminders")
 
   @@index([email])
   @@index([plan])
+  @@index([role])
   @@index([deletedAt])
   @@map("users")
 }
@@ -320,8 +383,12 @@ model Reminder {
   // Type-specific data stored as JSONB
   metadata     Json            @default("{}")
 
-  // For shared reminders (Team plan)
-  workspaceId  String?         @map("workspace_id") @db.Uuid
+  // Sharing
+  workspaceId  String?            @map("workspace_id") @db.Uuid
+  projectId    String?            @map("project_id") @db.Uuid
+  familyId     String?            @map("family_id") @db.Uuid
+  assigneeId   String?            @map("assignee_id") @db.Uuid   // who the task is assigned to
+  shareScope   ReminderShareScope @default(private) @map("share_scope")
 
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
@@ -334,6 +401,10 @@ model Reminder {
   contact      Contact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
   location     Location?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
   workspace    TeamWorkspace?  @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  project      TeamProject?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  family       Family?         @relation(fields: [familyId], references: [id], onDelete: SetNull)
+  assignee     User?           @relation("AssignedReminders", fields: [assigneeId], references: [id], onDelete: SetNull)
+  shares       ReminderShare[]
   notifications NotificationLog[]
 
   @@index([userId, fireAt], name: "idx_reminders_user_fire_at")
@@ -472,17 +543,39 @@ model WebhookEvent {
 // ─── TEAM PLAN ───────────────────────────────────────────────────────────────
 
 model TeamWorkspace {
-  id        String    @id @default(uuid()) @db.Uuid
-  name      String    @db.VarChar(100)
-  ownerId   String    @map("owner_id") @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  avatarUrl   String?   @map("avatar_url") @db.VarChar(500)
+  ownerId     String    @map("owner_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   owner     User      @relation(fields: [ownerId], references: [id])
   members   TeamMembership[]
+  projects  TeamProject[]
   reminders Reminder[]
 
   @@map("team_workspaces")
+}
+
+model TeamProject {
+  id          String        @id @default(uuid()) @db.Uuid
+  workspaceId String        @map("workspace_id") @db.Uuid
+  name        String        @db.VarChar(100)
+  description String?       @db.Text
+  color       String        @default("#6366f1") @db.VarChar(7)
+  icon        String        @default("folder") @db.VarChar(50)
+  isArchived  Boolean       @default(false) @map("is_archived")
+  dueDate     DateTime?     @map("due_date")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  workspace   TeamWorkspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  reminders   Reminder[]
+
+  @@index([workspaceId])
+  @@map("team_projects")
 }
 
 model TeamMembership {
@@ -497,6 +590,70 @@ model TeamMembership {
   @@id([workspaceId, userId])
   @@index([userId])
   @@map("team_memberships")
+}
+
+// ─── FAMILY PLAN ─────────────────────────────────────────────────────────────
+
+model Family {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(100)
+  avatarUrl String?   @map("avatar_url") @db.VarChar(500)
+  ownerId   String    @map("owner_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  owner     User           @relation("FamilyOwner", fields: [ownerId], references: [id])
+  members   FamilyMember[]
+  invites   FamilyInvite[]
+  reminders Reminder[]
+
+  @@map("families")
+}
+
+model FamilyMember {
+  familyId  String           @map("family_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  role      FamilyMemberRole @default(adult)
+  nickname  String?          @db.VarChar(50)
+  joinedAt  DateTime         @default(now()) @map("joined_at")
+
+  family    Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([familyId, userId])
+  @@index([userId])
+  @@map("family_members")
+}
+
+model FamilyInvite {
+  id        String             @id @default(uuid()) @db.Uuid
+  familyId  String             @map("family_id") @db.Uuid
+  email     String             @db.VarChar(255)
+  tokenHash String             @unique @map("token_hash") @db.VarChar(255)
+  role      FamilyMemberRole   @default(adult)
+  status    FamilyInviteStatus @default(pending)
+  expiresAt DateTime           @map("expires_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+
+  family    Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@index([familyId])
+  @@index([email])
+  @@map("family_invites")
+}
+
+model ReminderShare {
+  reminderId String   @map("reminder_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  canEdit    Boolean  @default(false) @map("can_edit")
+  sharedAt   DateTime @default(now()) @map("shared_at")
+
+  reminder   Reminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([reminderId, userId])
+  @@index([userId])
+  @@map("reminder_shares")
 }
 
 // ─── ADMIN ───────────────────────────────────────────────────────────────────
@@ -538,6 +695,34 @@ model AuditLog {
   @@index([resource, resourceId])
   @@index([action])
   @@map("audit_logs")
+}
+
+// ─── COUNTRIES & LANGUAGES ──────────────────────────────────────────────────
+
+model Country {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String     @unique @db.VarChar(100)
+  code      String     @unique @db.VarChar(3)    // ISO 3166-1 alpha-2/3
+  sortOrder Int        @default(0) @map("sort_order")
+  languages Language[]
+
+  @@map("countries")
+}
+
+model Language {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  code        String   @db.VarChar(20)           // BCP-47 / ISO 639-1
+  countryId   String   @map("country_id") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  isRtl       Boolean  @default(false) @map("is_rtl")
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  country     Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@unique([countryId, name])
+  @@index([countryId])
+  @@map("languages")
 }
 
 model ApiKey {

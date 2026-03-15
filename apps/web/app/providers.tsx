@@ -36,7 +36,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               duration: 4000,
               style: {
                 borderRadius: '12px',
-                fontFamily:   'var(--font-dm-sans)',
+                fontFamily:   'var(--font-body)',
                 fontSize:     '14px',
               },
             }}

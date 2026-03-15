@@ -1,27 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Outfit, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import { Providers } from './providers';
 import '../styles/globals.css';
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
-  weight: ['400', '600', '700', '900'],
-  display: 'swap',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-dm-sans',
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: {
@@ -64,12 +43,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${outfit.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
-    >
-      <head />
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

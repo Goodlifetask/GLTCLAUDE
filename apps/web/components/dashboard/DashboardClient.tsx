@@ -50,28 +50,28 @@ export function DashboardClient() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatTile
           label="Completed"
-          value={statsData?.completed ?? 0}
+          value={(statsData as any)?.data?.completed ?? 0}
           icon={<CheckCircle className="w-5 h-5" />}
           color="text-green-600"
           bgColor="bg-green-50"
         />
         <StatTile
           label="Overdue"
-          value={statsData?.overdue ?? 0}
+          value={(statsData as any)?.data?.overdue ?? 0}
           icon={<AlertCircle className="w-5 h-5" />}
           color="text-red-600"
           bgColor="bg-red-50"
         />
         <StatTile
           label="Pending"
-          value={statsData?.pending ?? 0}
+          value={(statsData as any)?.data?.upcoming ?? 0}
           icon={<Clock className="w-5 h-5" />}
           color="text-yellow-600"
           bgColor="bg-yellow-50"
         />
         <StatTile
-          label="Recurring"
-          value={statsData?.recurring ?? 0}
+          label="Total"
+          value={(statsData as any)?.data?.total ?? 0}
           icon={<RefreshCw className="w-5 h-5" />}
           color="text-blue-600"
           bgColor="bg-blue-50"

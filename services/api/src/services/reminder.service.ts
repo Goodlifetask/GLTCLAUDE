@@ -25,16 +25,23 @@ interface CreateReminderInput {
   locationId?: string;
   metadata?:   Record<string, unknown>;
   workspaceId?: string;
+  familyId?:   string;
+  assigneeId?: string;
+  projectId?:  string;
+  shareScope?: string;
 }
 
 interface UpdateReminderInput {
-  listId?:    string;
-  title?:     string;
-  notes?:     string;
-  priority?:  string;
-  fireAt?:    Date;
-  status?:    string;
-  metadata?:  Record<string, unknown>;
+  listId?:     string;
+  title?:      string;
+  notes?:      string;
+  priority?:   string;
+  fireAt?:     Date;
+  status?:     string;
+  metadata?:   Record<string, unknown>;
+  assigneeId?: string;
+  projectId?:  string;
+  shareScope?: string;
 }
 
 interface ListRemindersInput {
@@ -119,6 +126,10 @@ export class ReminderService {
         fireAt:      input.fireAt,
         metadata:    input.metadata ?? {},
         workspaceId: input.workspaceId ?? null,
+        familyId:    input.familyId ?? null,
+        assigneeId:  input.assigneeId ?? null,
+        projectId:   input.projectId ?? null,
+        shareScope:  (input.shareScope as any) ?? 'private',
       },
       include: {
         list:       true,
@@ -216,13 +227,16 @@ export class ReminderService {
     const updated = await this.prisma.reminder.update({
       where: { id },
       data: {
-        ...(input.title    && { title:    input.title }),
-        ...(input.notes    && { notes:    input.notes }),
-        ...(input.listId   && { listId:   input.listId }),
-        ...(input.priority && { priority: input.priority as any }),
-        ...(input.status   && { status:   input.status as any }),
-        ...(input.fireAt   && { fireAt:   input.fireAt }),
-        ...(input.metadata && { metadata: input.metadata }),
+        ...(input.title      && { title:      input.title }),
+        ...(input.notes      && { notes:      input.notes }),
+        ...(input.listId     && { listId:     input.listId }),
+        ...(input.priority   && { priority:   input.priority as any }),
+        ...(input.status     && { status:     input.status as any }),
+        ...(input.fireAt     && { fireAt:     input.fireAt }),
+        ...(input.metadata   && { metadata:   input.metadata }),
+        ...(input.assigneeId !== undefined && { assigneeId: input.assigneeId }),
+        ...(input.projectId  !== undefined && { projectId:  input.projectId }),
+        ...(input.shareScope && { shareScope: input.shareScope as any }),
       },
       include: { list: true, recurrence: true, contact: true, location: true },
     });

@@ -36,6 +36,20 @@ export const PLAN_CONFIG: Record<UserPlan, PlanConfig> = {
     stripeMonthlyPriceId: process.env['STRIPE_PRO_MONTHLY_PRICE_ID'],
     stripeYearlyPriceId: process.env['STRIPE_PRO_YEARLY_PRICE_ID'],
   },
+  family: {
+    name: 'Family',
+    price: 14.99,
+    reminderLimit: -1,
+    features: [
+      'Everything in Pro',
+      'Up to 6 family members',
+      'Shared family reminders',
+      'Assign tasks to family members',
+      'Family activity feed',
+    ],
+    stripeMonthlyPriceId: process.env['STRIPE_FAMILY_MONTHLY_PRICE_ID'],
+    stripeYearlyPriceId: process.env['STRIPE_FAMILY_YEARLY_PRICE_ID'],
+  },
   team: {
     name: 'Team',
     price: 24.99,
@@ -60,13 +74,17 @@ export function canCreateReminder(plan: UserPlan, currentCount: number): boolean
 }
 
 export function planHasCalendarSync(plan: UserPlan): boolean {
-  return plan === 'pro' || plan === 'team';
+  return plan === 'pro' || plan === 'team' || plan === 'family';
 }
 
 export function planHasVoiceAssistants(plan: UserPlan): boolean {
-  return plan === 'pro' || plan === 'team';
+  return plan === 'pro' || plan === 'team' || plan === 'family';
 }
 
 export function planHasTeamFeatures(plan: UserPlan): boolean {
   return plan === 'team';
+}
+
+export function planHasFamilyFeatures(plan: UserPlan): boolean {
+  return plan === 'family';
 }

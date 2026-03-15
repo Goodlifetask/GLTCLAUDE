@@ -1,60 +1,70 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Sans:wght@400;500;600;700&family=Lora:ital@1&family=JetBrains+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Theme: Warm Corporate (default) ─────────────────────────────────────── */
-:root,
-[data-theme="warm_corporate"] {
-  --color-primary:      #F0A202;
-  --color-primary-dark: #F18805;
-  --color-accent:       #D95D39;
-  --color-bg:           #FFFFFF;
-  --color-bg-dark:      #202C59;
-  --color-surface:      #FFF8EC;
-  --color-text:         #1A1A2E;
-  --color-text-muted:   #581F18;
-  --color-border:       #E8D5B0;
-}
+/* ─── Design System: Sky Blue & Orange ───────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:          #f0f7ff;
+  --bg-raised:   #0c4a6e;
+  --card:        #ffffff;
+  --card-hover:  #f0f9ff;
+  --card-border: rgba(14,165,233,0.15);
+  --overlay:     rgba(12,74,110,0.7);
 
-/* ─── Theme: Blue Spectrum ─────────────────────────────────────────────────── */
-[data-theme="blue_spectrum"] {
-  --color-primary:      #3F8EFC;
-  --color-primary-dark: #2667FF;
-  --color-accent:       #3B28CC;
-  --color-bg:           #FFFFFF;
-  --color-bg-dark:      #1A1A2E;
-  --color-surface:      #EFF6FF;
-  --color-text:         #0F172A;
-  --color-text-muted:   #475569;
-  --color-border:       #BFDBFE;
-}
+  /* Brand — orange */
+  --amber:       #f97316;
+  --amber-dim:   #ea6c0a;
+  --amber-glow:  rgba(249,115,22,0.12);
+  --amber-soft:  rgba(249,115,22,0.07);
 
-/* ─── Theme: India ─────────────────────────────────────────────────────────── */
-[data-theme="india"] {
-  --color-primary:      #FF8000;
-  --color-primary-dark: #E67300;
-  --color-accent:       #008000;
-  --color-bg:           #FFFFFF;
-  --color-bg-dark:      #1A1A1A;
-  --color-surface:      #FFF5E6;
-  --color-text:         #1A1A1A;
-  --color-text-muted:   #444444;
-  --color-border:       #FFD9B3;
-}
+  /* Semantic */
+  --sage:        #16a34a;
+  --sage-bg:     rgba(22,163,74,0.09);
+  --coral:       #dc2626;
+  --coral-bg:    rgba(220,38,38,0.09);
+  --sky:         #0ea5e9;
+  --sky-bg:      rgba(14,165,233,0.09);
+  --mauve:       #7c3aed;
+  --mauve-bg:    rgba(124,58,237,0.09);
+  --rose:        #db2777;
+  --rose-bg:     rgba(219,39,119,0.09);
 
-/* ─── Theme: USA ───────────────────────────────────────────────────────────── */
-[data-theme="usa"] {
-  --color-primary:      #0157AE;
-  --color-primary-dark: #000654;
-  --color-accent:       #D42729;
-  --color-bg:           #FFFFFF;
-  --color-bg-dark:      #000654;
-  --color-surface:      #F0F4FF;
-  --color-text:         #000654;
-  --color-text-muted:   #4A4A6A;
-  --color-border:       #C5D3E8;
+  /* Text */
+  --t1:  #0c1a2e;
+  --t2:  #334e68;
+  --t3:  #6b87a0;
+  --t4:  #b0c4d8;
+
+  /* Borders */
+  --b1:  rgba(14,165,233,0.15);
+  --b2:  rgba(14,165,233,0.08);
+  --b3:  rgba(14,165,233,0.25);
+
+  /* Misc */
+  --r:    10px;
+  --r-sm: 7px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --font-body: 'Sora', sans-serif;
+  --font-display: 'Playfair Display', serif;
+  --sh-card: 0 1px 4px rgba(14,165,233,0.08), 0 4px 16px rgba(14,165,233,0.06);
+  --sh-lg:   0 4px 24px rgba(14,165,233,0.12);
+  --sh-xl:   0 12px 48px rgba(14,165,233,0.15);
+  --sh-amber: 0 4px 20px rgba(249,115,22,0.3);
+
+  /* Legacy color vars */
+  --color-primary:      #f97316;
+  --color-primary-dark: #ea6c0a;
+  --color-accent:       #0ea5e9;
+  --color-bg:           #f0f7ff;
+  --color-bg-dark:      #0c4a6e;
+  --color-surface:      #ffffff;
+  --color-text:         #0c1a2e;
+  --color-text-muted:   #334e68;
+  --color-border:       rgba(14,165,233,0.15);
 }
 
 /* ─── Base Styles ──────────────────────────────────────────────────────────── */
@@ -66,71 +76,103 @@
   }
 
   html {
-    font-size: 16px;
+    font-size: 14px;
     scroll-behavior: smooth;
   }
 
   body {
-    font-family: 'DM Sans', system-ui, sans-serif;
-    background-color: var(--color-bg);
-    color: var(--color-text);
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--t1);
     line-height: 1.5;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-weight: 600;
     line-height: 1.2;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--amber);
     outline-offset: 2px;
     border-radius: 4px;
   }
 
   ::selection {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--amber);
+    color: #ffffff;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: none;
+    cursor: pointer;
+    opacity: 0.6;
   }
 }
 
 /* ─── Component Styles ─────────────────────────────────────────────────────── */
 @layer components {
   .card {
-    @apply bg-white rounded-md border border-[var(--color-border)] shadow-card;
+    background: var(--card);
+    border: 1px solid var(--b1);
+    border-radius: var(--r);
+    box-shadow: var(--sh-card);
   }
 
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
-           bg-[var(--color-primary)] text-white font-semibold text-sm
-           transition-all duration-150 hover:bg-[var(--color-primary-dark)]
-           focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2
+           font-semibold text-sm transition-all duration-150
            disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--amber);
+    color: #ffffff;
+    border: none;
+    box-shadow: var(--sh-amber);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--amber-dim);
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
-           bg-transparent border border-[var(--color-border)] text-[var(--color-text)]
-           font-semibold text-sm transition-all duration-150
-           hover:bg-[var(--color-surface)] focus-visible:ring-2
-           focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2;
+           font-semibold text-sm transition-all duration-150;
+    background: transparent;
+    border: 1px solid var(--b1);
+    color: var(--t2);
+  }
+
+  .btn-secondary:hover {
+    background: var(--card-hover);
+    color: var(--t1);
   }
 
   .input {
-    @apply w-full px-4 py-3 rounded-sm border border-[var(--color-border)]
-           bg-white text-[var(--color-text)] text-sm
-           placeholder:text-gray-400 transition-colors duration-150
-           focus:outline-none focus:border-[var(--color-primary)]
-           focus:ring-1 focus:ring-[var(--color-primary)];
+    @apply w-full px-4 py-3 text-sm transition-colors duration-150
+           focus:outline-none;
+    background: var(--card);
+    border: 1px solid var(--b1);
+    border-radius: var(--r-sm);
+    color: var(--t1);
+    font-family: var(--font-body);
+  }
+
+  .input::placeholder {
+    color: var(--t3);
+  }
+
+  .input:focus {
+    border-color: rgba(232,169,74,0.4);
+    box-shadow: 0 0 0 2px var(--amber-glow);
   }
 
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
   }
 
-  .badge-pending  { @apply badge bg-yellow-100 text-yellow-800; }
-  .badge-completed { @apply badge bg-green-100 text-green-800; }
-  .badge-overdue  { @apply badge bg-red-100 text-red-800; }
-  .badge-snoozed  { @apply badge bg-blue-100 text-blue-800; }
+  .badge-pending   { background: var(--amber-glow); color: var(--amber); }
+  .badge-completed { background: var(--sage-bg); color: var(--sage); }
+  .badge-overdue   { background: var(--coral-bg); color: var(--coral); }
+  .badge-snoozed   { background: var(--sky-bg); color: var(--sky); }
 }

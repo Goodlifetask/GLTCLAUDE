@@ -25,15 +25,21 @@ const createReminderSchema = z.object({
   contact_id:  z.string().uuid().optional(),
   location_id: z.string().uuid().optional(),
   metadata:    z.record(z.unknown()).optional(),
+  share_scope: z.enum(['private', 'family', 'team', 'specific']).default('private'),
+  assignee_id: z.string().uuid().optional(),
+  project_id:  z.string().uuid().optional(),
 });
 
 const updateReminderSchema = z.object({
-  title:    z.string().min(1).max(255).optional(),
-  notes:    z.string().max(5000).optional(),
-  list_id:  z.string().uuid().optional(),
-  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
-  fire_at:  z.string().datetime().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  title:       z.string().min(1).max(255).optional(),
+  notes:       z.string().max(5000).optional(),
+  list_id:     z.string().uuid().optional(),
+  priority:    z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  fire_at:     z.string().datetime().optional(),
+  metadata:    z.record(z.unknown()).optional(),
+  share_scope: z.enum(['private', 'family', 'team', 'specific']).optional(),
+  assignee_id: z.string().uuid().nullable().optional(),
+  project_id:  z.string().uuid().nullable().optional(),
 });
 
 const snoozeSchema = z.object({
@@ -52,7 +58,7 @@ const listQuerySchema = z.object({
   q:        z.string().max(100).optional(),
   page:     z.coerce.number().int().min(1).default(1),
   limit:    z.coerce.number().int().min(1).max(100).default(20),
-  sort:     z.enum(['fire_at', 'created_at', 'priority']).default('fire_at'),
+  sort:     z.enum(['fireAt', 'createdAt', 'priority']).default('fireAt'),
   order:    z.enum(['asc', 'desc']).default('asc'),
 });
 
@@ -107,6 +113,9 @@ export async function remindersRoutes(server: FastifyInstance) {
         contactId:  input.contact_id,
         locationId: input.location_id,
         metadata:   input.metadata,
+        shareScope: input.share_scope,
+        assigneeId: input.assignee_id,
+        projectId:  input.project_id,
         recurrence: input.recurrence
           ? {
               frequency:      input.recurrence.frequency,
@@ -142,12 +151,15 @@ export async function remindersRoutes(server: FastifyInstance) {
       const { id } = request.params as { id: string };
       const input  = updateReminderSchema.parse(request.body);
       const reminder = await reminderService.update(id, request.user.sub, {
-        title:    input.title,
-        notes:    input.notes,
-        listId:   input.list_id,
-        priority: input.priority,
-        fireAt:   input.fire_at ? new Date(input.fire_at) : undefined,
-        metadata: input.metadata,
+        title:      input.title,
+        notes:      input.notes,
+        listId:     input.list_id,
+        priority:   input.priority,
+        fireAt:     input.fire_at ? new Date(input.fire_at) : undefined,
+        metadata:   input.metadata,
+        shareScope: input.share_scope,
+        assigneeId: input.assignee_id ?? undefined,
+        projectId:  input.project_id ?? undefined,
       });
       return reply.send({ data: reminder });
     },

@@ -2,14 +2,19 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface AuthUser {
-  id:       string;
-  email:    string;
-  name:     string;
-  avatarUrl: string | null;
-  plan:     'free' | 'pro' | 'team';
-  theme:    string;
-  locale:   string;
-  timezone: string;
+  id:         string;
+  email:      string;
+  name:       string;
+  avatarUrl:  string | null;
+  plan:       'free' | 'pro' | 'team' | 'family';
+  theme:      string;
+  locale:     string;
+  timezone:   string;
+  persona?:         string | null;
+  occupation?:      string | null;
+  profileCategory?: string | null;
+  profileSubType?:  string | null;
+  taskPreferences?: string[];
 }
 
 interface AuthState {
@@ -39,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'glt-auth',
       storage: createJSONStorage(() => sessionStorage), // session only
-      partialize: (state) => ({ user: state.user }), // never persist access token
+      partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
     },
   ),
 );

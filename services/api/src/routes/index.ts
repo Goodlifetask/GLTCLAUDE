@@ -7,6 +7,10 @@ import { devicesRoutes } from './devices';
 import { subscriptionsRoutes } from './subscriptions';
 import { webhooksRoutes } from './webhooks';
 import { integrationsCalendarRoutes } from './integrations/calendar';
+import { adminRoutes } from './admin';
+import { countriesRoutes } from './countries';
+import { familyRoutes } from './family';
+import { teamRoutes } from './team';
 
 export async function registerRoutes(server: FastifyInstance) {
   await server.register(authRoutes,         { prefix: '/v1/auth' });
@@ -17,4 +21,8 @@ export async function registerRoutes(server: FastifyInstance) {
   await server.register(subscriptionsRoutes, { prefix: '/v1/subscriptions' });
   await server.register(webhooksRoutes,     { prefix: '/v1/webhooks' });
   await server.register(integrationsCalendarRoutes, { prefix: '/v1/integrations/calendar' });
+  await server.register(adminRoutes,        { prefix: '/v1/admin' });
+  await server.register(countriesRoutes,    { prefix: '/v1/countries' });
+  await server.register(familyRoutes,       { prefix: '/v1/family' });
+  await server.register(teamRoutes,         { prefix: '/v1/team' });
 }

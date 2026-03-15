@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Bell, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
@@ -29,8 +29,9 @@ export default function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) => api.auth.login(data),
-    onSuccess: (res) => {
-      setUser(res.data.user);
+    onSuccess: (res: any) => {
+      const u = res.data.user;
+      setUser({ ...u, avatarUrl: u.avatar_url ?? null });
       setAccessToken(res.data.tokens.access_token);
       router.push('/dashboard');
     },
@@ -39,24 +40,43 @@ export default function LoginPage() {
     },
   });
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '10px 14px',
+    background: 'var(--card)', border: '1px solid var(--b1)',
+    borderRadius: 'var(--r-sm)',
+    color: 'var(--t1)', fontFamily: 'var(--font-body)', fontSize: 13,
+    outline: 'none', transition: 'border-color 0.15s',
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-surface)] px-4">
-      <div className="w-full max-w-sm">
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg)', padding: '0 16px'
+    }}>
+      <div style={{ width: '100%', maxWidth: 360 }}>
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shadow-dark mb-3">
-            <Bell className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="font-display font-black text-2xl text-[var(--color-text)]">GoodLifeTask</h1>
-          <p className="text-[var(--color-text-muted)] text-sm mt-1">Sign in to your account</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: 14,
+            background: 'linear-gradient(145deg, var(--amber), var(--amber-dim))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'var(--sh-amber)', marginBottom: 14,
+            fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 24, color: '#ffffff'
+          }}>G</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600, color: 'var(--t1)', margin: 0, letterSpacing: '-0.01em' }}>GoodLifeTask</h1>
+          <p style={{ color: 'var(--t3)', fontSize: 13, marginTop: 6 }}>Sign in to your account</p>
         </div>
 
         {/* Card */}
-        <div className="card p-6">
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--b1)',
+          borderRadius: 'var(--r-lg)', padding: 24,
+          boxShadow: 'var(--sh-lg)'
+        }}>
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--t2)', marginBottom: 6 }}>
                 Email
               </label>
               <input
@@ -64,52 +84,70 @@ export default function LoginPage() {
                 type="email"
                 {...register('email')}
                 placeholder="you@example.com"
-                className="input"
+                style={inputStyle}
                 autoComplete="email"
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {errors.email && <p style={{ color: 'var(--coral)', fontSize: 11, marginTop: 4 }}>{errors.email.message}</p>}
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-                Password
-              </label>
-              <div className="relative">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--t2)' }}>
+                  Password
+                </label>
+                <Link href="/forgot-password" style={{ fontSize: 11, color: 'var(--amber)', fontWeight: 600, textDecoration: 'none' }}>
+                  Forgot password?
+                </Link>
+              </div>
+              <div style={{ position: 'relative' }}>
                 <input
                   id="password"
                   type={showPw ? 'text' : 'password'}
                   {...register('password')}
                   placeholder="••••••••"
-                  className="input pr-10"
+                  style={{ ...inputStyle, paddingRight: 40 }}
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)',
+                    display: 'flex', alignItems: 'center', padding: 0
+                  }}
                   tabIndex={-1}
                 >
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              {errors.password && <p style={{ color: 'var(--coral)', fontSize: 11, marginTop: 4 }}>{errors.password.message}</p>}
             </div>
 
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="btn-primary w-full"
+              style={{
+                width: '100%', padding: '11px 0',
+                background: 'var(--amber)', color: '#ffffff',
+                border: 'none', borderRadius: 'var(--r-sm)',
+                fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
+                cursor: mutation.isPending ? 'not-allowed' : 'pointer',
+                boxShadow: 'var(--sh-amber)',
+                opacity: mutation.isPending ? 0.7 : 1,
+                transition: 'opacity 0.15s'
+              }}
             >
               {mutation.isPending ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-[var(--color-border)]" />
-            <span className="text-xs text-[var(--color-text-muted)]">or</span>
-            <div className="flex-1 h-px bg-[var(--color-border)]" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--b1)' }} />
+            <span style={{ fontSize: 11, color: 'var(--t3)' }}>or</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--b1)' }} />
           </div>
 
           {/* Demo login shortcut */}
@@ -117,15 +155,23 @@ export default function LoginPage() {
             type="button"
             onClick={() => mutation.mutate({ email: 'free@demo.com', password: 'DemoUser123!' })}
             disabled={mutation.isPending}
-            className="btn-secondary w-full text-sm"
+            style={{
+              width: '100%', padding: '11px 0',
+              background: 'transparent', color: 'var(--t2)',
+              border: '1px solid var(--b1)', borderRadius: 'var(--r-sm)',
+              fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
+              cursor: mutation.isPending ? 'not-allowed' : 'pointer',
+              opacity: mutation.isPending ? 0.7 : 1,
+              transition: 'background 0.15s, color 0.15s'
+            }}
           >
             Try Demo Account
           </button>
         </div>
 
-        <p className="text-center text-sm text-[var(--color-text-muted)] mt-4">
+        <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--t3)', marginTop: 18 }}>
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-[var(--color-primary)] font-medium hover:underline">
+          <Link href="/register" style={{ color: 'var(--amber)', fontWeight: 600, textDecoration: 'none' }}>
             Sign up free
           </Link>
         </p>

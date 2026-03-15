@@ -1,4 +1,4 @@
-export type UserPlan = 'free' | 'pro' | 'team';
+export type UserPlan = 'free' | 'pro' | 'team' | 'family';
 
 export type AuthProvider = 'email' | 'google' | 'apple' | 'microsoft';
 
@@ -17,6 +17,9 @@ export interface User {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  profileCategory:  string | null;
+  profileSubType:   string | null;
+  taskPreferences:  string[];
 }
 
 export interface UserProfile extends User {

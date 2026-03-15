@@ -30,11 +30,12 @@ export default function RegisterPage() {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) => api.auth.register(data),
-    onSuccess: (res) => {
-      setUser(res.data.user);
+    onSuccess: (res: any) => {
+      const u = res.data.user;
+      setUser({ ...u, avatarUrl: u.avatar_url ?? null });
       setAccessToken(res.data.tokens.access_token);
       toast.success('Account created! Welcome to GoodLifeTask.');
-      router.push('/dashboard');
+      router.push('/onboarding');
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message ?? 'Registration failed');
