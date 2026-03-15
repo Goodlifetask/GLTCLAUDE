@@ -1693,7 +1693,10 @@ function LanguagePage() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 16 }}>{getFlagEmoji(r.code)}</span>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: selectedCountry === r.id ? 'var(--brand-dark)' : 'var(--text-secondary)' }}>{r.name}</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: selectedCountry === r.id ? 'var(--brand-dark)' : 'var(--text-secondary)' }}>{r.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'monospace', letterSpacing: '0.05em' }}>{r.code}</div>
+                  </div>
                 </div>
                 <span style={{
                   fontSize: 11, fontWeight: 600, borderRadius: 10, padding: '1px 7px',
@@ -1711,7 +1714,8 @@ function LanguagePage() {
             <div className="card">
               <div className="card-header">
                 <div className="card-title">
-                  {getFlagEmoji(activeCountry.code)} {activeCountry.name} Languages
+                  {getFlagEmoji(activeCountry.code)} {activeCountry.name}
+                  <span style={{ fontSize: 11, fontFamily: 'monospace', background: 'var(--bg-muted)', color: 'var(--text-muted)', padding: '1px 6px', borderRadius: 4, marginLeft: 4 }}>{activeCountry.code}</span>
                 </div>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{activeCountry.languages.length} languages</span>
               </div>
@@ -1726,8 +1730,9 @@ function LanguagePage() {
                     }}>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{lang.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 6 }}>
-                          <span style={{ background: 'var(--bg-muted)', padding: '0 5px', borderRadius: 4, fontFamily: 'monospace' }}>{lang.code.toUpperCase()}</span>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ background: 'var(--brand-soft)', color: 'var(--brand-dark)', padding: '0 5px', borderRadius: 4, fontFamily: 'monospace', fontWeight: 700 }}>{activeCountry.code}-{lang.code.toUpperCase()}</span>
+                          <span style={{ background: 'var(--bg-muted)', padding: '0 5px', borderRadius: 4, fontFamily: 'monospace' }}>{lang.code}</span>
                           {lang.isRtl && <span style={{ background: '#fef3c7', color: '#b45309', padding: '0 5px', borderRadius: 4, fontWeight: 700 }}>RTL</span>}
                         </div>
                       </div>
