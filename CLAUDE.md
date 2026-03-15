@@ -1,7 +1,14 @@
 # GoodLifeTask — Claude Code Instructions
 
 ## FIRST THING ON EVERY SESSION
-Read `SESSION.md` in this directory before doing anything else. It contains the current work state, last stopping point, and next steps. Resume from there without asking the user to re-explain context.
+1. Read `SESSION.md` before doing anything else.
+2. Run `git status` to see any uncommitted work.
+3. **IMPORTANT — Admin dashboard:** All admin UI modules live in ONE large file: `apps/admin/app/dashboard/page.tsx`. Do NOT judge admin completeness by the file listing alone — always read the file or search it before concluding that pages are missing.
+
+## GIT — COMMIT AFTER EVERY SIGNIFICANT CHANGE
+- After completing any feature or meaningful change, immediately run: `git add -A && git commit -m "feat: <description>"`
+- Do not wait until the end of the session. Commit frequently so work is never lost.
+- Auto-save scheduled task runs every 30 min as a safety net, but manual commits after real work are preferred.
 
 ## Project
 - **Product:** GoodLifeTask — cross-platform reminder & productivity app
