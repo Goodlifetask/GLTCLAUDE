@@ -28,6 +28,7 @@ const createReminderSchema = z.object({
   share_scope: z.enum(['private', 'family', 'team', 'specific']).default('private'),
   assignee_id: z.string().uuid().optional(),
   project_id:  z.string().uuid().optional(),
+  category:    z.string().max(50).optional(),
 });
 
 const updateReminderSchema = z.object({
@@ -40,6 +41,7 @@ const updateReminderSchema = z.object({
   share_scope: z.enum(['private', 'family', 'team', 'specific']).optional(),
   assignee_id: z.string().uuid().nullable().optional(),
   project_id:  z.string().uuid().nullable().optional(),
+  category:    z.string().max(50).nullable().optional(),
 });
 
 const snoozeSchema = z.object({
@@ -115,6 +117,7 @@ export async function remindersRoutes(server: FastifyInstance) {
         metadata:   input.metadata,
         shareScope: input.share_scope,
         assigneeId: input.assignee_id,
+        category:   input.category,
         projectId:  input.project_id,
         recurrence: input.recurrence
           ? {
@@ -159,6 +162,7 @@ export async function remindersRoutes(server: FastifyInstance) {
         metadata:   input.metadata,
         shareScope: input.share_scope,
         assigneeId: input.assignee_id ?? undefined,
+        category:   input.category ?? undefined,
         projectId:  input.project_id ?? undefined,
       });
       return reply.send({ data: reminder });

@@ -91,6 +91,7 @@ export interface Reminder {
   notes: string | null;
   status: ReminderStatus;
   priority: ReminderPriority;
+  category: string | null;
   fireAt: Date;
   snoozedUntil: Date | null;
   completedAt: Date | null;

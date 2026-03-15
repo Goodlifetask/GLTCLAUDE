@@ -10,6 +10,7 @@ import {
 import { formatDistanceToNow, format, isPast } from 'date-fns';
 import { api } from '../../lib/api';
 import type { Reminder } from '@glt/shared';
+import { REMINDER_CATEGORIES } from '@glt/shared';
 import { clsx } from 'clsx';
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -116,6 +117,19 @@ export function ReminderCard({ reminder }: ReminderCardProps) {
                 Recurring
               </span>
             )}
+
+            {/* Category badge */}
+            {(reminder as any).category && (() => {
+              const cat = REMINDER_CATEGORIES.find((c) => c.slug === (reminder as any).category);
+              return cat ? (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                  style={{ background: cat.color + '22', color: cat.color }}
+                >
+                  {cat.icon} {cat.name}
+                </span>
+              ) : null;
+            })()}
           </div>
 
           <h4

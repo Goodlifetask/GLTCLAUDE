@@ -375,6 +375,7 @@ model Reminder {
   notes        String?         @db.Text
   status       ReminderStatus  @default(pending)
   priority     ReminderPriority @default(medium)
+  category     String?         @db.VarChar(50)
 
   fireAt       DateTime        @map("fire_at") @db.Timestamptz
   snoozedUntil DateTime?       @map("snoozed_until") @db.Timestamptz

@@ -29,6 +29,7 @@ interface CreateReminderInput {
   assigneeId?: string;
   projectId?:  string;
   shareScope?: string;
+  category?: string;
 }
 
 interface UpdateReminderInput {
@@ -42,6 +43,7 @@ interface UpdateReminderInput {
   assigneeId?: string;
   projectId?:  string;
   shareScope?: string;
+  category?: string;
 }
 
 interface ListRemindersInput {
@@ -130,6 +132,7 @@ export class ReminderService {
         assigneeId:  input.assigneeId ?? null,
         projectId:   input.projectId ?? null,
         shareScope:  (input.shareScope as any) ?? 'private',
+        category:    input.category ?? null,
       },
       include: {
         list:       true,
@@ -237,6 +240,7 @@ export class ReminderService {
         ...(input.assigneeId !== undefined && { assigneeId: input.assigneeId }),
         ...(input.projectId  !== undefined && { projectId:  input.projectId }),
         ...(input.shareScope && { shareScope: input.shareScope as any }),
+        ...(input.category !== undefined && { category: input.category }),
       },
       include: { list: true, recurrence: true, contact: true, location: true },
     });

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +7,7 @@ import { z } from 'zod';
 import { X, Phone, CheckSquare, Mail, MapPin, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../lib/api';
+import { REMINDER_CATEGORIES } from '@glt/shared';
 import toast from 'react-hot-toast';
 
 const schema = z.object({
@@ -16,6 +16,7 @@ const schema = z.object({
   notes:    z.string().max(5000).optional(),
   fire_at:  z.string().min(1, 'Date & time is required'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  category: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -44,6 +45,7 @@ export function CreateReminderModal({ onClose }: CreateReminderModalProps) {
   });
 
   const selectedType = watch('type');
+  const selectedCategory = watch('category');
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -166,6 +168,31 @@ export function CreateReminderModal({ onClose }: CreateReminderModalProps) {
                 <option value="high">High</option>
                 <option value="urgent">Urgent</option>
               </select>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                Category
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {REMINDER_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.slug}
+                    type="button"
+                    onClick={() => setValue('category', selectedCategory === cat.slug ? undefined : cat.slug)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                      selectedCategory === cat.slug
+                        ? 'text-white border-transparent'
+                        : 'bg-white border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-gray-300'
+                    }`}
+                    style={selectedCategory === cat.slug ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+                  >
+                    <span>{cat.icon}</span>
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Notes */}
