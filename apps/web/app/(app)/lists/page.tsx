@@ -4,13 +4,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
 
-const LIST_COLORS = ['#f97316','#0ea5e9','#16a34a','#dc2626','#7c3aed','#db2777','#d97706','#0891b2'];
+const LIST_COLORS = ['#7C3AED','#6D28D9','#0ea5e9','#16a34a','#dc2626','#A78BFA','#db2777','#818CF8'];
 
 export default function ListsPage() {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('#f97316');
+  const [newColor, setNewColor] = useState('#7C3AED');
   const [selectedList, setSelectedList] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -34,7 +34,7 @@ export default function ListsPage() {
       qc.invalidateQueries({ queryKey: ['lists'] });
       toast.success('List created!');
       setNewName('');
-      setNewColor('#f97316');
+      setNewColor('#7C3AED');
       setShowForm(false);
     },
     onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Failed to create list'),
@@ -164,17 +164,17 @@ export default function ListsPage() {
                 background: 'var(--card)', border: `1px solid ${selectedList === list.id ? (list.color || 'var(--amber)') : 'var(--b1)'}`,
                 borderRadius: 'var(--r-lg)', padding: '16px 18px',
                 cursor: 'pointer', transition: 'all 0.15s',
-                boxShadow: selectedList === list.id ? `0 0 0 3px ${(list.color || '#f97316')}22` : 'none',
+                boxShadow: selectedList === list.id ? `0 0 0 3px ${(list.color || '#7C3AED')}22` : 'none',
                 position: 'relative'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                  background: list.color || '#f97316',
+                  background: list.color || '#7C3AED',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, color: '#fff', fontWeight: 700,
-                  boxShadow: `0 2px 8px ${(list.color || '#f97316')}44`
+                  boxShadow: `0 2px 8px ${(list.color || '#7C3AED')}44`
                 }}>{list.icon || list.name?.[0]?.toUpperCase() || '☰'}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{list.name}</div>

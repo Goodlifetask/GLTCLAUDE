@@ -241,7 +241,7 @@ export default function OnboardingPage() {
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{
             width: 60, height: 60, borderRadius: 18,
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, #f97316 100%)',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6D28D9 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
             boxShadow: '0 8px 24px color-mix(in srgb, var(--color-primary) 30%, transparent)',
@@ -377,7 +377,7 @@ export default function OnboardingPage() {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             width: 60, height: 60, borderRadius: 18,
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, #f97316 100%)',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6D28D9 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
             boxShadow: '0 8px 24px color-mix(in srgb, var(--color-primary) 30%, transparent)',
@@ -459,7 +459,7 @@ export default function OnboardingPage() {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             width: 60, height: 60, borderRadius: 18,
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, #f97316 100%)',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6D28D9 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px', fontSize: 30,
             boxShadow: '0 8px 24px color-mix(in srgb, var(--color-primary) 30%, transparent)',
@@ -555,7 +555,7 @@ export default function OnboardingPage() {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             width: 60, height: 60, borderRadius: 18,
-            background: 'linear-gradient(135deg, var(--color-primary) 0%, #f97316 100%)',
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6D28D9 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
             boxShadow: '0 8px 24px color-mix(in srgb, var(--color-primary) 30%, transparent)',

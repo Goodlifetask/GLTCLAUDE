@@ -198,7 +198,7 @@ export default function DashboardPage() {
           </div>
           <div style={{ display: 'flex', gap: 14 }}>
             {[
-              { num: stats.completed, label: 'Done', color: 'var(--amber)', bg: 'var(--amber-glow)', border: 'rgba(249,115,22,0.2)' },
+              { num: stats.completed, label: 'Done', color: 'var(--amber)', bg: 'var(--amber-glow)', border: 'rgba(124,58,237,0.2)' },
               { num: stats.overdue, label: 'Overdue', color: 'var(--coral)', bg: 'var(--coral-bg)', border: 'rgba(220,38,38,0.15)' },
               { num: stats.upcoming, label: 'Remaining', color: 'var(--sky)', bg: 'var(--sky-bg)', border: 'rgba(14,165,233,0.15)' },
             ].map(({ num, label, color, bg, border }) => (
@@ -224,7 +224,7 @@ export default function DashboardPage() {
                 style={{
                   padding: '6px 14px', borderRadius: 20,
                   fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  border: `1px solid ${isActive ? 'rgba(232,169,74,0.3)' : 'var(--b1)'}`,
+                  border: `1px solid ${isActive ? 'rgba(124,58,237,0.3)' : 'var(--b1)'}`,
                   color: isActive ? 'var(--amber)' : 'var(--t2)',
                   background: isActive ? 'var(--amber-glow)' : 'var(--card)'
                 }}>{pill.label}</div>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
             <div style={{
               padding: '6px 14px', borderRadius: 20,
               fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              border: '1px solid rgba(232,169,74,0.3)',
+              border: '1px solid rgba(124,58,237,0.3)',
               color: 'var(--amber)', background: 'var(--amber-glow)',
               display: 'flex', alignItems: 'center', gap: 6
             }}>
@@ -533,7 +533,7 @@ function CreateReminderModal({ onClose }: { onClose: () => void }) {
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                   padding: '10px 4px', borderRadius: 'var(--r-sm)',
-                  border: `1px solid ${selType === btn.type ? 'rgba(232,169,74,0.4)' : 'var(--b1)'}`,
+                  border: `1px solid ${selType === btn.type ? 'rgba(124,58,237,0.4)' : 'var(--b1)'}`,
                   cursor: 'pointer', fontSize: 11, fontWeight: 600,
                   color: selType === btn.type ? 'var(--amber)' : 'var(--t3)',
                   background: selType === btn.type ? 'var(--amber-glow)' : '#f8fafc',

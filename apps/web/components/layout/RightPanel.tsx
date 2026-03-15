@@ -91,7 +91,7 @@ export function RightPanel() {
     }}>
       {/* Add Reminder */}
       <div style={{ padding: '20px 18px', borderBottom: '1px solid var(--b2)' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(176,196,216,0.5)', marginBottom: 14 }}>Add Reminder</div>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(200,185,255,0.5)', marginBottom: 14 }}>Add Reminder</div>
 
         {/* Type grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5, marginBottom: 14 }}>
@@ -99,7 +99,7 @@ export function RightPanel() {
             <div key={btn.type} onClick={() => setSelType(btn.type)} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               padding: '9px 4px', borderRadius: 'var(--r-sm)',
-              border: `1px solid ${selType === btn.type ? 'rgba(232,169,74,0.4)' : 'var(--b1)'}`,
+              border: `1px solid ${selType === btn.type ? 'rgba(124,58,237,0.4)' : 'var(--b1)'}`,
               cursor: 'pointer', fontSize: 10, fontWeight: 600,
               color: selType === btn.type ? 'var(--amber)' : 'var(--t3)',
               background: selType === btn.type ? 'var(--amber-glow)' : 'var(--card)',
@@ -153,14 +153,14 @@ export function RightPanel() {
 
       {/* Mini Calendar */}
       <div style={{ padding: '20px 18px', borderBottom: '1px solid var(--b2)' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(176,196,216,0.5)', marginBottom: 14 }}>{MONTHS[month]} {year}</div>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(200,185,255,0.5)', marginBottom: 14 }}>{MONTHS[month]} {year}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <button style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 12 }}>&#8249;</button>
           <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 500, color: '#ffffff' }}>{MONTHS[month]} {year}</span>
           <button style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 12 }}>&#8250;</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1 }}>
-          {DOWS.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(176,196,216,0.5)', padding: '4px 0', textTransform: 'uppercase' }}>{d}</div>)}
+          {DOWS.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(200,185,255,0.5)', padding: '4px 0', textTransform: 'uppercase' }}>{d}</div>)}
           {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
           {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => (
             <div key={d} style={{
@@ -178,15 +178,15 @@ export function RightPanel() {
       {/* Quote */}
       <div style={{ padding: '20px 18px' }}>
         <div style={{
-          background: 'linear-gradient(135deg, #1d1810, #261f15)',
-          border: '1px solid rgba(232,169,74,0.15)',
+          background: 'linear-gradient(135deg, #1a1245, #251870)',
+          border: '1px solid rgba(124,58,237,0.2)',
           borderRadius: 'var(--r-lg)', padding: '18px 16px',
           position: 'relative', overflow: 'hidden'
         }}>
           <div style={{
             position: 'absolute', top: -14, left: 10,
             fontFamily: 'var(--font-display)', fontSize: 80,
-            color: 'rgba(232,169,74,0.12)', lineHeight: 1, pointerEvents: 'none'
+            color: 'rgba(167,139,250,0.15)', lineHeight: 1, pointerEvents: 'none'
           }}>&ldquo;</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontStyle: 'italic', color: 'rgba(255,255,255,0.7)', lineHeight: 1.65, position: 'relative' }}>{quote[0]}</div>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--amber)', marginTop: 10, opacity: 0.8 }}>— {quote[1]}</div>

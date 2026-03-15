@@ -4,44 +4,44 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design System: Sky Blue & Orange ───────────────────────────────────── */
+/* ─── Design System: Violet / Indigo ─────────────────────────────────────── */
 :root {
   /* Surfaces */
-  --bg:          #f0f7ff;
-  --bg-raised:   #0c4a6e;
+  --bg:          #F5F3FF;
+  --bg-raised:   #2D1B69;
   --card:        #ffffff;
-  --card-hover:  #f0f9ff;
-  --card-border: rgba(14,165,233,0.15);
-  --overlay:     rgba(12,74,110,0.7);
+  --card-hover:  #FAF8FF;
+  --card-border: rgba(124,58,237,0.15);
+  --overlay:     rgba(45,27,105,0.7);
 
-  /* Brand — orange */
-  --amber:       #f97316;
-  --amber-dim:   #ea6c0a;
-  --amber-glow:  rgba(249,115,22,0.12);
-  --amber-soft:  rgba(249,115,22,0.07);
+  /* Brand — violet */
+  --amber:       #7C3AED;
+  --amber-dim:   #6D28D9;
+  --amber-glow:  rgba(124,58,237,0.12);
+  --amber-soft:  rgba(124,58,237,0.07);
 
   /* Semantic */
   --sage:        #16a34a;
   --sage-bg:     rgba(22,163,74,0.09);
   --coral:       #dc2626;
   --coral-bg:    rgba(220,38,38,0.09);
-  --sky:         #0ea5e9;
-  --sky-bg:      rgba(14,165,233,0.09);
-  --mauve:       #7c3aed;
-  --mauve-bg:    rgba(124,58,237,0.09);
+  --sky:         #818CF8;
+  --sky-bg:      rgba(129,140,248,0.09);
+  --mauve:       #A78BFA;
+  --mauve-bg:    rgba(167,139,250,0.09);
   --rose:        #db2777;
   --rose-bg:     rgba(219,39,119,0.09);
 
   /* Text */
-  --t1:  #0c1a2e;
-  --t2:  #334e68;
-  --t3:  #6b87a0;
-  --t4:  #b0c4d8;
+  --t1:  #1E1B4B;
+  --t2:  #4338CA;
+  --t3:  #7C6FAB;
+  --t4:  #BAB4D9;
 
   /* Borders */
-  --b1:  rgba(14,165,233,0.15);
-  --b2:  rgba(14,165,233,0.08);
-  --b3:  rgba(14,165,233,0.25);
+  --b1:  rgba(124,58,237,0.15);
+  --b2:  rgba(124,58,237,0.08);
+  --b3:  rgba(124,58,237,0.25);
 
   /* Misc */
   --r:    10px;
@@ -50,21 +50,21 @@
   --r-xl: 20px;
   --font-body: 'Sora', sans-serif;
   --font-display: 'Playfair Display', serif;
-  --sh-card: 0 1px 4px rgba(14,165,233,0.08), 0 4px 16px rgba(14,165,233,0.06);
-  --sh-lg:   0 4px 24px rgba(14,165,233,0.12);
-  --sh-xl:   0 12px 48px rgba(14,165,233,0.15);
-  --sh-amber: 0 4px 20px rgba(249,115,22,0.3);
+  --sh-card: 0 1px 4px rgba(124,58,237,0.08), 0 4px 16px rgba(124,58,237,0.06);
+  --sh-lg:   0 4px 24px rgba(124,58,237,0.12);
+  --sh-xl:   0 12px 48px rgba(124,58,237,0.15);
+  --sh-amber: 0 4px 20px rgba(124,58,237,0.35);
 
   /* Legacy color vars */
-  --color-primary:      #f97316;
-  --color-primary-dark: #ea6c0a;
-  --color-accent:       #0ea5e9;
-  --color-bg:           #f0f7ff;
-  --color-bg-dark:      #0c4a6e;
+  --color-primary:      #7C3AED;
+  --color-primary-dark: #6D28D9;
+  --color-accent:       #A78BFA;
+  --color-bg:           #F5F3FF;
+  --color-bg-dark:      #2D1B69;
   --color-surface:      #ffffff;
-  --color-text:         #0c1a2e;
-  --color-text-muted:   #334e68;
-  --color-border:       rgba(14,165,233,0.15);
+  --color-text:         #1E1B4B;
+  --color-text-muted:   #4338CA;
+  --color-border:       rgba(124,58,237,0.15);
 }
 
 /* ─── Base Styles ──────────────────────────────────────────────────────────── */
@@ -163,7 +163,7 @@
   }
 
   .input:focus {
-    border-color: rgba(232,169,74,0.4);
+    border-color: rgba(124,58,237,0.4);
     box-shadow: 0 0 0 2px var(--amber-glow);
   }
 

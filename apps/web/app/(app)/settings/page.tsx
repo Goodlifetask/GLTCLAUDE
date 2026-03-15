@@ -266,7 +266,7 @@ export default function SettingsPage() {
                 }}
                 style={{
                   padding: '10px 10px 8px',
-                  border: `1px solid ${selectedPersona === p.value ? 'rgba(232,169,74,0.5)' : 'var(--b1)'}`,
+                  border: `1px solid ${selectedPersona === p.value ? 'rgba(124,58,237,0.5)' : 'var(--b1)'}`,
                   borderRadius: 'var(--r-sm)',
                   background: selectedPersona === p.value ? 'var(--amber-glow)' : 'var(--bg-raised)',
                   cursor: 'pointer',
@@ -343,7 +343,7 @@ export default function SettingsPage() {
                   }}
                   style={{
                     flex: 1, padding: '10px 12px', borderRadius: 'var(--r-sm)',
-                    border: `1px solid ${theme === t.value ? 'rgba(232,169,74,0.4)' : 'var(--b1)'}`,
+                    border: `1px solid ${theme === t.value ? 'rgba(124,58,237,0.4)' : 'var(--b1)'}`,
                     cursor: 'pointer', textAlign: 'center',
                     fontSize: 12, fontWeight: 600,
                     color: theme === t.value ? 'var(--amber)' : 'var(--t2)',

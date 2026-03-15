@@ -162,7 +162,7 @@ export default function TeamPage() {
                   marginBottom: 4, fontSize: 13, fontWeight: 600,
                   color: (selectedWs?.id === ws.id) ? 'var(--amber)' : 'var(--t2)',
                   background: (selectedWs?.id === ws.id) ? 'var(--amber-glow)' : 'transparent',
-                  border: `1px solid ${(selectedWs?.id === ws.id) ? 'rgba(232,169,74,0.3)' : 'transparent'}`
+                  border: `1px solid ${(selectedWs?.id === ws.id) ? 'rgba(124,58,237,0.3)' : 'transparent'}`
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

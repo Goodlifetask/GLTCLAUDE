@@ -244,7 +244,7 @@ export default function FamilyPage() {
                         onClick={() => setInviteRole(r)}
                         style={{
                           flex: 1, padding: '9px 14px', textAlign: 'center',
-                          border: `1px solid ${inviteRole === r ? 'rgba(232,169,74,0.5)' : 'var(--b1)'}`,
+                          border: `1px solid ${inviteRole === r ? 'rgba(124,58,237,0.5)' : 'var(--b1)'}`,
                           borderRadius: 'var(--r-sm)', cursor: 'pointer',
                           fontSize: 13, fontWeight: 600,
                           color: inviteRole === r ? 'var(--amber)' : 'var(--t2)',

@@ -187,7 +187,7 @@ export function Sidebar() {
             <span style={{ color: 'var(--amber)' }}>{stats.completed} / {stats.total}</span>
           </div>
           <div style={{ height: 3, background: 'var(--b1)', borderRadius: 3, overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, var(--amber-dim), var(--amber))', width: `${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%`, boxShadow: '0 0 8px rgba(232,169,74,0.4)' }} />
+            <div style={{ height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, var(--amber-dim), var(--amber))', width: `${stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%`, boxShadow: '0 0 8px rgba(124,58,237,0.4)' }} />
           </div>
         </div>
         <div
