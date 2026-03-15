@@ -112,6 +112,29 @@
   }
 }
 
+/* ─── Dark Surface Overrides (sidebar, right panel) ───────────────────────── */
+/* Applied via className="dark-surface" on any element with --bg-raised background */
+.dark-surface {
+  --t1: #FFFFFF;
+  --t2: rgba(255,255,255,0.85);
+  --t3: rgba(255,255,255,0.55);
+  --t4: rgba(255,255,255,0.32);
+  --b1: rgba(255,255,255,0.12);
+  --b2: rgba(255,255,255,0.06);
+  --b3: rgba(255,255,255,0.22);
+  /* Lighter violet so active/accent items are readable on dark */
+  --amber:      #C4B5FD;
+  --amber-dim:  #A78BFA;
+  --amber-glow: rgba(196,181,253,0.15);
+  --amber-soft: rgba(196,181,253,0.1);
+}
+/* Restore dark text inside form controls on dark surfaces */
+.dark-surface input,
+.dark-surface select,
+.dark-surface textarea {
+  color: #1E1B4B !important;
+}
+
 /* ─── Component Styles ─────────────────────────────────────────────────────── */
 @layer components {
   .card {

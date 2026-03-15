@@ -85,7 +85,7 @@ export function Sidebar() {
   const initials = user?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
   return (
-    <aside style={{
+    <aside className="dark-surface" style={{
       background: 'var(--bg-raised)',
       borderRight: '1px solid var(--b1)',
       display: 'flex', flexDirection: 'column',

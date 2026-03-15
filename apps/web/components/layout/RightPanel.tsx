@@ -83,7 +83,7 @@ export function RightPanel() {
   const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--t4)', marginBottom: 4, display: 'block' };
 
   return (
-    <aside style={{
+    <aside className="dark-surface" style={{
       background: 'var(--bg-raised)',
       borderLeft: '1px solid var(--b1)',
       display: 'flex', flexDirection: 'column',
