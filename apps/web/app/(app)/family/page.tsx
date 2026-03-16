@@ -23,6 +23,7 @@ export default function FamilyPage() {
   const [reminderDate,    setReminderDate]     = useState('');
   const [reminderAssignee, setReminderAssignee] = useState('');
   const [reminderPriority, setReminderPriority] = useState<'normal' | 'high' | 'urgent'>('normal');
+  const [copied, setCopied] = useState(false);
 
   const { data: familyData, isLoading } = useQuery({
     queryKey: ['family'],
@@ -359,7 +360,7 @@ export default function FamilyPage() {
                           borderRadius: 'var(--r-sm)', cursor: 'pointer',
                           fontSize: 13, fontWeight: 600,
                           color: inviteRole === r ? 'var(--amber)' : 'var(--t2)',
-                          background: inviteRole === r ? 'var(--amber-glow)' : 'var(--bg-raised)',
+                          background: inviteRole === r ? 'var(--amber-glow)' : 'var(--bg)',
                         }}
                       >{r === 'adult' ? '🧑 Adult' : '🧒 Child'}</div>
                     ))}
@@ -370,16 +371,33 @@ export default function FamilyPage() {
                     background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
                     borderRadius: 'var(--r-sm)', padding: '12px 14px', marginBottom: 14,
                   }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#10b981', marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#10b981', marginBottom: 8 }}>
                       ✓ Invite token generated — share this with your family member:
                     </div>
-                    <div style={{
-                      fontFamily: 'monospace', wordBreak: 'break-all', fontSize: 11,
-                      background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: '8px 10px',
-                      color: '#a7f3d0', marginBottom: 6
-                    }}>{inviteToken}</div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{
+                        flex: 1, fontFamily: 'monospace', wordBreak: 'break-all', fontSize: 11,
+                        background: 'rgba(0,0,0,0.08)', borderRadius: 6, padding: '8px 10px',
+                        color: 'var(--t1)', border: '1px solid var(--b1)', userSelect: 'all',
+                      }}>{inviteToken}</div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(inviteToken);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        style={{
+                          padding: '8px 14px', borderRadius: 'var(--r-sm)', cursor: 'pointer',
+                          fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, flexShrink: 0,
+                          background: copied ? 'rgba(16,185,129,0.15)' : 'var(--amber-glow)',
+                          border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : 'var(--amber)'}`,
+                          color: copied ? '#10b981' : 'var(--amber)',
+                          transition: 'all 0.2s',
+                        }}
+                      >{copied ? '✓ Copied!' : '📋 Copy'}</button>
+                    </div>
                     <div style={{ fontSize: 11, color: 'var(--t3)' }}>
-                      They can enter this token on the Family page to join. Valid for 7 days.
+                      They enter this token on the Family page → "Join a Family". Valid for 7 days.
                     </div>
                   </div>
                 )}
