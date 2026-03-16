@@ -22,7 +22,7 @@ export default function FamilyPage() {
   const [reminderTitle,   setReminderTitle]   = useState('');
   const [reminderDate,    setReminderDate]     = useState('');
   const [reminderAssignee, setReminderAssignee] = useState('');
-  const [reminderPriority, setReminderPriority] = useState<'normal' | 'high' | 'urgent'>('normal');
+  const [reminderPriority, setReminderPriority] = useState<'medium' | 'high' | 'urgent'>('medium');
   const [copied, setCopied] = useState(false);
 
   const { data: familyData, isLoading } = useQuery({
@@ -92,7 +92,7 @@ export default function FamilyPage() {
       qc.invalidateQueries({ queryKey: ['family-reminders'] });
       toast.success('Reminder created!');
       setShowNewReminder(false);
-      setReminderTitle(''); setReminderDate(''); setReminderAssignee(''); setReminderPriority('normal');
+      setReminderTitle(''); setReminderDate(''); setReminderAssignee(''); setReminderPriority('medium');
     },
     onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Failed to create reminder'),
   });
@@ -473,7 +473,7 @@ export default function FamilyPage() {
 
                   {/* Priority */}
                   <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-                    {(['normal', 'high', 'urgent'] as const).map(p => (
+                    {(['medium', 'high', 'urgent'] as const).map(p => (
                       <button
                         key={p}
                         type="button"
@@ -491,7 +491,7 @@ export default function FamilyPage() {
                             ? p === 'urgent' ? 'var(--coral)' : p === 'high' ? '#d97706' : 'var(--amber)'
                             : 'var(--t3)',
                         }}
-                      >{p === 'normal' ? '● Normal' : p === 'high' ? '▲ High' : '🔴 Urgent'}</button>
+                      >{p === 'medium' ? '● Normal' : p === 'high' ? '▲ High' : '🔴 Urgent'}</button>
                     ))}
                   </div>
 
