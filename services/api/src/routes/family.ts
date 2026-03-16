@@ -1,6 +1,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { pipeline } from 'stream/promises';
 import { authenticate } from '../middleware/auth';
 
 export async function familyRoutes(server: FastifyInstance) {
@@ -280,5 +283,51 @@ export async function familyRoutes(server: FastifyInstance) {
     });
 
     return reply.status(201).send({ success: true, data: reminder });
+  });
+
+  // ── POST /v1/family/avatar — upload family cover photo (owner only)
+  server.post('/avatar', { preHandler: [authenticate] }, async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = request.user.sub;
+
+    const membership = await server.prisma.familyMember.findFirst({ where: { userId } });
+    if (!membership) return reply.status(404).send({ error: 'NOT_FOUND', message: 'You are not part of a family.' });
+
+    const family = await server.prisma.family.findUnique({ where: { id: membership.familyId } });
+    if (!family || family.ownerId !== userId) {
+      return reply.status(403).send({ error: 'FORBIDDEN', message: 'Only the family owner can upload the family photo.' });
+    }
+
+    const data = await request.file();
+    if (!data) return reply.status(400).send({ error: 'BAD_REQUEST', message: 'No file provided.' });
+
+    const allowedMime = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedMime.includes(data.mimetype)) {
+      return reply.status(400).send({ error: 'BAD_REQUEST', message: 'Only JPEG, PNG, WebP, or GIF images are allowed.' });
+    }
+
+    const ext = data.mimetype.split('/')[1].replace('jpeg', 'jpg');
+    const filename = `${family.id}_${Date.now()}.${ext}`;
+    const uploadsDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'families');
+
+    // Ensure directory exists
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+    const destPath = path.join(uploadsDir, filename);
+    await pipeline(data.file, fs.createWriteStream(destPath));
+
+    const avatarUrl = `/uploads/families/${filename}`;
+
+    // Delete old file if exists and is a local upload
+    if (family.avatarUrl?.startsWith('/uploads/')) {
+      const oldPath = path.join(__dirname, '..', '..', 'public', family.avatarUrl);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const updated = await server.prisma.family.update({
+      where: { id: family.id },
+      data: { avatarUrl },
+    });
+
+    return reply.send({ success: true, data: { avatarUrl: updated.avatarUrl } });
   });
 }

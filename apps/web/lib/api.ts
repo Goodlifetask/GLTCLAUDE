@@ -197,6 +197,13 @@ export const api = {
       client.get('/family/reminders', { params }).then((r) => r.data),
     createReminder: (data: Record<string, unknown>) =>
       client.post('/family/reminders', data).then((r) => r.data),
+    uploadAvatar: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return client.post('/family/avatar', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data);
+    },
   },
 
   team: {

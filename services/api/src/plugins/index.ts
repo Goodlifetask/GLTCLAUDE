@@ -6,6 +6,8 @@ import fastifyJwt from '@fastify/jwt';
 import fastifyRateLimit from '@fastify/rate-limit';
 import fastifySensible from '@fastify/sensible';
 import fastifyMultipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 import { prismaPlugin } from './prisma';
 import { redisPlugin } from './redis';
 import { env } from '../lib/env';
@@ -18,7 +20,7 @@ export async function registerPlugins(server: FastifyInstance) {
         defaultSrc:    ["'self'"],
         scriptSrc:     ["'self'"],
         styleSrc:      ["'self'", "'unsafe-inline'"],
-        imgSrc:        ["'self'", 'data:', 'https:'],
+        imgSrc:        ["'self'", 'data:', 'https:', 'http:'],
         connectSrc:    ["'self'"],
         fontSrc:       ["'self'"],
         objectSrc:     ["'none'"],
@@ -91,6 +93,13 @@ export async function registerPlugins(server: FastifyInstance) {
       fileSize: 5 * 1024 * 1024, // 5 MB
       files: 1,
     },
+  });
+
+  // Static file serving (uploaded family photos)
+  await server.register(fastifyStatic, {
+    root: path.join(__dirname, '..', '..', 'public', 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
   });
 
   // Database

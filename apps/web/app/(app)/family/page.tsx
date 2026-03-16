@@ -56,6 +56,25 @@ export default function FamilyPage() {
   const [addDayLabel, setAddDayLabel] = useState('');
   const [addDayDate, setAddDayDate] = useState('');
 
+  /* ── Avatar upload ────────────────────────────────────────────── */
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const handleAvatarUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      await api.family.uploadAvatar(file);
+      qc.invalidateQueries({ queryKey: ['family'] });
+      toast.success('Family photo updated!');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Upload failed');
+    } finally {
+      setAvatarUploading(false);
+      e.target.value = '';
+    }
+  }, [qc]);
+
   /* ── New reminder form state ─────────────────────────────────── */
   const [showNewReminder, setShowNewReminder] = useState(false);
   const [reminderTitle,   setReminderTitle]   = useState('');
@@ -356,23 +375,53 @@ export default function FamilyPage() {
         ) : (
           <div style={{ maxWidth: 720 }}>
             {/* Family header */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+              {/* Cover photo banner */}
+              <div style={{
+                position: 'relative',
+                height: 160,
+                background: family.avatarUrl
+                  ? `url(http://localhost:3001${family.avatarUrl}) center/cover no-repeat`
+                  : 'linear-gradient(135deg, #3D2BB8 0%, #6C4EFF 60%, #f59e0b 100%)',
+                display: 'flex', alignItems: 'flex-end',
+              }}>
+                {/* Overlay for text readability */}
                 <div style={{
-                  width: 52, height: 52, borderRadius: 14,
-                  background: 'linear-gradient(135deg, var(--amber-dim), var(--amber))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24, boxShadow: 'var(--sh-amber)'
-                }}>👨‍👩‍👧‍👦</div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--t1)' }}>
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.45) 100%)',
+                }} />
+                {/* Family name overlay */}
+                <div style={{ position: 'relative', padding: '14px 20px', flex: 1 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
                     {family.name}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
                     {family.members?.length ?? 0} member{(family.members?.length ?? 0) !== 1 ? 's' : ''}
                   </div>
                 </div>
+                {/* Upload button — owner only */}
+                {family.ownerId === user?.id && (
+                  <label style={{
+                    position: 'relative', margin: '14px 16px', cursor: 'pointer',
+                    background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)',
+                    border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
+                    padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                    fontSize: 12, fontWeight: 600, color: '#fff', flexShrink: 0,
+                    transition: 'background 0.15s',
+                  }}>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      style={{ display: 'none' }}
+                      onChange={handleAvatarUpload}
+                      disabled={avatarUploading}
+                    />
+                    {avatarUploading ? '⏳ Uploading…' : '📷 Change Photo'}
+                  </label>
+                )}
               </div>
+              {/* Rest of card content */}
+              <div style={{ padding: '18px 22px 20px' }}>
 
               {/* Members */}
               <span style={labelStyle}>Members</span>
@@ -413,7 +462,8 @@ export default function FamilyPage() {
                   </div>
                 ))}
               </div>
-            </div>
+              </div>{/* /padding div */}
+            </div>{/* /card */}
 
             {/* Invite modal inline */}
             {showInvite && (
