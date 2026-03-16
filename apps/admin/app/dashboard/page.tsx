@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminSidebar } from '../../components/AdminSidebar';
-import { adminApi, AdminStats, AdminUser, UserRole, CountryItem, TranslationEntry, TranslationsForLangResponse } from '../../lib/api';
+import { adminApi, AdminStats, AdminUser, AdminFamily, UserRole, CountryItem, TranslationEntry, TranslationsForLangResponse } from '../../lib/api';
 
 // ── DATA ──
 const USERS = [
@@ -1257,6 +1257,327 @@ function UsersPage() {
               >
                 {addSaving ? 'Creating…' : 'Create User'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── FAMILIES PAGE ─────────────────────────────────────────────────────────────
+function FamiliesPage() {
+  const [families, setFamilies]         = useState<AdminFamily[]>([]);
+  const [total, setTotal]               = useState(0);
+  const [loading, setLoading]           = useState(true);
+  const [search, setSearch]             = useState('');
+  const [searchInput, setSearchInput]   = useState('');
+
+  // Create family modal
+  const [showCreate, setShowCreate]     = useState(false);
+  const [createName, setCreateName]     = useState('');
+  const [createOwnerEmail, setCreateOwnerEmail] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError]   = useState('');
+
+  // Add member modal
+  const [addMemberFamily, setAddMemberFamily] = useState<AdminFamily | null>(null);
+  const [addMemberEmail, setAddMemberEmail]   = useState('');
+  const [addMemberRole, setAddMemberRole]     = useState<'adult' | 'child'>('adult');
+  const [addMemberLoading, setAddMemberLoading] = useState(false);
+  const [addMemberError, setAddMemberError]   = useState('');
+
+  // Expanded family rows
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const [toast, setToast] = useState<string>('');
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await adminApi.admin.families({ page: 1, limit: 50, search: search || undefined });
+      setFamilies(res.data);
+      setTotal(res.total);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [search]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleCreateFamily() {
+    setCreateError('');
+    if (!createName.trim() || !createOwnerEmail.trim()) {
+      setCreateError('Name and owner email are required.');
+      return;
+    }
+    setCreateLoading(true);
+    try {
+      // Look up owner by email via admin users list
+      const usersRes = await adminApi.admin.users({ search: createOwnerEmail.trim(), limit: 5 });
+      const owner = usersRes.data.find(u => u.email.toLowerCase() === createOwnerEmail.trim().toLowerCase());
+      if (!owner) { setCreateError('No user found with that email.'); setCreateLoading(false); return; }
+      await adminApi.admin.createFamily({ name: createName.trim(), ownerId: owner.id });
+      setShowCreate(false);
+      setCreateName('');
+      setCreateOwnerEmail('');
+      showToast('Family created successfully.');
+      load();
+    } catch (e: any) {
+      setCreateError(e.message || 'Failed to create family.');
+    } finally { setCreateLoading(false); }
+  }
+
+  async function handleAddMember() {
+    if (!addMemberFamily) return;
+    setAddMemberError('');
+    if (!addMemberEmail.trim()) { setAddMemberError('Email is required.'); return; }
+    setAddMemberLoading(true);
+    try {
+      const usersRes = await adminApi.admin.users({ search: addMemberEmail.trim(), limit: 5 });
+      const user = usersRes.data.find(u => u.email.toLowerCase() === addMemberEmail.trim().toLowerCase());
+      if (!user) { setAddMemberError('No user found with that email.'); setAddMemberLoading(false); return; }
+      await adminApi.admin.addFamilyMember(addMemberFamily.id, { userId: user.id, role: addMemberRole });
+      setAddMemberFamily(null);
+      setAddMemberEmail('');
+      setAddMemberRole('adult');
+      showToast('Member added successfully.');
+      load();
+    } catch (e: any) {
+      setAddMemberError(e.message || 'Failed to add member.');
+    } finally { setAddMemberLoading(false); }
+  }
+
+  async function handleRemoveMember(familyId: string, userId: string, userName: string) {
+    if (!confirm(`Remove ${userName} from this family?`)) return;
+    try {
+      await adminApi.admin.removeFamilyMember(familyId, userId);
+      showToast('Member removed.');
+      load();
+    } catch (e: any) {
+      showToast('Error: ' + (e.message || 'Failed to remove member.'));
+    }
+  }
+
+  async function handleDeleteFamily(family: AdminFamily) {
+    if (!confirm(`Delete family "${family.name}"? This will remove all members.`)) return;
+    try {
+      await adminApi.admin.deleteFamily(family.id);
+      showToast('Family deleted.');
+      load();
+    } catch (e: any) {
+      showToast('Error: ' + (e.message || 'Failed to delete family.'));
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 12px', borderRadius: 8,
+    border: '1px solid var(--border)', background: 'var(--bg-body)',
+    fontSize: 13, color: 'var(--text-primary)', outline: 'none',
+  };
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 };
+  const modalOverlay: React.CSSProperties = {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+  };
+  const modalBox: React.CSSProperties = {
+    background: 'var(--bg-card)', borderRadius: 14, padding: 28,
+    width: 420, boxShadow: '0 8px 40px rgba(0,0,0,0.22)',
+    border: '1px solid var(--border)',
+  };
+
+  return (
+    <div>
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#1a1a2e', color: '#fff', padding: '10px 20px', borderRadius: 8, zIndex: 9999, fontSize: 13 }}>
+          {toast}
+        </div>
+      )}
+
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div>
+          <div className="page-title">Family Groups</div>
+          <div className="page-desc">Create families, assign owners and members, manage membership from one place.</div>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn-primary btn-sm" onClick={() => setShowCreate(true)}>+ Create Family</button>
+        </div>
+      </div>
+
+      {/* Search bar */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <input
+          type="text"
+          placeholder="Search by family name…"
+          value={searchInput}
+          onChange={e => setSearchInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') setSearch(searchInput); }}
+          style={{ ...inputStyle, maxWidth: 300 }}
+        />
+        <button className="btn btn-secondary btn-sm" onClick={() => setSearch(searchInput)}>Search</button>
+        {search && <button className="btn btn-ghost btn-sm" onClick={() => { setSearch(''); setSearchInput(''); }}>Clear</button>}
+      </div>
+
+      {/* Families table */}
+      <div className="card">
+        <div className="card-body-flush">
+          {loading ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Loading…</div>
+          ) : families.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+              No family groups found. Create one to get started.
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Family</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Owner</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Members</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Created</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {families.map(fam => (
+                  <>
+                    <tr
+                      key={fam.id}
+                      style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
+                      onClick={() => setExpandedId(expandedId === fam.id ? null : fam.id)}
+                    >
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(139,92,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👨‍👩‍👧</div>
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{fam.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{fam.id.slice(0, 8)}…</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ fontWeight: 500 }}>{fam.owner.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{fam.owner.email}</div>
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                        <span className="badge" style={{ background: 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>{fam.members.length}</span>
+                      </td>
+                      <td style={{ padding: '12px 14px', color: 'var(--text-muted)', fontSize: 12 }}>
+                        {new Date(fam.createdAt).toLocaleDateString()}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
+                          <button className="btn btn-secondary btn-xs" onClick={() => { setAddMemberFamily(fam); setAddMemberError(''); }}>+ Member</button>
+                          <button className="btn btn-danger btn-xs" onClick={() => handleDeleteFamily(fam)}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedId === fam.id && (
+                      <tr key={fam.id + '-expanded'} style={{ background: 'var(--bg-muted)' }}>
+                        <td colSpan={5} style={{ padding: '14px 20px' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Members ({fam.members.length})
+                          </div>
+                          {fam.members.length === 0 ? (
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>No members yet.</div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {fam.members.map(m => (
+                                <div key={m.user.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 10px', background: 'var(--bg-card)', borderRadius: 8, border: '1px solid var(--border-light)' }}>
+                                  <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(139,92,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#8b5cf6' }}>
+                                    {m.user.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontWeight: 600, fontSize: 13 }}>{m.user.name}</span>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: 12, marginLeft: 8 }}>{m.user.email}</span>
+                                  </div>
+                                  <span className="badge" style={{ background: m.role === 'owner' ? 'rgba(139,92,246,0.12)' : 'rgba(16,185,129,0.1)', color: m.role === 'owner' ? '#8b5cf6' : '#10b981', fontSize: 11 }}>
+                                    {m.role}
+                                  </span>
+                                  {m.role !== 'owner' && (
+                                    <button
+                                      className="btn btn-danger btn-xs"
+                                      onClick={() => handleRemoveMember(fam.id, m.user.id, m.user.name)}
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {total > 50 && (
+          <div style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
+            Showing 50 of {total} families.
+          </div>
+        )}
+      </div>
+
+      {/* Create family modal */}
+      {showCreate && (
+        <div style={modalOverlay} onClick={() => setShowCreate(false)}>
+          <div style={modalBox} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18 }}>Create Family Group</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <div style={labelStyle}>Family Name</div>
+                <input style={inputStyle} value={createName} onChange={e => setCreateName(e.target.value)} placeholder="e.g. The Smith Family" />
+              </div>
+              <div>
+                <div style={labelStyle}>Owner Email</div>
+                <input style={inputStyle} value={createOwnerEmail} onChange={e => setCreateOwnerEmail(e.target.value)} placeholder="owner@example.com" />
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>The user must already have an account. They will be set as the family owner.</div>
+              </div>
+              {createError && <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 6 }}>{createError}</div>}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setShowCreate(false); setCreateError(''); }}>Cancel</button>
+                <button className="btn btn-primary btn-sm" disabled={createLoading} onClick={handleCreateFamily}>
+                  {createLoading ? 'Creating…' : 'Create Family'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add member modal */}
+      {addMemberFamily && (
+        <div style={modalOverlay} onClick={() => setAddMemberFamily(null)}>
+          <div style={modalBox} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>Add Member</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18 }}>Family: <strong>{addMemberFamily.name}</strong></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <div style={labelStyle}>Member Email</div>
+                <input style={inputStyle} value={addMemberEmail} onChange={e => setAddMemberEmail(e.target.value)} placeholder="member@example.com" />
+              </div>
+              <div>
+                <div style={labelStyle}>Role</div>
+                <select
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                  value={addMemberRole}
+                  onChange={e => setAddMemberRole(e.target.value as 'adult' | 'child')}
+                >
+                  <option value="adult">Adult</option>
+                  <option value="child">Child</option>
+                </select>
+              </div>
+              {addMemberError && <div style={{ fontSize: 12, color: '#ef4444', padding: '8px 10px', background: 'rgba(239,68,68,0.08)', borderRadius: 6 }}>{addMemberError}</div>}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => { setAddMemberFamily(null); setAddMemberError(''); }}>Cancel</button>
+                <button className="btn btn-primary btn-sm" disabled={addMemberLoading} onClick={handleAddMember}>
+                  {addMemberLoading ? 'Adding…' : 'Add Member'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2975,7 +3296,7 @@ function BillingPage() {
 // ── PAGE LABELS FOR BREADCRUMB ──
 const PAGE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard', analytics: 'Analytics', logs: 'Activity Logs',
-  users: 'User Management', roles: 'Roles & Permissions', subs: 'Subscriptions',
+  users: 'User Management', families: 'Family Groups', roles: 'Roles & Permissions', subs: 'Subscriptions',
   categories: 'Categories', themes: 'Themes & UI', language: 'Languages', translations: 'Translations', notifs: 'Push Notifications',
   webads: 'Web Ad Manager', mobileads: 'Mobile Ads', billing: 'Billing & Revenue',
   integrations: 'Integrations', voice: 'Voice Assistants', calsync: 'Calendar Sync',
@@ -3022,6 +3343,7 @@ export default function AdminDashboard() {
     switch (activePage) {
       case 'dashboard':    return <DashboardPage onNavigate={setActivePage} />;
       case 'users':        return <UsersPage />;
+      case 'families':     return <FamiliesPage />;
       case 'roles':        return <RolesPage />;
       case 'categories':   return <CategoriesPage showToast={showToast} />;
       case 'themes':       return <ThemesPage />;

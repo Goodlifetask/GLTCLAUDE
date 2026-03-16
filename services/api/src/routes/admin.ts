@@ -435,6 +435,160 @@ export async function adminRoutes(server: FastifyInstance) {
     },
   );
 
+  // ── Family Management ────────────────────────────────────────────────────────
+
+  // GET /admin/families — list all family groups with members
+  server.get(
+    '/families',
+    { preHandler: [authenticateAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const query = PaginationSchema.extend({
+        search: z.string().optional(),
+      }).parse(request.query);
+      const skip = (query.page - 1) * query.limit;
+
+      const where: any = {};
+      if (query.search) {
+        where.name = { contains: query.search, mode: 'insensitive' };
+      }
+
+      const [families, total] = await Promise.all([
+        server.prisma.family.findMany({
+          where,
+          skip,
+          take: query.limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            owner: { select: { id: true, name: true, email: true } },
+            members: {
+              include: {
+                user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+              },
+            },
+          },
+        }),
+        server.prisma.family.count({ where }),
+      ]);
+
+      return reply.send({ data: families, total, page: query.page, limit: query.limit });
+    },
+  );
+
+  // POST /admin/families — create a family group and assign an owner
+  server.post(
+    '/families',
+    { preHandler: [authenticateAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const body = z.object({
+        name:    z.string().min(1).max(100),
+        ownerId: z.string().uuid(),
+      }).parse(request.body);
+
+      // Check owner exists
+      const owner = await server.prisma.user.findUnique({ where: { id: body.ownerId } });
+      if (!owner) return reply.status(404).send({ error: 'NOT_FOUND', message: 'Owner user not found.' });
+
+      // Check owner not already in a family
+      const existing = await server.prisma.familyMember.findFirst({ where: { userId: body.ownerId } });
+      if (existing) return reply.status(409).send({ error: 'CONFLICT', message: 'This user is already in a family.' });
+
+      const family = await server.prisma.$transaction(async (tx) => {
+        const f = await tx.family.create({
+          data: {
+            name:    body.name,
+            ownerId: body.ownerId,
+            members: { create: { userId: body.ownerId, role: 'owner' } },
+          },
+          include: {
+            owner:   { select: { id: true, name: true, email: true } },
+            members: { include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
+          },
+        });
+        await tx.user.update({ where: { id: body.ownerId }, data: { plan: 'family' } });
+        return f;
+      });
+
+      return reply.status(201).send({ success: true, data: family });
+    },
+  );
+
+  // POST /admin/families/:familyId/members — add a user to a family
+  server.post(
+    '/families/:familyId/members',
+    { preHandler: [authenticateAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { familyId } = request.params as { familyId: string };
+      const body = z.object({
+        userId: z.string().uuid(),
+        role:   z.enum(['owner', 'adult', 'child']).default('adult'),
+      }).parse(request.body);
+
+      const family = await server.prisma.family.findUnique({ where: { id: familyId } });
+      if (!family) return reply.status(404).send({ error: 'NOT_FOUND', message: 'Family not found.' });
+
+      const user = await server.prisma.user.findUnique({ where: { id: body.userId } });
+      if (!user) return reply.status(404).send({ error: 'NOT_FOUND', message: 'User not found.' });
+
+      const alreadyMember = await server.prisma.familyMember.findFirst({ where: { userId: body.userId } });
+      if (alreadyMember) return reply.status(409).send({ error: 'CONFLICT', message: 'User is already in a family.' });
+
+      await server.prisma.$transaction([
+        server.prisma.familyMember.create({
+          data: { familyId, userId: body.userId, role: body.role },
+        }),
+        server.prisma.user.update({ where: { id: body.userId }, data: { plan: 'family' } }),
+      ]);
+
+      const updated = await server.prisma.family.findUnique({
+        where: { id: familyId },
+        include: {
+          owner:   { select: { id: true, name: true, email: true } },
+          members: { include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
+        },
+      });
+
+      return reply.status(201).send({ success: true, data: updated });
+    },
+  );
+
+  // DELETE /admin/families/:familyId/members/:userId — remove a user from a family
+  server.delete(
+    '/families/:familyId/members/:userId',
+    { preHandler: [authenticateAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { familyId, userId } = request.params as { familyId: string; userId: string };
+
+      const family = await server.prisma.family.findUnique({ where: { id: familyId } });
+      if (!family) return reply.status(404).send({ error: 'NOT_FOUND', message: 'Family not found.' });
+
+      if (family.ownerId === userId) {
+        return reply.status(400).send({ error: 'INVALID_OPERATION', message: 'Cannot remove the family owner. Delete the family or transfer ownership first.' });
+      }
+
+      await server.prisma.familyMember.delete({
+        where: { familyId_userId: { familyId, userId } },
+      });
+
+      return reply.status(204).send();
+    },
+  );
+
+  // DELETE /admin/families/:familyId — delete an entire family
+  server.delete(
+    '/families/:familyId',
+    { preHandler: [authenticateAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { familyId } = request.params as { familyId: string };
+
+      const family = await server.prisma.family.findUnique({ where: { id: familyId } });
+      if (!family) return reply.status(404).send({ error: 'NOT_FOUND', message: 'Family not found.' });
+
+      await server.prisma.family.delete({ where: { id: familyId } });
+
+      return reply.status(204).send();
+    },
+  );
+
   // GET /admin/countries — returns all countries with their languages
   server.get(
     '/countries',

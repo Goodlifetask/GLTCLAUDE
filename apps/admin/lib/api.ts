@@ -256,6 +256,28 @@ export interface BulkUpsertTranslationsPayload {
   translations: Array<{ keyId: string; value: string }>;
 }
 
+// ─── Families ─────────────────────────────────────────────────────────────────
+
+export interface FamilyMemberItem {
+  role: string;
+  user: { id: string; name: string; email: string; avatarUrl?: string | null };
+}
+
+export interface AdminFamily {
+  id: string;
+  name: string;
+  createdAt: string;
+  owner: { id: string; name: string; email: string };
+  members: FamilyMemberItem[];
+}
+
+export interface AdminFamiliesResponse {
+  data: AdminFamily[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // ─── Subscription ────────────────────────────────────────────────────────────
 
 export interface Subscription {
@@ -346,6 +368,16 @@ export const adminApi = {
       request<{ success: boolean; data: { userId: string; email: string; tempPassword: string } }>(
         'POST', `/admin/users/${id}/reset-password`, {},
       ),
+    families: (params?: { page?: number; limit?: number; search?: string }) =>
+      request<AdminFamiliesResponse>('GET', '/admin/families' + queryString(params as Record<string, string | number | boolean | undefined>)),
+    createFamily: (data: { name: string; ownerId: string }) =>
+      request<{ success: boolean; data: AdminFamily }>('POST', '/admin/families', data),
+    addFamilyMember: (familyId: string, data: { userId: string; role?: string }) =>
+      request<{ success: boolean; data: AdminFamily }>('POST', `/admin/families/${familyId}/members`, data),
+    removeFamilyMember: (familyId: string, userId: string) =>
+      request<void>('DELETE', `/admin/families/${familyId}/members/${userId}`),
+    deleteFamily: (familyId: string) =>
+      request<void>('DELETE', `/admin/families/${familyId}`),
   },
 
   translations: {

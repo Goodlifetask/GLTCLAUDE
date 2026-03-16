@@ -10,6 +10,7 @@ const NAV = [
   { section: 'Users', items: [
     { label: 'All Users', icon: '◎', page: 'users', badge: '24.8k', badgeClass: 'nb-gray' },
     { label: 'Roles & Permissions', icon: '⬡', page: 'roles', badge: null, badgeClass: null },
+    { label: 'Family Groups', icon: '👨‍👩‍👧', page: 'families', badge: null, badgeClass: null },
     { label: 'Subscriptions', icon: '◈', page: 'subs', badge: '3', badgeClass: 'nb-red' },
   ]},
   { section: 'Application', items: [
