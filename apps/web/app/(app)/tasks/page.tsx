@@ -31,38 +31,39 @@ export default function TasksPage() {
   const tasks: any[] = (data as any)?.data?.reminders ?? [];
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--bg)' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--bg)', minWidth: 0 }}>
 
       {/* Header */}
       <div style={{
-        padding: '24px 32px 0',
+        padding: '22px 32px 0',
         borderBottom: '1px solid var(--b1)',
-        background: 'var(--bg-raised)',
+        background: 'var(--card)',
+        flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <span style={{ fontSize: 22 }}>◎</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <span style={{ fontSize: 20 }}>◎</span>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--t1)', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--t1)', margin: 0 }}>
               Tasks
             </h1>
-            <p style={{ fontSize: 12, color: 'var(--t3)', margin: '2px 0 0' }}>
+            <p style={{ fontSize: 11, color: 'var(--t3)', margin: '2px 0 0' }}>
               {tasks.length} task{tasks.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
 
-        {/* Filter tabs */}
-        <div style={{ display: 'flex', gap: 2 }}>
+        {/* Filter tabs — flush to bottom border */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: -1 }}>
           {(['pending', 'all', 'completed'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               style={{
-                padding: '7px 18px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                border: 'none', background: 'transparent',
+                padding: '7px 20px 8px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                border: 'none', borderBottom: filter === f ? '2px solid var(--amber)' : '2px solid transparent',
+                background: 'transparent',
                 color: filter === f ? 'var(--amber)' : 'var(--t3)',
-                borderBottom: filter === f ? '2px solid var(--amber)' : '2px solid transparent',
-                textTransform: 'capitalize', transition: 'all 0.12s',
+                transition: 'all 0.12s',
                 fontFamily: 'var(--font-body)',
               }}
             >
