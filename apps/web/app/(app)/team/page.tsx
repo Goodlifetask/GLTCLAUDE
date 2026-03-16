@@ -96,7 +96,7 @@ export default function TeamPage() {
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: 10, fontWeight: 600, color: 'var(--t4)',
+    fontSize: 10, fontWeight: 700, color: 'var(--t2)',
     textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12, display: 'block'
   };
 
