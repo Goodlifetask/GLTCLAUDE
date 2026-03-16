@@ -63,7 +63,7 @@ interface ListRemindersInput {
 export class ReminderService {
   constructor(
     private prisma: PrismaClient,
-    private notificationQueue: Queue,
+    private notificationQueue: Queue | null,
   ) {}
 
   async create(input: CreateReminderInput): Promise<Reminder> {
@@ -154,27 +154,33 @@ export class ReminderService {
     const limit = Math.min(input.limit ?? 20, 100);
     const skip  = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {
-      userId:    input.userId,
-      deletedAt: null,
-    };
+    // Base: reminders created by user OR assigned to user
+    const andClauses: Record<string, unknown>[] = [
+      { deletedAt: null },
+      { OR: [{ userId: input.userId }, { assigneeId: input.userId }] },
+    ];
 
-    if (input.status) where['status'] = input.status;
-    if (input.type)   where['type']   = input.type;
-    if (input.listId) where['listId'] = input.listId;
+    if (input.status) andClauses.push({ status: input.status });
+    if (input.type)   andClauses.push({ type: input.type });
+    if (input.listId) andClauses.push({ listId: input.listId });
 
     if (input.from || input.to) {
-      where['fireAt'] = {};
-      if (input.from) (where['fireAt'] as any)['gte'] = input.from;
-      if (input.to)   (where['fireAt'] as any)['lte'] = input.to;
+      const fireAt: Record<string, unknown> = {};
+      if (input.from) fireAt['gte'] = input.from;
+      if (input.to)   fireAt['lte'] = input.to;
+      andClauses.push({ fireAt });
     }
 
     if (input.q) {
-      where['OR'] = [
-        { title: { contains: input.q, mode: 'insensitive' } },
-        { notes: { contains: input.q, mode: 'insensitive' } },
-      ];
+      andClauses.push({
+        OR: [
+          { title: { contains: input.q, mode: 'insensitive' } },
+          { notes: { contains: input.q, mode: 'insensitive' } },
+        ],
+      });
     }
+
+    const where = { AND: andClauses };
 
     const orderBy: Record<string, string> = {};
     orderBy[input.sort ?? 'fireAt'] = input.order ?? 'asc';
@@ -336,6 +342,11 @@ export class ReminderService {
   private async scheduleNotification(reminder: Reminder): Promise<void> {
     const delay = reminder.fireAt.getTime() - Date.now();
     if (delay <= 0) return; // already past
+
+    if (!this.notificationQueue) {
+      logger.warn({ reminderId: reminder.id }, 'Notification queue unavailable (Redis too old?) — skipping schedule');
+      return;
+    }
 
     await this.notificationQueue.add(
       'send-notification',

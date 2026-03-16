@@ -65,13 +65,21 @@ const listQuerySchema = z.object({
 });
 
 export async function remindersRoutes(server: FastifyInstance) {
-  const notificationQueue = new Queue('notifications', {
-    connection: new Redis(env.REDIS_URL),
-    defaultJobOptions: {
-      attempts: 5,
-      backoff: { type: 'exponential', delay: 1000 },
-    },
-  });
+  let notificationQueue: Queue | null = null;
+  try {
+    notificationQueue = new Queue('notifications', {
+      connection: new Redis(env.REDIS_URL),
+      defaultJobOptions: {
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 1000 },
+      },
+    });
+    // Verify Redis is compatible (BullMQ requires Redis >= 5)
+    await notificationQueue.waitUntilReady();
+  } catch (err: any) {
+    server.log.warn(`Notification queue disabled: ${err?.message ?? err} — reminders will save but push notifications won't fire`);
+    notificationQueue = null;
+  }
 
   const reminderService = new ReminderService(server.prisma, notificationQueue);
 
