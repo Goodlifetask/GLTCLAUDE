@@ -164,7 +164,7 @@ export function RightPanel() {
                 }}
               >
                 <span style={{ fontSize: 17 }}>{btn.icon}</span>
-                {btn.label}
+                <span style={{ color: '#FDE68A', fontWeight: 700 }}>{btn.label}</span>
               </button>
             );
           })}
