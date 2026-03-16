@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Bell, Eye, EyeOff, CheckSquare } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
@@ -20,59 +19,65 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-type AccountType = 'individual' | 'family' | 'team' | 'community';
-
-const ACCOUNT_TYPES: {
-  type: AccountType;
-  emoji: string;
-  title: string;
-  description: string;
-  route: string;
-}[] = [
-  {
-    type: 'individual',
-    emoji: '👤',
-    title: 'Individual',
-    description: 'Just for me. Personal reminders, tasks and events.',
-    route: '/onboarding',
-  },
-  {
-    type: 'family',
-    emoji: '👨‍👩‍👧‍👦',
-    title: 'Family',
-    description: 'For my household. Share and assign tasks with family members.',
-    route: '/onboarding/family-setup',
-  },
-  {
-    type: 'team',
-    emoji: '🏢',
-    title: 'Team',
-    description: 'For work. Collaborate with colleagues on projects and deadlines.',
-    route: '/onboarding/team-setup',
-  },
-  {
-    type: 'community',
-    emoji: '🏘️',
-    title: 'Community',
-    description: 'For my group. Coordinate activities and reminders together.',
-    route: '/onboarding/community-setup',
-  },
+const PROFESSIONS = [
+  'Select Role', 'Student', 'Teacher', 'Nurse', 'Doctor', 'Engineer',
+  'Developer', 'Manager', 'Entrepreneur', 'Parent', 'Retiree', 'Chef',
+  'Carpenter', 'Other',
 ];
+
+const COUNTRIES = [
+  'Select Country', 'United States', 'United Kingdom', 'Australia', 'Canada',
+  'India', 'Germany', 'France', 'Japan', 'Brazil', 'South Africa',
+  'UAE', 'Singapore', 'Nigeria', 'Mexico', 'Other',
+];
+
+const LANGUAGES = [
+  'English', 'Spanish', 'French', 'German', 'Hindi',
+  'Japanese', 'Chinese', 'Russian', 'Portuguese', 'Arabic',
+];
+
+const INTERESTS = [
+  ...REMINDER_CATEGORIES.map(c => ({ label: c.name, icon: c.icon, slug: c.slug, color: c.color })),
+  { label: 'Technology', icon: '💻', slug: 'technology', color: '#0ea5e9' },
+  { label: 'Sports',     icon: '⚽', slug: 'sports',     color: '#22c55e' },
+  { label: 'Automotive', icon: '🚗', slug: 'automotive', color: '#f97316' },
+  { label: 'Cooking',    icon: '🍳', slug: 'cooking',    color: '#ec4899' },
+];
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.07)',
+  border: '1px solid rgba(255,255,255,0.15)',
+  borderRadius: 10,
+  padding: '12px 14px',
+  fontSize: 14,
+  color: '#ffffff',
+  fontFamily: 'inherit',
+  outline: 'none',
+};
+
+const selectStyle: React.CSSProperties = {
+  ...inputStyle,
+  cursor: 'pointer',
+  colorScheme: 'dark',
+  appearance: 'auto',
+};
 
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser, setAccessToken } = useAuthStore();
-  const [showPw, setShowPw] = useState(false);
-  const [step, setStep] = useState<1 | 2>(1);
-  const [hoveredType, setHoveredType] = useState<AccountType | null>(null);
-  const [savingType, setSavingType] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [customCategory, setCustomCategory] = useState('');
+  const [showPw, setShowPw]         = useState(false);
+  const [profession, setProfession] = useState('');
+  const [country, setCountry]       = useState('');
+  const [selLangs, setSelLangs]     = useState<string[]>(['English']);
+  const [selInterests, setSelInterests] = useState<string[]>([]);
+  const [fontSize, setFontSize]     = useState(14);
 
-  function toggleCategory(slug: string) {
-    setSelectedCategories(prev =>
-      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
-    );
+  function toggleLang(l: string) {
+    setSelLangs(p => p.includes(l) ? p.filter(x => x !== l) : [...p, l]);
+  }
+  function toggleInterest(s: string) {
+    setSelInterests(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
   }
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -82,313 +87,305 @@ export default function RegisterPage() {
   const mutation = useMutation({
     mutationFn: (data: FormData) => api.auth.register({
       ...data,
-      categories: selectedCategories,
-      ...(customCategory.trim() ? { customCategory: customCategory.trim() } : {}),
+      categories: selInterests,
+      profession,
+      country,
+      languages: selLangs,
     }),
     onSuccess: (res: any) => {
       const u = res.data.user;
       setUser({ ...u, avatarUrl: u.avatar_url ?? null });
       setAccessToken(res.data.tokens.access_token);
-      toast.success('Account created! Welcome to GoodLifeTask.');
-      setStep(2);
+      toast.success('Welcome to GoodLifeTask!');
+      router.push('/dashboard');
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message ?? 'Registration failed');
     },
   });
 
-  async function handleAccountTypeSelect(type: AccountType, route: string) {
-    if (savingType) return;
-    setSavingType(true);
-    try {
-      await api.users.updateProfile({ profileCategory: type });
-    } catch {
-      // non-critical, continue
-    } finally {
-      setSavingType(false);
-    }
-    router.push(route);
-  }
-
-  if (step === 2) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(160deg, #fffaf7 0%, #fff4ed 45%, #fef0e6 100%)',
-        padding: '32px 16px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Decorative blobs */}
-        <div style={{
-          position: 'absolute', top: -120, right: -120,
-          width: 400, height: 400, borderRadius: '50%',
-          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 12%, transparent) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', bottom: -100, left: -100,
-          width: 350, height: 350, borderRadius: '50%',
-          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 8%, transparent) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Brand header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'var(--color-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 12px color-mix(in srgb, var(--color-primary) 35%, transparent)',
-          }}>
-            <CheckSquare size={20} color="#fff" />
-          </div>
-          <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
-            GoodLifeTask
-          </span>
-        </div>
-
-        {/* Card */}
-        <div style={{
-          width: '100%',
-          maxWidth: 560,
-          background: '#fff',
-          borderRadius: 24,
-          boxShadow: '0 8px 48px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
-          padding: '32px 32px 28px',
-        }}>
-          {/* Heading */}
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
-            <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 6px', color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
-              How will you use GoodLifeTask?
-            </h2>
-            <p style={{ fontSize: 14, color: 'var(--color-text-muted)', margin: 0 }}>
-              This helps us set up the right tools for you
-            </p>
-          </div>
-
-          {/* 2×2 grid of account type cards */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 12,
-          }}>
-            {ACCOUNT_TYPES.map(({ type, emoji, title, description, route }) => {
-              const isHovered = hoveredType === type;
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  disabled={savingType}
-                  onClick={() => handleAccountTypeSelect(type, route)}
-                  onMouseEnter={() => setHoveredType(type)}
-                  onMouseLeave={() => setHoveredType(null)}
-                  style={{
-                    minWidth: 200,
-                    padding: '20px 16px',
-                    borderRadius: 16,
-                    border: `2px solid ${isHovered ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                    background: isHovered
-                      ? 'color-mix(in srgb, var(--color-primary) 8%, transparent)'
-                      : '#fff',
-                    cursor: savingType ? 'not-allowed' : 'pointer',
-                    textAlign: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 10,
-                    transition: 'all 0.18s cubic-bezier(.4,0,.2,1)',
-                    boxShadow: isHovered
-                      ? '0 4px 20px color-mix(in srgb, var(--color-primary) 18%, transparent)'
-                      : '0 1px 4px rgba(0,0,0,0.05)',
-                    opacity: savingType ? 0.7 : 1,
-                  }}
-                >
-                  <span style={{ fontSize: 36, lineHeight: 1 }}>{emoji}</span>
-                  <span style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: isHovered ? 'var(--color-primary)' : 'var(--color-text)',
-                    transition: 'color 0.18s',
-                  }}>
-                    {title}
-                  </span>
-                  <span style={{
-                    fontSize: 12,
-                    color: 'var(--color-text-muted)',
-                    lineHeight: 1.5,
-                  }}>
-                    {description}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Skip link */}
-          <div style={{ textAlign: 'center', marginTop: 20 }}>
-            <Link
-              href="/onboarding"
-              style={{
-                fontSize: 13,
-                color: 'var(--color-text-muted)',
-                textDecoration: 'none',
-                fontWeight: 500,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
-            >
-              Skip for now
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+  const pillBase: React.CSSProperties = {
+    padding: '6px 14px',
+    borderRadius: 20,
+    border: '1px solid rgba(255,255,255,0.2)',
+    background: 'rgba(255,255,255,0.06)',
+    color: 'rgba(255,255,255,0.75)',
+    cursor: 'pointer',
+    fontSize: 13,
+    fontWeight: 500,
+    fontFamily: 'inherit',
+    transition: 'all 0.15s',
+    whiteSpace: 'nowrap' as const,
+  };
+  function pillActive(color: string): React.CSSProperties {
+    return {
+      ...pillBase,
+      background: `${color}28`,
+      border: `1.5px solid ${color}`,
+      color: color,
+      fontWeight: 700,
+      boxShadow: `0 0 8px ${color}44`,
+    };
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-surface)] px-4">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-xl bg-[var(--color-primary)] flex items-center justify-center shadow-dark mb-3">
-            <Bell className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="font-display font-black text-2xl text-[var(--color-text)]">Create Account</h1>
-          <p className="text-[var(--color-text-muted)] text-sm mt-1">Start organising your life</p>
-        </div>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(160deg, #0a1628 0%, #0d2340 45%, #0b2535 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '24px 16px 40px',
+      fontSize,
+      position: 'relative',
+    }}>
 
-        <div className="card p-6">
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+      {/* Font size controls */}
+      <div style={{
+        position: 'absolute', top: 16, right: 20,
+        display: 'flex', gap: 6,
+      }}>
+        {[12, 14, 16].map((s, i) => (
+          <button
+            key={s}
+            onClick={() => setFontSize(s)}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: fontSize === s ? '#6C4EFF' : 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff', cursor: 'pointer',
+              fontSize: 10 + i * 2, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >A</button>
+        ))}
+      </div>
+
+      {/* Logo */}
+      <div style={{ marginBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #1a3a5c, #0d6e8a)',
+          border: '3px solid rgba(100,180,255,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 0 30px rgba(100,180,255,0.3)',
+          marginBottom: 10,
+          overflow: 'hidden',
+        }}>
+          <div style={{ textAlign: 'center', lineHeight: 1.1 }}>
+            <div style={{ fontSize: 9, fontWeight: 900, color: '#4ade80', letterSpacing: '0.05em' }}>Good</div>
+            <div style={{ fontSize: 11, fontWeight: 900, color: '#facc15', letterSpacing: '0.05em' }}>Life</div>
+            <div style={{ fontSize: 9, fontWeight: 900, color: '#4ade80', letterSpacing: '0.05em' }}>Tasks</div>
+          </div>
+        </div>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>
+          GoodLifeTask
+        </h1>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '4px 0 0' }}>
+          Create your account
+        </p>
+      </div>
+
+      {/* Main form */}
+      <form
+        onSubmit={handleSubmit(d => mutation.mutate(d))}
+        style={{ width: '100%', maxWidth: 820, marginTop: 16 }}
+      >
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 32,
+          alignItems: 'start',
+        }}>
+
+          {/* ── LEFT: Account Details ── */}
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#60a5fa', marginBottom: 20, letterSpacing: '0.01em' }}>
+              Account Details
+            </h2>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
                 Full Name
               </label>
               <input
-                id="name"
                 {...register('name')}
-                placeholder="Jane Smith"
-                className="input"
+                placeholder=""
+                style={inputStyle}
                 autoComplete="name"
               />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+              {errors.name && <p style={{ color: '#f87171', fontSize: 11, marginTop: 4 }}>{errors.name.message}</p>}
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[var(--color-text)] mb-1">
-                Email
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
+                Email Address
               </label>
               <input
-                id="email"
                 type="email"
                 {...register('email')}
-                placeholder="you@example.com"
-                className="input"
+                placeholder=""
+                style={inputStyle}
                 autoComplete="email"
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {errors.email && <p style={{ color: '#f87171', fontSize: 11, marginTop: 4 }}>{errors.email.message}</p>}
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-[var(--color-text)] mb-1">
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
                 Password
               </label>
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
                 <input
-                  id="password"
                   type={showPw ? 'text' : 'password'}
                   {...register('password')}
-                  placeholder="Min 8 characters"
-                  className="input pr-10"
+                  placeholder=""
+                  style={{ ...inputStyle, paddingRight: 44 }}
                   autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  tabIndex={-1}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 16, color: 'rgba(255,255,255,0.5)',
+                  }}
                 >
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPw ? '👁' : '🔒'}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              {errors.password && <p style={{ color: '#f87171', fontSize: 11, marginTop: 4 }}>{errors.password.message}</p>}
+            </div>
+          </div>
+
+          {/* ── RIGHT: Profile Setup ── */}
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#facc15', marginBottom: 20, letterSpacing: '0.01em' }}>
+              Profile Setup
+            </h2>
+
+            {/* Profession + Country */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
+                  Profession
+                </label>
+                <select
+                  value={profession}
+                  onChange={e => setProfession(e.target.value)}
+                  style={selectStyle}
+                >
+                  {PROFESSIONS.map(p => <option key={p} value={p === 'Select Role' ? '' : p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
+                  Country
+                </label>
+                <select
+                  value={country}
+                  onChange={e => setCountry(e.target.value)}
+                  style={selectStyle}
+                >
+                  {COUNTRIES.map(c => <option key={c} value={c === 'Select Country' ? '' : c}>{c}</option>)}
+                </select>
+              </div>
             </div>
 
-            {/* Category Picker */}
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
-                What will you use GoodLifeTask for?
+            {/* Languages */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
+                Spoken Languages
               </label>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 8,
-                marginBottom: 10,
-              }}>
-                {REMINDER_CATEGORIES.map(cat => {
-                  const selected = selectedCategories.includes(cat.slug);
-                  return (
-                    <button
-                      key={cat.slug}
-                      type="button"
-                      onClick={() => toggleCategory(cat.slug)}
-                      style={{
-                        padding: '6px 8px',
-                        borderRadius: 20,
-                        border: selected
-                          ? '1.5px solid var(--amber)'
-                          : '1.5px solid var(--color-border)',
-                        background: selected ? 'var(--amber-glow, rgba(245,158,11,0.12))' : 'var(--card, #fff)',
-                        color: selected ? 'var(--amber, #f59e0b)' : 'var(--color-text-muted)',
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        fontWeight: selected ? 600 : 400,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 4,
-                        transition: 'all 0.15s',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <span>{cat.icon}</span>
-                      <span>{cat.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-                  + Add custom:
-                </span>
-                <input
-                  type="text"
-                  value={customCategory}
-                  onChange={e => setCustomCategory(e.target.value)}
-                  placeholder="e.g. Gym Routine"
-                  maxLength={60}
-                  className="input"
-                  style={{ fontSize: 12, padding: '6px 10px' }}
-                />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                {LANGUAGES.map(l => (
+                  <button
+                    key={l} type="button" onClick={() => toggleLang(l)}
+                    style={selLangs.includes(l) ? pillActive('#6C4EFF') : pillBase}
+                  >
+                    {l}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <button type="submit" disabled={mutation.isPending} className="btn-primary w-full">
-              {mutation.isPending ? 'Creating account...' : 'Create Free Account'}
-            </button>
-          </form>
+            {/* Interests */}
+            <div>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
+                Interests
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                {INTERESTS.map(it => (
+                  <button
+                    key={it.slug} type="button" onClick={() => toggleInterest(it.slug)}
+                    style={selInterests.includes(it.slug) ? pillActive(it.color) : pillBase}
+                  >
+                    {it.icon} {it.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <p className="text-center text-sm text-[var(--color-text-muted)] mt-4">
-          Already have an account?{' '}
-          <Link href="/login" className="text-[var(--color-primary)] font-medium hover:underline">
-            Sign in
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={mutation.isPending}
+          style={{
+            width: '100%',
+            marginTop: 28,
+            padding: '15px 0',
+            background: mutation.isPending
+              ? 'rgba(255,255,255,0.1)'
+              : 'linear-gradient(90deg, #3b82f6 0%, #6C4EFF 40%, #a855f7 70%, #facc15 100%)',
+            border: 'none',
+            borderRadius: 12,
+            color: '#fff',
+            fontSize: 15,
+            fontWeight: 700,
+            cursor: mutation.isPending ? 'not-allowed' : 'pointer',
+            letterSpacing: '0.02em',
+            boxShadow: '0 4px 24px rgba(108,78,255,0.4)',
+            transition: 'all 0.2s',
+            fontFamily: 'inherit',
+          }}
+        >
+          {mutation.isPending ? 'Creating account…' : '🎯 Create Account'}
+        </button>
+
+        {/* Footer links */}
+        <div style={{ textAlign: 'center', marginTop: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+            Already have an account?{' '}
+            <Link href="/login" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>
+              Login
+            </Link>
+          </p>
+          <Link href="/verify" style={{ fontSize: 13, color: '#60a5fa', textDecoration: 'none' }}>
+            Has verification code?
           </Link>
+          <Link
+            href="/dashboard"
+            style={{
+              display: 'inline-block', margin: '0 auto',
+              padding: '7px 18px', borderRadius: 8,
+              background: 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: 12, textDecoration: 'none',
+            }}
+          >
+            🔓 Bypass Login (Debug Mode)
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <p style={{ textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 24 }}>
+          Secured by next-gen encryption 🔑
         </p>
-      </div>
+      </form>
     </div>
   );
 }
