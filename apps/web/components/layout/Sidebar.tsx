@@ -173,10 +173,14 @@ export function Sidebar() {
           <div
             style={{
               width: 30, height: 30, borderRadius: 8,
-              background: 'linear-gradient(135deg, #6C4EFF, #9E7BFF)',
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.28)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 700, color: '#ffffff', flexShrink: 0,
+              fontSize: 12, fontWeight: 700, color: '#FDE68A', flexShrink: 0,
               fontFamily: 'var(--font-display)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25)',
+              textShadow: '0 1px 4px rgba(253,230,138,0.5)',
             }}
           >
             {initials}
