@@ -1,6 +1,8 @@
 'use client';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '../../store/auth';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../lib/api';
 
 type NavEntry = {
   label: string;
@@ -13,6 +15,16 @@ export function Sidebar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+
+  /* ── Family pending count for badge ────────────────────────────── */
+  const isFamilyUser = user?.plan === 'family' || user?.profileCategory === 'family';
+  const { data: familyRemindersData } = useQuery({
+    queryKey: ['family-reminders-count'],
+    queryFn: () => api.family.reminders({ status: 'pending', limit: 100 }),
+    enabled: !!isFamilyUser,
+    staleTime: 60_000,
+  });
+  const familyPendingCount: number = familyRemindersData?.total ?? 0;
 
   /* ── Conditional plan item ─────────────────────────────────────── */
   const planItem: NavEntry | null =
@@ -151,7 +163,25 @@ export function Sidebar() {
               <span style={{ fontSize: 16, width: 20, textAlign: 'center', flexShrink: 0 }}>
                 {item.icon}
               </span>
-              <span>{item.label}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.href === '/family' && familyPendingCount > 0 && (
+                <span style={{
+                  background: 'var(--amber)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 5px',
+                  flexShrink: 0,
+                }}>
+                  {familyPendingCount > 99 ? '99+' : familyPendingCount}
+                </span>
+              )}
             </div>
           );
         })}
