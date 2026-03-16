@@ -1,9 +1,37 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/auth';
 import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
+
+/* ── Special Days helpers ─────────────────────────────────────── */
+interface SpecialDayItem { id: string; type: 'birthday' | 'anniversary' | 'custom'; label: string; date: string; }
+type SpecialDaysMap = Record<string, SpecialDayItem[]>; // keyed by userId
+
+function loadSpecialDays(familyId: string): SpecialDaysMap {
+  if (typeof window === 'undefined') return {};
+  try { return JSON.parse(localStorage.getItem(`family_special_days_${familyId}`) || '{}'); } catch { return {}; }
+}
+function saveSpecialDays(familyId: string, map: SpecialDaysMap) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(`family_special_days_${familyId}`, JSON.stringify(map));
+}
+function nextOccurrence(mmdd: string): Date {
+  const [month, day] = mmdd.split('-').map(Number);
+  const now = new Date();
+  const next = new Date(now.getFullYear(), month - 1, day);
+  if (next < now) next.setFullYear(now.getFullYear() + 1);
+  return next;
+}
+function daysUntil(mmdd: string): number {
+  const diff = nextOccurrence(mmdd).getTime() - new Date().getTime();
+  return Math.ceil(diff / 86400000);
+}
+
+/* ── Member avatar colours ────────────────────────────────────── */
+const AVATAR_COLORS = ['#6C4EFF','#8b5cf6','#10b981','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6'];
+function memberColor(idx: number) { return AVATAR_COLORS[idx % AVATAR_COLORS.length]; }
 
 export default function FamilyPage() {
   const { user } = useAuthStore();
@@ -16,6 +44,17 @@ export default function FamilyPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'adult' | 'child'>('adult');
   const [inviteToken, setInviteToken] = useState('');
+
+  /* ── Tab ──────────────────────────────────────────────────────── */
+  const [activeTab, setActiveTab] = useState<'reminders' | 'special-days'>('reminders');
+
+  /* ── Special Days state ───────────────────────────────────────── */
+  const [specialDays, setSpecialDays] = useState<SpecialDaysMap>({});
+  const [showAddDay, setShowAddDay] = useState(false);
+  const [addDayMemberId, setAddDayMemberId] = useState('');
+  const [addDayType, setAddDayType] = useState<'birthday' | 'anniversary' | 'custom'>('birthday');
+  const [addDayLabel, setAddDayLabel] = useState('');
+  const [addDayDate, setAddDayDate] = useState('');
 
   /* ── New reminder form state ─────────────────────────────────── */
   const [showNewReminder, setShowNewReminder] = useState(false);
@@ -100,6 +139,36 @@ export default function FamilyPage() {
   const family = familyData?.data;
   const reminders = remindersData?.data ?? [];
 
+  // Load special days from localStorage when family is known
+  useEffect(() => {
+    if (family?.id) setSpecialDays(loadSpecialDays(family.id));
+  }, [family?.id]);
+
+  const saveDay = useCallback(() => {
+    if (!family?.id || !addDayMemberId || !addDayDate) return;
+    const label = addDayLabel.trim() ||
+      (addDayType === 'birthday' ? 'Birthday' : addDayType === 'anniversary' ? 'Anniversary' : 'Special Day');
+    const item: SpecialDayItem = {
+      id: Date.now().toString(),
+      type: addDayType,
+      label,
+      date: addDayDate, // stored as MM-DD
+    };
+    const updated = { ...specialDays, [addDayMemberId]: [...(specialDays[addDayMemberId] ?? []), item] };
+    setSpecialDays(updated);
+    saveSpecialDays(family.id, updated);
+    setShowAddDay(false);
+    setAddDayLabel(''); setAddDayDate(''); setAddDayType('birthday');
+    toast.success('Special day added!');
+  }, [family?.id, addDayMemberId, addDayDate, addDayLabel, addDayType, specialDays]);
+
+  const removeDay = useCallback((memberId: string, itemId: string) => {
+    if (!family?.id) return;
+    const updated = { ...specialDays, [memberId]: (specialDays[memberId] ?? []).filter(d => d.id !== itemId) };
+    setSpecialDays(updated);
+    saveSpecialDays(family.id, updated);
+  }, [family?.id, specialDays]);
+
   const cardStyle: React.CSSProperties = {
     background: 'var(--card)', border: '1px solid var(--b1)',
     borderRadius: 'var(--r-xl)', padding: '22px 24px', marginBottom: 18
@@ -155,11 +224,25 @@ export default function FamilyPage() {
             Shared tasks and reminders for your family
           </div>
         </div>
-        {family && (
-          <button onClick={() => setShowInvite(true)} style={btnPrimary}>
-            + Invite Member
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {family && (
+            <>
+              {/* Tab switcher */}
+              <div style={{ display: 'flex', gap: 4, background: 'var(--bg)', borderRadius: 8, padding: 3, border: '1px solid var(--b1)' }}>
+                {([['reminders', '📋 Reminders'], ['special-days', '🎂 Special Days']] as const).map(([t, label]) => (
+                  <button key={t} onClick={() => setActiveTab(t)} style={{
+                    padding: '5px 14px', borderRadius: 6, cursor: 'pointer', border: 'none',
+                    fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
+                    background: activeTab === t ? 'var(--amber)' : 'transparent',
+                    color: activeTab === t ? '#fff' : 'var(--t2)',
+                    transition: 'all 0.15s',
+                  }}>{label}</button>
+                ))}
+              </div>
+              <button onClick={() => setShowInvite(true)} style={btnPrimary}>+ Invite Member</button>
+            </>
+          )}
+        </div>
       </div>
 
       <div style={{ padding: '24px 26px', flex: 1 }}>
@@ -412,8 +495,260 @@ export default function FamilyPage() {
               </div>
             )}
 
+            {/* ── Special Days Tab ──────────────────────────────── */}
+            {activeTab === 'special-days' && (() => {
+              const members: any[] = family?.members ?? [];
+              const owners  = members.filter((m: any) => m.role === 'owner');
+              const adults  = members.filter((m: any) => m.role === 'adult');
+              const children = members.filter((m: any) => m.role === 'child');
+
+              // All upcoming special days sorted by days until
+              const allUpcoming: { memberId: string; memberName: string; item: SpecialDayItem; days: number }[] = [];
+              members.forEach((m: any, idx: number) => {
+                (specialDays[m.userId] ?? []).forEach(item => {
+                  allUpcoming.push({ memberId: m.userId, memberName: m.user?.name ?? '', item, days: daysUntil(item.date) });
+                });
+              });
+              allUpcoming.sort((a, b) => a.days - b.days);
+
+              const typeEmoji = (t: string) => t === 'birthday' ? '🎂' : t === 'anniversary' ? '💍' : '⭐';
+              const typeColor = (t: string) => t === 'birthday' ? '#f59e0b' : t === 'anniversary' ? '#ec4899' : '#8b5cf6';
+
+              const MemberNode = ({ m, idx }: { m: any; idx: number }) => {
+                const days = specialDays[m.userId] ?? [];
+                const next = [...days].sort((a, b) => daysUntil(a.date) - daysUntil(b.date))[0];
+                const color = memberColor(members.findIndex((x: any) => x.userId === m.userId));
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 100 }}>
+                    {/* Avatar */}
+                    <div style={{ position: 'relative' }}>
+                      <div style={{
+                        width: 56, height: 56, borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${color}cc, ${color})`,
+                        border: `3px solid ${color}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 20, fontWeight: 700, color: '#fff',
+                        boxShadow: `0 4px 14px ${color}40`,
+                        fontFamily: 'var(--font-display)',
+                      }}>
+                        {m.user?.name?.slice(0, 1).toUpperCase() || '?'}
+                      </div>
+                      {next && daysUntil(next.date) <= 30 && (
+                        <div style={{
+                          position: 'absolute', top: -4, right: -4,
+                          background: typeColor(next.type), color: '#fff',
+                          borderRadius: '50%', width: 20, height: 20,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 10, border: '2px solid #fff',
+                        }}>
+                          {daysUntil(next.date) === 0 ? '🎉' : typeEmoji(next.type)}
+                        </div>
+                      )}
+                    </div>
+                    {/* Name + role */}
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--t1)' }}>{m.user?.name}</div>
+                      <div style={{ fontSize: 10, color: color, fontWeight: 600, textTransform: 'capitalize' }}>{m.role}</div>
+                    </div>
+                    {/* Special days for this member */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', alignItems: 'center' }}>
+                      {days.map(d => (
+                        <div key={d.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          background: `${typeColor(d.type)}14`,
+                          border: `1px solid ${typeColor(d.type)}40`,
+                          borderRadius: 20, padding: '2px 8px', fontSize: 10, whiteSpace: 'nowrap',
+                        }}>
+                          <span>{typeEmoji(d.type)}</span>
+                          <span style={{ fontWeight: 600, color: typeColor(d.type) }}>{d.label}</span>
+                          <span style={{ color: 'var(--t3)' }}>{d.date.replace('-', '/')}</span>
+                          <button onClick={() => removeDay(m.userId, d.id)} style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'var(--t4)', fontSize: 10, padding: 0, lineHeight: 1,
+                          }}>✕</button>
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => { setAddDayMemberId(m.userId); setShowAddDay(true); }}
+                        style={{
+                          background: 'none', border: `1px dashed var(--b1)`, cursor: 'pointer',
+                          borderRadius: 20, padding: '2px 10px', fontSize: 10,
+                          color: 'var(--t3)', fontFamily: 'var(--font-body)',
+                        }}
+                      >+ Add date</button>
+                    </div>
+                  </div>
+                );
+              };
+
+              const Connector = () => (
+                <div style={{ width: 2, height: 28, background: 'var(--b1)', margin: '0 auto', borderRadius: 2 }} />
+              );
+              const HLine = ({ count }: { count: number }) => count <= 1 ? null : (
+                <div style={{ height: 2, background: 'var(--b1)', borderRadius: 2, margin: '0 28px' }} />
+              );
+
+              return (
+                <>
+                  {/* Family tree */}
+                  <div style={{ ...cardStyle, overflow: 'hidden' }}>
+                    <span style={labelStyle}>Family Tree</span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, padding: '10px 0' }}>
+                      {/* Owners row */}
+                      {owners.length > 0 && (
+                        <div style={{ display: 'flex', gap: 32, justifyContent: 'center' }}>
+                          {owners.map((m: any, i: number) => <MemberNode key={m.userId} m={m} idx={i} />)}
+                        </div>
+                      )}
+
+                      {/* Connector + adults */}
+                      {adults.length > 0 && (
+                        <>
+                          <Connector />
+                          <HLine count={adults.length} />
+                          <div style={{ display: 'flex', gap: 32, justifyContent: 'center' }}>
+                            {adults.map((m: any, i: number) => <MemberNode key={m.userId} m={m} idx={owners.length + i} />)}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Connector + children */}
+                      {children.length > 0 && (
+                        <>
+                          <Connector />
+                          <HLine count={children.length} />
+                          <div style={{ display: 'flex', gap: 32, justifyContent: 'center' }}>
+                            {children.map((m: any, i: number) => <MemberNode key={m.userId} m={m} idx={owners.length + adults.length + i} />)}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Upcoming special days */}
+                  <div style={cardStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <span style={labelStyle}>Upcoming Special Days</span>
+                    </div>
+                    {allUpcoming.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--t4)', fontSize: 13 }}>
+                        No special days yet. Click "+ Add date" on a family member above.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {allUpcoming.map(({ memberId, memberName, item, days }) => (
+                          <div key={item.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 12,
+                            padding: '11px 14px', background: 'var(--bg)',
+                            borderRadius: 'var(--r-sm)', border: `1px solid ${typeColor(item.type)}30`,
+                          }}>
+                            <div style={{
+                              width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                              background: `${typeColor(item.type)}14`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 20,
+                            }}>{typeEmoji(item.type)}</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)' }}>
+                                {memberName}'s {item.label}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 2 }}>
+                                {item.date.replace('-', ' / ')} · every year
+                              </div>
+                            </div>
+                            <div style={{
+                              textAlign: 'center', minWidth: 54,
+                              padding: '5px 10px', borderRadius: 8,
+                              background: days === 0 ? '#fef3c7' : days <= 7 ? `${typeColor(item.type)}14` : 'var(--bg)',
+                              border: `1px solid ${days <= 7 ? typeColor(item.type) + '40' : 'var(--b1)'}`,
+                            }}>
+                              <div style={{ fontSize: 16, fontWeight: 800, color: days === 0 ? '#d97706' : typeColor(item.type), lineHeight: 1 }}>
+                                {days === 0 ? '🎉' : days}
+                              </div>
+                              <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--t3)', marginTop: 2 }}>
+                                {days === 0 ? 'Today!' : days === 1 ? 'tomorrow' : 'days'}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Special Day modal */}
+                  {showAddDay && (
+                    <div style={{
+                      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                    }} onClick={() => setShowAddDay(false)}>
+                      <div style={{
+                        background: 'var(--card)', borderRadius: 16, padding: 26, width: 360,
+                        boxShadow: 'var(--sh-xl)', border: '1px solid var(--b1)',
+                      }} onClick={e => e.stopPropagation()}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: 'var(--t1)', marginBottom: 18 }}>
+                          Add Special Day
+                        </div>
+                        {/* Member name */}
+                        <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 14 }}>
+                          For: <strong>{family?.members?.find((m: any) => m.userId === addDayMemberId)?.user?.name}</strong>
+                        </div>
+                        {/* Type */}
+                        <div style={{ marginBottom: 14 }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Type</label>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {([['birthday','🎂 Birthday'],['anniversary','💍 Anniversary'],['custom','⭐ Custom']] as const).map(([t, label]) => (
+                              <button key={t} onClick={() => setAddDayType(t)} style={{
+                                flex: 1, padding: '7px 4px', borderRadius: 8, cursor: 'pointer',
+                                fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600,
+                                border: `1px solid ${addDayType === t ? typeColor(t) : 'var(--b1)'}`,
+                                background: addDayType === t ? `${typeColor(t)}14` : 'transparent',
+                                color: addDayType === t ? typeColor(t) : 'var(--t2)',
+                              }}>{label}</button>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Custom label */}
+                        {addDayType === 'custom' && (
+                          <div style={{ marginBottom: 14 }}>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Label</label>
+                            <input value={addDayLabel} onChange={e => setAddDayLabel(e.target.value)}
+                              placeholder="e.g. Graduation Day"
+                              style={inputStyle} />
+                          </div>
+                        )}
+                        {/* Date (MM-DD only — annual) */}
+                        <div style={{ marginBottom: 20 }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>
+                            Date (Month-Day, repeats every year)
+                          </label>
+                          <input
+                            type="text"
+                            value={addDayDate}
+                            onChange={e => setAddDayDate(e.target.value)}
+                            placeholder="MM-DD  e.g. 05-15"
+                            maxLength={5}
+                            style={inputStyle}
+                          />
+                          <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 4 }}>Format: MM-DD (e.g. 05-15 for May 15)</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            onClick={saveDay}
+                            disabled={!addDayDate.match(/^\d{2}-\d{2}$/)}
+                            style={{ ...btnPrimary, flex: 1, opacity: !addDayDate.match(/^\d{2}-\d{2}$/) ? 0.5 : 1 }}
+                          >Save</button>
+                          <button onClick={() => setShowAddDay(false)} style={{ ...btnSecondary, flex: 1 }}>Cancel</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
             {/* Shared Reminders */}
-            <div style={cardStyle}>
+            {activeTab === 'reminders' && <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <span style={labelStyle}>Shared Reminders</span>
                 <button
@@ -546,7 +881,7 @@ export default function FamilyPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </div>}
           </div>
         )}
       </div>
