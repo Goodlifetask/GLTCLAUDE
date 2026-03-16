@@ -59,8 +59,6 @@ export function Sidebar() {
         top: 0,
         height: '100vh',
         overflow: 'hidden',
-        width: 220,
-        minWidth: 220,
       }}
     >
       {/* ── Brand ─────────────────────────────────────────────────── */}
