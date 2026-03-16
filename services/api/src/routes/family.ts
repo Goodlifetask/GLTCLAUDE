@@ -247,7 +247,7 @@ export async function familyRoutes(server: FastifyInstance) {
     const body = z.object({
       title:      z.string().min(1).max(255),
       type:       z.enum(['call', 'task', 'email', 'location', 'event']).default('task'),
-      fireAt:     z.string().datetime(),
+      fireAt:     z.coerce.date(),
       priority:   z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
       notes:      z.string().optional(),
       shareScope: z.enum(['family', 'specific']).default('family'),
@@ -264,7 +264,7 @@ export async function familyRoutes(server: FastifyInstance) {
         familyId:   membership.familyId,
         title:      body.title,
         type:       body.type,
-        fireAt:     new Date(body.fireAt),
+        fireAt:     body.fireAt,
         priority:   body.priority,
         notes:      body.notes,
         shareScope: body.shareScope,
