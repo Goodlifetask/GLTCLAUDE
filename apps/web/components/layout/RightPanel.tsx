@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import { REMINDER_CATEGORIES } from '@glt/shared';
 import toast from 'react-hot-toast';
 
 const QUOTES = [
@@ -59,6 +60,7 @@ export function RightPanel() {
   const [date, setDate]       = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime]       = useState('09:00');
   const [recur, setRecur]     = useState('');
+  const [category, setCategory] = useState('');
   const [note, setNote]       = useState('');
   const [quote, setQuote]     = useState(QUOTES[0]);
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
@@ -76,6 +78,7 @@ export function RightPanel() {
         type, title: title.trim(), fire_at: fireAt,
       };
       if (note.trim()) payload['notes'] = note.trim();
+      if (category) payload['category'] = category;
       if (recur) {
         const freqMap: Record<string,string> = {
           Daily:'daily', Weekly:'weekly', Monthly:'monthly', Yearly:'yearly',
@@ -88,8 +91,9 @@ export function RightPanel() {
       qc.invalidateQueries({ queryKey: ['reminders'] });
       qc.invalidateQueries({ queryKey: ['stats'] });
       qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      qc.invalidateQueries({ queryKey: ['tasks-all'] });
       toast.success('Reminder added!');
-      setTitle(''); setNote(''); setRecur('');
+      setTitle(''); setNote(''); setRecur(''); setCategory('');
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message ?? 'Failed to create reminder');
@@ -209,6 +213,40 @@ export function RightPanel() {
             <option>Monthly</option>
             <option>Yearly</option>
           </select>
+        </div>
+
+        {/* Category */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={glassLabel}>Category</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
+            {REMINDER_CATEGORIES.map(cat => {
+              const active = category === cat.slug;
+              return (
+                <button
+                  key={cat.slug}
+                  onClick={() => setCategory(active ? '' : cat.slug)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                    padding: '7px 4px 6px',
+                    borderRadius: 10,
+                    border: active ? `1.5px solid ${cat.color}` : '1.5px solid rgba(255,255,255,0.1)',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', fontSize: 9, fontWeight: 700,
+                    color: active ? '#FDE68A' : 'rgba(255,255,255,0.5)',
+                    background: active ? `${cat.color}22` : 'rgba(255,255,255,0.04)',
+                    transition: 'all 0.15s',
+                    boxShadow: active ? `0 0 10px ${cat.color}44` : 'none',
+                    letterSpacing: '0.03em',
+                  }}
+                >
+                  <span style={{ fontSize: 14 }}>{cat.icon}</span>
+                  <span style={{ color: active ? '#FDE68A' : 'rgba(255,255,255,0.55)', fontWeight: 700 }}>
+                    {cat.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Note */}
