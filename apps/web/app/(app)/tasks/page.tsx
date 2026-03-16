@@ -40,12 +40,12 @@ export default function TasksPage() {
   /* Fetch ALL tasks once; count + filter client-side */
   const { data, isLoading } = useQuery({
     queryKey: ['tasks-all'],
-    queryFn: () => api.reminders.list({ type: 'task', limit: 500, sort: 'fireAt', order: 'asc' }),
+    queryFn: () => api.reminders.list({ type: 'task', limit: 100, sort: 'fireAt', order: 'asc' }),
     staleTime: 30_000,
   });
 
   const allTasks: any[] = useMemo(
-    () => (data as any)?.data?.reminders ?? [],
+    () => (data as any)?.data ?? [],
     [data],
   );
 

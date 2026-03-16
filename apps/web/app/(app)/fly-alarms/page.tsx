@@ -22,7 +22,7 @@ export default function FlyAlarmsPage() {
   });
 
   const now = new Date();
-  const allPending: any[] = (overdueData as any)?.data?.reminders ?? [];
+  const allPending: any[] = (overdueData as any)?.data ?? [];
 
   // Split into overdue vs firing soon (next 24 hours)
   const overdue = allPending.filter((r: any) => r.fireAt && new Date(r.fireAt) < now);
