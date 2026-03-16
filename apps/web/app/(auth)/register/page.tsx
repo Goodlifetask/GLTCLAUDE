@@ -201,7 +201,7 @@ export default function RegisterPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(160deg, #0a1628 0%, #0d2340 45%, #0b2535 100%)',
+      background: 'linear-gradient(160deg, #1A1040 0%, #2D1E8A 40%, #3D2BB8 75%, #2D1E8A 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -228,10 +228,10 @@ export default function RegisterPage() {
       <div style={{ marginBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{
           width: 80, height: 80, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #1a3a5c, #0d6e8a)',
-          border: '3px solid rgba(100,180,255,0.5)',
+          background: 'linear-gradient(135deg, #3D2BB8, #6C4EFF)',
+          border: '3px solid rgba(196,181,253,0.5)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 30px rgba(100,180,255,0.3)',
+          boxShadow: '0 0 30px rgba(108,78,255,0.45)',
           marginBottom: 10, overflow: 'hidden',
         }}>
           <div style={{ textAlign: 'center', lineHeight: 1.1 }}>
@@ -253,11 +253,19 @@ export default function RegisterPage() {
         onSubmit={handleSubmit(d => mutation.mutate(d))}
         style={{ width: '100%', maxWidth: 820, marginTop: 16 }}
       >
+        <div style={{
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(196,181,253,0.15)',
+          borderRadius: 20,
+          padding: '28px 28px 24px',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+        }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'start' }}>
 
           {/* ── LEFT: Account Details ── */}
           <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#60a5fa', marginBottom: 20, letterSpacing: '0.01em' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#C4B5FD', marginBottom: 20, letterSpacing: '0.01em' }}>
               Account Details
             </h2>
 
@@ -299,7 +307,7 @@ export default function RegisterPage() {
 
           {/* ── RIGHT: Profile Setup ── */}
           <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#facc15', marginBottom: 20, letterSpacing: '0.01em' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#FDE68A', marginBottom: 20, letterSpacing: '0.01em' }}>
               Profile Setup
             </h2>
 
@@ -436,6 +444,7 @@ export default function RegisterPage() {
             </div>
           </div>
         </div>
+        </div>{/* end glass card */}
 
         {/* Submit */}
         <button
