@@ -22,7 +22,7 @@ const TYPE_BTNS = [
   { type: 'task',      icon: '✓',  label: 'Task',     color: '#A78BFA' },
   { type: 'call',      icon: '📞', label: 'Call',     color: '#6EE7B7' },
   { type: 'email',     icon: '✉️', label: 'Email',    color: '#93C5FD' },
-  { type: 'location',  icon: '📍', label: 'Location', color: '#FCA5A5' },
+  { type: 'location',  icon: '📍', label: 'Location', color: '#818CF8' },
   { type: 'event',     icon: '📅', label: 'Event',    color: '#FDE68A' },
   { type: 'recurring', icon: '🔁', label: 'Repeat',   color: '#C4B5FD' },
 ];
