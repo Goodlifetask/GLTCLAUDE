@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../store/auth';
 import toast from 'react-hot-toast';
+import { REMINDER_CATEGORIES } from '@glt/shared';
 
 const schema = z.object({
   name:     z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -65,13 +66,25 @@ export default function RegisterPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [hoveredType, setHoveredType] = useState<AccountType | null>(null);
   const [savingType, setSavingType] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [customCategory, setCustomCategory] = useState('');
+
+  function toggleCategory(slug: string) {
+    setSelectedCategories(prev =>
+      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    );
+  }
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => api.auth.register(data),
+    mutationFn: (data: FormData) => api.auth.register({
+      ...data,
+      categories: selectedCategories,
+      ...(customCategory.trim() ? { customCategory: customCategory.trim() } : {}),
+    }),
     onSuccess: (res: any) => {
       const u = res.data.user;
       setUser({ ...u, avatarUrl: u.avatar_url ?? null });
@@ -302,6 +315,65 @@ export default function RegisterPage() {
                 </button>
               </div>
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+            </div>
+
+            {/* Category Picker */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text)] mb-2">
+                What will you use GoodLifeTask for?
+              </label>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 8,
+                marginBottom: 10,
+              }}>
+                {REMINDER_CATEGORIES.map(cat => {
+                  const selected = selectedCategories.includes(cat.slug);
+                  return (
+                    <button
+                      key={cat.slug}
+                      type="button"
+                      onClick={() => toggleCategory(cat.slug)}
+                      style={{
+                        padding: '6px 8px',
+                        borderRadius: 20,
+                        border: selected
+                          ? '1.5px solid var(--amber)'
+                          : '1.5px solid var(--color-border)',
+                        background: selected ? 'var(--amber-glow, rgba(245,158,11,0.12))' : 'var(--card, #fff)',
+                        color: selected ? 'var(--amber, #f59e0b)' : 'var(--color-text-muted)',
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        fontWeight: selected ? 600 : 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4,
+                        transition: 'all 0.15s',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+                  + Add custom:
+                </span>
+                <input
+                  type="text"
+                  value={customCategory}
+                  onChange={e => setCustomCategory(e.target.value)}
+                  placeholder="e.g. Gym Routine"
+                  maxLength={60}
+                  className="input"
+                  style={{ fontSize: 12, padding: '6px 10px' }}
+                />
+              </div>
             </div>
 
             <button type="submit" disabled={mutation.isPending} className="btn-primary w-full">

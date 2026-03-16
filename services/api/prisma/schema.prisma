@@ -178,6 +178,12 @@ enum FamilyInviteStatus {
   expired
 }
 
+enum CategoryStatus {
+  pending
+  approved
+  rejected
+}
+
 enum ReminderShareScope {
   private
   family
@@ -243,6 +249,7 @@ model User {
   ownedFamilies       Family[]         @relation("FamilyOwner")
   reminderShares      ReminderShare[]
   assignedReminders   Reminder[]       @relation("AssignedReminders")
+  userCategories      UserCategory[]
 
   @@index([email])
   @@index([plan])
@@ -696,6 +703,27 @@ model AuditLog {
   @@index([resource, resourceId])
   @@index([action])
   @@map("audit_logs")
+}
+
+model UserCategory {
+  id            String         @id @default(uuid()) @db.Uuid
+  userId        String         @map("user_id") @db.Uuid
+  name          String         @db.VarChar(60)
+  slug          String         @db.VarChar(60)
+  icon          String         @default("📁") @db.VarChar(10)
+  color         String         @default("#6C4EFF") @db.VarChar(7)
+  status        CategoryStatus @default(pending)
+  suggestCount  Int            @default(1) @map("suggest_count")
+  isGlobal      Boolean        @default(false) @map("is_global")  // true = promoted to system
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slug])
+  @@index([status])
+  @@index([name])
+  @@map("user_categories")
 }
 
 // ─── COUNTRIES & LANGUAGES ──────────────────────────────────────────────────

@@ -1445,8 +1445,17 @@ function RolesPage() {
   );
 }
 
+const USER_CATS_INITIAL = [
+  { n: 'Gym Routine', i: '💪', c: '#10b981', cnt: 420, status: 'approved', users: 38 },
+  { n: 'Medication',  i: '💊', c: '#ef4444', cnt: 180, status: 'pending',  users: 22 },
+  { n: 'Investments', i: '📈', c: '#f59e0b', cnt: 95,  status: 'pending',  users: 15 },
+  { n: 'Cooking',     i: '🍳', c: '#f59e0b', cnt: 67,  status: 'pending',  users: 12 },
+  { n: 'Pets',        i: '🐾', c: '#8b5cf6', cnt: 54,  status: 'rejected', users: 8  },
+];
+
 function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'success' | 'error') => void }) {
   const [custCats, setCustCats] = useState(CUSTCATS.map(c => ({ ...c })));
+  const [userCats, setUserCats] = useState(USER_CATS_INITIAL.map(c => ({ ...c })));
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
@@ -1468,12 +1477,34 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
     showToast(`Category "${name}" deleted.`);
   }
 
+  function handleApproveUserCat(i: number) {
+    setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'approved' } : c));
+    showToast('Category approved and visible to all users');
+  }
+
+  function handleRejectUserCat(i: number) {
+    setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'rejected' } : c));
+    showToast(`Category "${userCats[i].n}" rejected.`);
+  }
+
+  function handlePromoteUserCat(i: number) {
+    showToast('Category promoted to system categories!');
+  }
+
+  const statusBadgeStyle: Record<string, React.CSSProperties> = {
+    pending:  { background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)' },
+    approved: { background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.35)' },
+    rejected: { background: 'rgba(239,68,68,0.15)',  color: '#ef4444', border: '1px solid rgba(239,68,68,0.35)'  },
+  };
+
   return (
     <div>
       <div className="page-header">
         <div><div className="page-title">Categories</div><div className="page-desc">Manage reminder categories, icons, and color coding for the app.</div></div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+
+        {/* Column 1: System Categories */}
         <div>
           <div className="section-label">System Categories</div>
           <div className="cat-list">
@@ -1490,6 +1521,53 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
             ))}
           </div>
         </div>
+
+        {/* Column 2: User Defined Categories */}
+        <div>
+          <div className="section-label">User Defined</div>
+          <div className="cat-list">
+            {userCats.map((c, i) => (
+              <div key={i} className="cat-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                  <div className="cat-swatch" style={{ background: c.c, flexShrink: 0 }} />
+                  <span className="cat-emoji">{c.i}</span>
+                  <span className="cat-name" style={{ flex: 1 }}>{c.n}</span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                    ...statusBadgeStyle[c.status],
+                  }}>{c.status}</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--t4)', paddingLeft: 4 }}>
+                  {c.users} users suggested this
+                </div>
+                {c.status === 'pending' && (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      className="btn btn-xs"
+                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}
+                      onClick={() => handleApproveUserCat(i)}
+                    >Approve</button>
+                    <button
+                      className="btn btn-xs"
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}
+                      onClick={() => handleRejectUserCat(i)}
+                    >Reject</button>
+                  </div>
+                )}
+                {c.status === 'approved' && c.users > 20 && (
+                  <button
+                    className="btn btn-xs"
+                    style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}
+                    onClick={() => handlePromoteUserCat(i)}
+                  >⬆ Promote to System</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Column 3: Add New Custom */}
         <div>
           <div className="section-label">Custom Categories</div>
           <div className="cat-list">

@@ -6,6 +6,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../../../store/auth';
 import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
+import { REMINDER_CATEGORIES } from '@glt/shared';
 
 const PERSONAS = [
   { value: 'student',       label: 'Student',       icon: '📚', desc: 'Classes, assignments, study sessions' },
@@ -64,6 +65,33 @@ export default function SettingsPage() {
     reminders: true,
     weekly: false,
   });
+
+  // My Categories state (local-only for now)
+  const [myCategoryIds, setMyCategoryIds] = useState<string[]>(['work', 'personal']);
+  const [customCats, setCustomCats] = useState<{ name: string; icon: string; color: string }[]>([]);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('');
+  const [newCatColor, setNewCatColor] = useState('#6C4EFF');
+
+  function toggleMyCategory(slug: string) {
+    setMyCategoryIds(prev =>
+      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    );
+  }
+
+  function handleAddCustomCat() {
+    const name = newCatName.trim();
+    if (!name) { toast.error('Please enter a category name.'); return; }
+    setCustomCats(prev => [...prev, { name, icon: newCatIcon.trim() || '📁', color: newCatColor }]);
+    setNewCatName('');
+    setNewCatIcon('');
+    setNewCatColor('#6C4EFF');
+    toast.success(`Category "${name}" added.`);
+  }
+
+  function handleRemoveCustomCat(i: number) {
+    setCustomCats(prev => prev.filter((_, idx) => idx !== i));
+  }
 
   const updateProfileMutation = useMutation({
     mutationFn: (data: Partial<{ name: string; timezone: string; theme: string }>) =>
@@ -305,6 +333,104 @@ export default function SettingsPage() {
                   fontSize: 12, fontWeight: 600, color: 'var(--t2)', flexShrink: 0
                 }}
               >Save</button>
+            </div>
+          </div>
+        </div>
+
+        {/* My Categories Section */}
+        <div style={sectionStyle}>
+          <span style={labelStyle}>My Categories</span>
+          <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
+            Choose which categories you use and add your own custom ones.
+          </div>
+
+          {/* System category toggles */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 18 }}>
+            {REMINDER_CATEGORIES.map(cat => {
+              const active = myCategoryIds.includes(cat.slug);
+              return (
+                <div
+                  key={cat.slug}
+                  onClick={() => toggleMyCategory(cat.slug)}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: 10,
+                    border: `1px solid ${active ? 'rgba(124,58,237,0.45)' : 'var(--b1)'}`,
+                    background: active ? 'var(--amber-glow)' : 'var(--bg-raised)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.12s',
+                  }}
+                >
+                  <div style={{ fontSize: 18, marginBottom: 3 }}>{cat.icon}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: active ? 'var(--amber)' : 'var(--t2)' }}>{cat.name}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Custom categories list */}
+          {customCats.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 8 }}>Your Custom Categories</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {customCats.map((cat, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: 'var(--bg-raised)', borderRadius: 'var(--r-sm)',
+                    padding: '8px 12px', border: '1px solid var(--b1)',
+                  }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 16 }}>{cat.icon}</span>
+                    <span style={{ fontSize: 13, color: 'var(--t1)', flex: 1 }}>{cat.name}</span>
+                    <button
+                      onClick={() => handleRemoveCustomCat(i)}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--t4)', fontSize: 14, padding: '0 4px',
+                      }}
+                      title="Remove"
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add new custom category */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 8 }}>Add Custom Category</div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <input
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                placeholder="Category name"
+                maxLength={60}
+                style={{ ...inputStyle, flex: '1 1 130px' }}
+                onKeyDown={e => e.key === 'Enter' && handleAddCustomCat()}
+              />
+              <input
+                value={newCatIcon}
+                onChange={e => setNewCatIcon(e.target.value)}
+                placeholder="📁"
+                maxLength={4}
+                style={{ ...inputStyle, width: 60 }}
+              />
+              <input
+                type="color"
+                value={newCatColor}
+                onChange={e => setNewCatColor(e.target.value)}
+                style={{ ...inputStyle, width: 50, padding: 4, height: 36, cursor: 'pointer' }}
+              />
+              <button
+                onClick={handleAddCustomCat}
+                style={{
+                  padding: '9px 16px', background: 'var(--amber)', color: '#fff',
+                  border: 'none', borderRadius: 'var(--r-sm)',
+                  cursor: 'pointer', fontFamily: 'var(--font-body)',
+                  fontSize: 12, fontWeight: 700, flexShrink: 0,
+                }}
+              >+ Add</button>
             </div>
           </div>
         </div>
