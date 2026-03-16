@@ -143,7 +143,7 @@
 }
 .dark-surface input::placeholder,
 .dark-surface textarea::placeholder {
-  color: rgba(255,255,255,0.35);
+  color: rgba(196,181,253,0.55);  /* lavender — matches purple theme */
 }
 .dark-surface select option {
   background: #2D1E8A;

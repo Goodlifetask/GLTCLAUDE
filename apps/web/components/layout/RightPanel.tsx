@@ -41,12 +41,13 @@ const glassInput: React.CSSProperties = {
   transition: 'border-color 0.15s, background 0.15s',
 };
 
+/* Label above each field */
 const glassLabel: React.CSSProperties = {
   fontSize: 10,
   fontWeight: 700,
-  letterSpacing: '0.08em',
+  letterSpacing: '0.09em',
   textTransform: 'uppercase',
-  color: 'rgba(196,181,253,0.65)',
+  color: '#C4B5FD',        /* bright lavender — clearly readable */
   marginBottom: 6,
   display: 'block',
 };
@@ -136,7 +137,7 @@ export function RightPanel() {
           display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
         }}>
           <div style={{ width: 3, height: 14, borderRadius: 2, background: 'linear-gradient(180deg,#C4B5FD,#818CF8)' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(196,181,253,0.8)' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#C4B5FD' }}>
             Quick Add
           </span>
         </div>
@@ -213,7 +214,7 @@ export function RightPanel() {
         {/* Note */}
         <div style={{ marginBottom: 16 }}>
           <label style={glassLabel}>
-            Note <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, color: 'rgba(255,255,255,0.25)' }}>(optional)</span>
+            Note <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, color: 'rgba(196,181,253,0.5)' }}>(optional)</span>
           </label>
           <textarea value={note} onChange={e => setNote(e.target.value)}
             placeholder="Any extra details…"
