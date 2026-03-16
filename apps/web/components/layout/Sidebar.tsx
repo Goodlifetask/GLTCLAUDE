@@ -51,7 +51,7 @@ export function Sidebar() {
     <aside
       className="dark-surface"
       style={{
-        background: 'var(--bg-raised)',
+        background: 'linear-gradient(180deg, #3D2BB8 0%, #2D1E8A 100%)',
         borderRight: '1px solid var(--b1)',
         display: 'flex',
         flexDirection: 'column',
@@ -69,11 +69,11 @@ export function Sidebar() {
           <div
             style={{
               width: 34, height: 34,
-              background: 'linear-gradient(145deg, var(--amber), var(--amber-dim))',
+              background: 'linear-gradient(145deg, #9E7BFF, #6C4EFF)',
               borderRadius: 9,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 16, color: '#ffffff',
-              boxShadow: 'var(--sh-amber), inset 0 1px 0 rgba(255,255,255,0.2)',
+              boxShadow: '0 4px 16px rgba(108,78,255,0.5), inset 0 1px 0 rgba(255,255,255,0.25)',
               flexShrink: 0,
             }}
           >
@@ -170,7 +170,7 @@ export function Sidebar() {
           <div
             style={{
               width: 30, height: 30, borderRadius: 8,
-              background: 'linear-gradient(135deg, var(--amber-dim), var(--amber))',
+              background: 'linear-gradient(135deg, #6C4EFF, #9E7BFF)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 12, fontWeight: 700, color: '#ffffff', flexShrink: 0,
               fontFamily: 'var(--font-display)',

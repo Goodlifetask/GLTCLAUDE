@@ -4,21 +4,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design System: Violet / Indigo ─────────────────────────────────────── */
+/* ─── Design System: Blue-Violet / Purple ────────────────────────────────── */
 :root {
   /* Surfaces */
-  --bg:          #F5F3FF;
-  --bg-raised:   #2D1B69;
-  --card:        #ffffff;
-  --card-hover:  #FAF8FF;
-  --card-border: rgba(124,58,237,0.15);
-  --overlay:     rgba(45,27,105,0.7);
+  --bg:          #EEEEF4;
+  --bg-raised:   #3D2BB8;
+  --card:        #FFFFFF;
+  --card-hover:  #F7F6FF;
+  --card-border: rgba(108,78,255,0.14);
+  --overlay:     rgba(61,43,184,0.72);
 
-  /* Brand — violet */
-  --amber:       #7C3AED;
-  --amber-dim:   #6D28D9;
-  --amber-glow:  rgba(124,58,237,0.12);
-  --amber-soft:  rgba(124,58,237,0.07);
+  /* Brand — blue-violet */
+  --amber:       #6C4EFF;
+  --amber-dim:   #5B3DE0;
+  --amber-glow:  rgba(108,78,255,0.13);
+  --amber-soft:  rgba(108,78,255,0.07);
+
+  /* Gradient tokens for cards */
+  --grad-deep:   linear-gradient(135deg, #4B3BD8 0%, #7B5AF8 100%);
+  --grad-mid:    linear-gradient(135deg, #6C50F0 0%, #9E7BFF 100%);
+  --grad-light:  linear-gradient(135deg, rgba(108,80,240,0.55) 0%, rgba(158,123,255,0.55) 100%);
 
   /* Semantic */
   --sage:        #16a34a;
@@ -26,45 +31,45 @@
   --coral:       #dc2626;
   --coral-bg:    rgba(220,38,38,0.09);
   --sky:         #818CF8;
-  --sky-bg:      rgba(129,140,248,0.09);
+  --sky-bg:      rgba(129,140,248,0.1);
   --mauve:       #A78BFA;
-  --mauve-bg:    rgba(167,139,250,0.09);
+  --mauve-bg:    rgba(167,139,250,0.1);
   --rose:        #db2777;
   --rose-bg:     rgba(219,39,119,0.09);
 
   /* Text */
-  --t1:  #1E1B4B;
-  --t2:  #4338CA;
-  --t3:  #7C6FAB;
-  --t4:  #BAB4D9;
+  --t1:  #1A1040;
+  --t2:  #4A3BAA;
+  --t3:  #7B6FB8;
+  --t4:  #B8B0D8;
 
   /* Borders */
-  --b1:  rgba(124,58,237,0.15);
-  --b2:  rgba(124,58,237,0.08);
-  --b3:  rgba(124,58,237,0.25);
+  --b1:  rgba(108,78,255,0.14);
+  --b2:  rgba(108,78,255,0.07);
+  --b3:  rgba(108,78,255,0.24);
 
   /* Misc */
-  --r:    10px;
-  --r-sm: 7px;
-  --r-lg: 14px;
-  --r-xl: 20px;
+  --r:    12px;
+  --r-sm: 8px;
+  --r-lg: 16px;
+  --r-xl: 22px;
   --font-body: 'Sora', sans-serif;
   --font-display: 'Playfair Display', serif;
-  --sh-card: 0 1px 4px rgba(124,58,237,0.08), 0 4px 16px rgba(124,58,237,0.06);
-  --sh-lg:   0 4px 24px rgba(124,58,237,0.12);
-  --sh-xl:   0 12px 48px rgba(124,58,237,0.15);
-  --sh-amber: 0 4px 20px rgba(124,58,237,0.35);
+  --sh-card: 0 2px 8px rgba(108,78,255,0.07), 0 6px 24px rgba(108,78,255,0.05);
+  --sh-lg:   0 4px 28px rgba(108,78,255,0.13);
+  --sh-xl:   0 12px 52px rgba(108,78,255,0.16);
+  --sh-amber: 0 4px 22px rgba(108,78,255,0.38);
 
   /* Legacy color vars */
-  --color-primary:      #7C3AED;
-  --color-primary-dark: #6D28D9;
-  --color-accent:       #A78BFA;
-  --color-bg:           #F5F3FF;
-  --color-bg-dark:      #2D1B69;
+  --color-primary:      #6C4EFF;
+  --color-primary-dark: #5B3DE0;
+  --color-accent:       #9E7BFF;
+  --color-bg:           #EEEEF4;
+  --color-bg-dark:      #3D2BB8;
   --color-surface:      #ffffff;
-  --color-text:         #1E1B4B;
-  --color-text-muted:   #4338CA;
-  --color-border:       rgba(124,58,237,0.15);
+  --color-text:         #1A1040;
+  --color-text-muted:   #4A3BAA;
+  --color-border:       rgba(108,78,255,0.14);
 }
 
 /* ─── Base Styles ──────────────────────────────────────────────────────────── */
@@ -116,17 +121,19 @@
 /* Applied via className="dark-surface" on any element with --bg-raised background */
 .dark-surface {
   --t1: #FFFFFF;
-  --t2: rgba(255,255,255,0.85);
-  --t3: rgba(255,255,255,0.55);
-  --t4: rgba(255,255,255,0.32);
-  --b1: rgba(255,255,255,0.12);
-  --b2: rgba(255,255,255,0.06);
-  --b3: rgba(255,255,255,0.22);
-  /* Lighter violet so active/accent items are readable on dark */
+  --t2: rgba(255,255,255,0.88);
+  --t3: rgba(255,255,255,0.56);
+  --t4: rgba(255,255,255,0.34);
+  --b1: rgba(255,255,255,0.13);
+  --b2: rgba(255,255,255,0.07);
+  --b3: rgba(255,255,255,0.24);
+  --card: rgba(255,255,255,0.08);
+  --card-hover: rgba(255,255,255,0.13);
+  /* Lighter blue-violet so active/accent items are readable on dark */
   --amber:      #C4B5FD;
   --amber-dim:  #A78BFA;
-  --amber-glow: rgba(196,181,253,0.15);
-  --amber-soft: rgba(196,181,253,0.1);
+  --amber-glow: rgba(196,181,253,0.18);
+  --amber-soft: rgba(196,181,253,0.11);
 }
 /* Restore dark text inside form controls on dark surfaces */
 .dark-surface input,
@@ -186,8 +193,8 @@
   }
 
   .input:focus {
-    border-color: rgba(124,58,237,0.4);
-    box-shadow: 0 0 0 2px var(--amber-glow);
+    border-color: rgba(108,78,255,0.45);
+    box-shadow: 0 0 0 3px var(--amber-glow);
   }
 
   .badge {
