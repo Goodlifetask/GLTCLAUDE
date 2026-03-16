@@ -1,8 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { REMINDER_CATEGORIES } from '@glt/shared';
+import toast from 'react-hot-toast';
 
 /* ── Category gradient map ─────────────────────────────────────────── */
 const CAT_GRADIENT: Record<string, string> = {
@@ -18,24 +19,200 @@ const CAT_GRADIENT: Record<string, string> = {
   none:      'linear-gradient(135deg, #374151 0%, #6B7280 100%)',
 };
 
-const PRIORITY_COLOR: Record<string, { bg: string; color: string }> = {
-  urgent: { bg: '#fee2e2', color: '#dc2626' },
-  high:   { bg: '#fef3c7', color: '#d97706' },
-  medium: { bg: 'rgba(108,78,255,0.12)', color: '#6C4EFF' },
-  low:    { bg: '#f0fdf4', color: '#16a34a' },
+/* ── Type styling (matches Dashboard) ─────────────────────────────── */
+const TYPE_COLOR: Record<string, string> = {
+  call: 'var(--sage)', task: 'var(--amber)', email: 'var(--sky)',
+  location: 'var(--mauve)', event: 'var(--rose)',
 };
-
+const TYPE_BG: Record<string, string> = {
+  call: 'var(--sage-bg)', task: 'var(--amber-glow)', email: 'var(--sky-bg)',
+  location: 'var(--mauve-bg)', event: 'var(--rose-bg)',
+};
 const TYPE_ICON: Record<string, string> = {
-  call: '📞', task: '◎', email: '✉️', location: '📍', event: '📅',
+  call: '📞', task: '✓', email: '✉️', location: '📍', event: '📅',
+};
+const TYPE_LABEL: Record<string, string> = {
+  call: 'Call', task: 'Task', email: 'Email', location: 'Location', event: 'Event',
 };
 
 /* ── Extra virtual categories ──────────────────────────────────────── */
 const ALL_CAT  = { slug: 'all',  name: 'All Tasks',     icon: '⊞', color: '#4338CA' };
 const NONE_CAT = { slug: 'none', name: 'Uncategorized', icon: '◌', color: '#6B7280' };
 
+const SNOOZE_OPTIONS = [
+  { label: '15 minutes', minutes: 15 },
+  { label: '1 hour',     minutes: 60 },
+  { label: 'Tomorrow',   minutes: 1440 },
+];
+
+/* ── Task card — matches Dashboard ReminderCard exactly ────────────── */
+function TaskCard({
+  task,
+  onComplete,
+  onDelete,
+  onSnooze,
+  snoozeOpen,
+  onSnoozeToggle,
+}: {
+  task: any;
+  onComplete: () => void;
+  onDelete: () => void;
+  onSnooze: (minutes: number) => void;
+  snoozeOpen: boolean;
+  onSnoozeToggle: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const type     = task.type || 'task';
+  const done     = task.status === 'completed';
+  const isOverdue = task.fireAt && new Date(task.fireAt) < new Date() && !done;
+  const fireAt   = task.fireAt ? new Date(task.fireAt) : null;
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: 'var(--card)',
+        border: '1px solid var(--b1)',
+        borderRadius: 'var(--r-lg)',
+        padding: '15px 16px 15px 18px',
+        marginBottom: 6,
+        display: 'flex', alignItems: 'flex-start', gap: 13,
+        position: 'relative',
+        opacity: done ? 0.55 : 1,
+        transition: 'opacity 0.15s, box-shadow 0.15s',
+        boxShadow: hovered ? 'var(--sh-card-hover, 0 4px 16px rgba(0,0,0,0.12))' : 'var(--sh-card)',
+      }}
+    >
+      {/* Color bar */}
+      <div style={{
+        position: 'absolute', left: 0, top: 10, bottom: 10,
+        width: 2.5, borderRadius: '0 2px 2px 0',
+        background: TYPE_COLOR[type] || 'var(--amber)',
+      }} />
+
+      {/* Complete checkbox */}
+      <div
+        onClick={!done ? onComplete : undefined}
+        title={done ? 'Completed' : 'Mark complete'}
+        style={{
+          width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 2,
+          border: done ? 'none' : '1.5px solid var(--t3)',
+          background: done ? 'var(--sage)' : hovered && !done ? 'rgba(0,0,0,0.04)' : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: done ? 'default' : 'pointer',
+          color: done ? '#fff' : 'transparent', fontSize: 11,
+          transition: 'all 0.12s',
+        }}
+      >{done ? '✓' : ''}</div>
+
+      {/* Main content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 13.5, fontWeight: 600,
+          color: done ? 'var(--t3)' : 'var(--t1)',
+          lineHeight: 1.35, marginBottom: 5,
+          textDecoration: done ? 'line-through' : 'none',
+        }}>
+          {task.title}
+        </div>
+
+        {task.notes && (
+          <div style={{ fontSize: 11.5, color: 'var(--t3)', marginBottom: 6, lineHeight: 1.5 }}>
+            {task.notes}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {fireAt && (
+            <span style={{
+              fontSize: 11,
+              color: isOverdue ? 'var(--coral)' : 'var(--t3)',
+              fontWeight: isOverdue ? 600 : 500,
+            }}>
+              {isOverdue ? '⚡ ' : ''}
+              {fireAt.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            </span>
+          )}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+            background: TYPE_BG[type] || 'var(--amber-glow)',
+            color: TYPE_COLOR[type] || 'var(--amber)',
+          }}>
+            {TYPE_ICON[type] || '✓'} {TYPE_LABEL[type] || type}
+          </span>
+          {task.recurrenceId && (
+            <span style={{ fontSize: 10, color: 'var(--t4)', background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: 4 }}>
+              🔁 recurring
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Action buttons — visible on hover */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+        opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
+        position: 'relative',
+      }}>
+        {/* Snooze */}
+        {!done && (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={onSnoozeToggle}
+              title="Snooze"
+              style={{
+                width: 28, height: 28, borderRadius: 7,
+                border: '1px solid var(--b1)', background: 'var(--card)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', fontSize: 13, color: 'var(--t2)',
+              }}
+            >⏰</button>
+            {snoozeOpen && (
+              <div style={{
+                position: 'absolute', right: 0, top: 34,
+                background: 'var(--card)', border: '1px solid var(--b1)',
+                borderRadius: 'var(--r)', padding: '4px 0',
+                zIndex: 50, minWidth: 130,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+              }}>
+                {SNOOZE_OPTIONS.map(opt => (
+                  <div
+                    key={opt.minutes}
+                    onClick={() => onSnooze(opt.minutes)}
+                    style={{ padding: '8px 14px', fontSize: 12, color: 'var(--t2)', cursor: 'pointer', fontWeight: 500 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >{opt.label}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Delete */}
+        <button
+          onClick={onDelete}
+          title="Delete"
+          style={{
+            width: 28, height: 28, borderRadius: 7,
+            border: '1px solid rgba(220,38,38,0.2)', background: '#fff5f5',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', fontSize: 13, color: '#dc2626',
+          }}
+        >🗑</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ──────────────────────────────────────────────────────────── */
 export default function TasksPage() {
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const [activeCat,    setActiveCat]    = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('pending');
+  const [snoozeOpen,   setSnoozeOpen]   = useState<string | null>(null);
 
   /* Fetch ALL tasks once; count + filter client-side */
   const { data, isLoading } = useQuery({
@@ -48,6 +225,30 @@ export default function TasksPage() {
     () => (data as any)?.data ?? [],
     [data],
   );
+
+  /* Mutations */
+  const completeMutation = useMutation({
+    mutationFn: (id: string) => api.reminders.complete(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tasks-all'] }); toast.success('Task completed!'); },
+    onError: () => toast.error('Failed to complete task'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.reminders.delete(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tasks-all'] }); toast.success('Task deleted'); },
+    onError: () => toast.error('Failed to delete task'),
+  });
+
+  const snoozeMutation = useMutation({
+    mutationFn: ({ id, minutes }: { id: string; minutes: number }) =>
+      api.reminders.snooze(id, minutes),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks-all'] });
+      setSnoozeOpen(null);
+      toast.success('Task snoozed');
+    },
+    onError: () => toast.error('Failed to snooze task'),
+  });
 
   /* Count per slug */
   const countByCat = useMemo(() => {
@@ -117,7 +318,7 @@ export default function TasksPage() {
         {/* Grid */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 32px 32px' }}>
           {isLoading ? (
-            <div style={{ textAlign: 'center', paddingTop: 80, color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+            <div style={{ textAlign: 'center', paddingTop: 80, color: 'var(--t4)', fontSize: 13 }}>
               Loading categories…
             </div>
           ) : (
@@ -275,64 +476,18 @@ export default function TasksPage() {
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {visibleTasks.map(task => {
-              const pri    = task.priority || 'medium';
-              const colors = PRIORITY_COLOR[pri] ?? PRIORITY_COLOR.medium;
-              const done   = task.status === 'completed';
-              const fireAt = task.fireAt ? new Date(task.fireAt) : null;
-              return (
-                <div key={task.id} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 14,
-                  padding: '14px 18px',
-                  background: 'var(--card)',
-                  border: '1px solid var(--b1)',
-                  borderRadius: 'var(--r)',
-                  opacity: done ? 0.6 : 1,
-                  transition: 'all 0.12s',
-                  boxShadow: 'var(--sh-card)',
-                }}>
-                  {/* Checkbox */}
-                  <div style={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 2,
-                    border: done ? 'none' : '2px solid var(--b3)',
-                    background: done ? 'var(--amber)' : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, color: '#fff',
-                  }}>
-                    {done ? '✓' : ''}
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: 13, fontWeight: 600, color: 'var(--t1)',
-                      textDecoration: done ? 'line-through' : 'none', marginBottom: 4,
-                    }}>
-                      {task.title}
-                    </div>
-                    {task.notes && (
-                      <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {task.notes}
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, color: 'var(--t3)' }}>{TYPE_ICON[task.type] || '◎'}</span>
-                      {fireAt && (
-                        <span style={{ fontSize: 10, color: 'var(--t4)' }}>
-                          📅 {fireAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} {fireAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                      <span style={{
-                        fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10,
-                        background: colors.bg, color: colors.color,
-                      }}>
-                        {pri}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {visibleTasks.map(task => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onComplete={() => completeMutation.mutate(task.id)}
+                onDelete={() => deleteMutation.mutate(task.id)}
+                onSnooze={(minutes) => snoozeMutation.mutate({ id: task.id, minutes })}
+                snoozeOpen={snoozeOpen === task.id}
+                onSnoozeToggle={() => setSnoozeOpen(snoozeOpen === task.id ? null : task.id)}
+              />
+            ))}
           </div>
         )}
       </div>
