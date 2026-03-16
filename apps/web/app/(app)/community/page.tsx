@@ -116,7 +116,7 @@ export default function CommunityPage() {
     borderRadius: 'var(--r-xl)', padding: '20px 22px', marginBottom: 16,
   };
   const input: React.CSSProperties = {
-    background: 'var(--bg-raised)', border: '1px solid var(--b1)',
+    background: 'var(--bg)', border: '1px solid var(--b1)',
     borderRadius: 'var(--r-sm)', padding: '9px 12px',
     fontSize: 13, color: 'var(--t1)', fontFamily: 'var(--font-body)',
     outline: 'none', width: '100%', boxSizing: 'border-box',
@@ -128,7 +128,7 @@ export default function CommunityPage() {
     fontSize: 13, fontWeight: 700, flexShrink: 0,
   };
   const btnSecondary: React.CSSProperties = {
-    padding: '8px 14px', background: 'var(--bg-raised)',
+    padding: '8px 14px', background: 'var(--bg)',
     border: '1px solid var(--b1)', borderRadius: 'var(--r-sm)',
     cursor: 'pointer', fontFamily: 'var(--font-body)',
     fontSize: 12, fontWeight: 600, color: 'var(--t2)', flexShrink: 0,
@@ -404,7 +404,7 @@ export default function CommunityPage() {
                         {projects.slice(0, 5).map((p: any) => (
                           <div key={p.id} style={{
                             display: 'flex', alignItems: 'center', gap: 10,
-                            padding: '8px 10px', background: 'var(--bg-raised)',
+                            padding: '8px 10px', background: 'var(--bg)',
                             borderRadius: 'var(--r-sm)', borderLeft: `3px solid ${p.color}`,
                           }}>
                             <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{p.name}</div>
@@ -425,7 +425,7 @@ export default function CommunityPage() {
                         {leaderboard.slice(0, 5).map((entry, i) => (
                           <div key={entry.name} style={{
                             display: 'flex', alignItems: 'center', gap: 10,
-                            padding: '7px 10px', background: 'var(--bg-raised)',
+                            padding: '7px 10px', background: 'var(--bg)',
                             borderRadius: 'var(--r-sm)',
                           }}>
                             <div style={{
@@ -459,7 +459,7 @@ export default function CommunityPage() {
                         {events.slice(0, 5).map((e: any) => (
                           <div key={e.id} style={{
                             display: 'flex', alignItems: 'center', gap: 12,
-                            padding: '10px 14px', background: 'var(--bg-raised)',
+                            padding: '10px 14px', background: 'var(--bg)',
                             borderRadius: 'var(--r-sm)', border: '1px solid var(--b1)',
                           }}>
                             <span style={{ fontSize: 18 }}>📅</span>
@@ -498,7 +498,7 @@ export default function CommunityPage() {
                       {tasks.map((r: any) => (
                         <div key={r.id} style={{
                           display: 'flex', alignItems: 'center', gap: 12,
-                          padding: '10px 14px', background: 'var(--bg-raised)',
+                          padding: '10px 14px', background: 'var(--bg)',
                           borderRadius: 'var(--r-sm)', border: '1px solid var(--b1)',
                         }}>
                           <div style={{
@@ -556,7 +556,7 @@ export default function CommunityPage() {
                       {events.map((e: any) => (
                         <div key={e.id} style={{
                           display: 'flex', gap: 14,
-                          padding: '14px 16px', background: 'var(--bg-raised)',
+                          padding: '14px 16px', background: 'var(--bg)',
                           borderRadius: 'var(--r-sm)', border: `1px solid rgba(16,185,129,0.15)`,
                           borderLeft: `3px solid ${GREEN}`,
                         }}>
@@ -610,7 +610,7 @@ export default function CommunityPage() {
                       return (
                         <div key={m.userId} style={{
                           display: 'flex', alignItems: 'center', gap: 12,
-                          padding: '12px 14px', background: 'var(--bg-raised)',
+                          padding: '12px 14px', background: 'var(--bg)',
                           borderRadius: 'var(--r-sm)', border: '1px solid var(--b1)',
                         }}>
                           <div style={{

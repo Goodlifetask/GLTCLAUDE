@@ -101,7 +101,7 @@ export default function TeamPage() {
   };
 
   const inputStyle: React.CSSProperties = {
-    background: 'var(--bg-raised)', border: '1px solid var(--b1)',
+    background: 'var(--bg)', border: '1px solid var(--b1)',
     borderRadius: 'var(--r-sm)', padding: '9px 12px',
     fontSize: 13, color: 'var(--t1)', fontFamily: 'var(--font-body)',
     outline: 'none', width: '100%', boxSizing: 'border-box'
@@ -115,7 +115,7 @@ export default function TeamPage() {
   };
 
   const btnSecondary: React.CSSProperties = {
-    padding: '8px 14px', background: 'var(--bg-raised)',
+    padding: '8px 14px', background: 'var(--bg)',
     border: '1px solid var(--b1)', borderRadius: 'var(--r-sm)',
     cursor: 'pointer', fontFamily: 'var(--font-body)',
     fontSize: 12, fontWeight: 600, color: 'var(--t2)', flexShrink: 0
@@ -279,7 +279,7 @@ export default function TeamPage() {
                   {(selectedWs.members ?? []).map((m: any) => (
                     <div key={m.userId} style={{
                       display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '5px 10px', background: 'var(--bg-raised)',
+                      padding: '5px 10px', background: 'var(--bg)',
                       borderRadius: 20, border: '1px solid var(--b1)', fontSize: 11
                     }}>
                       <div style={{
@@ -346,7 +346,7 @@ export default function TeamPage() {
                 </div>
 
                 {showCreateProject && (
-                  <div style={{ padding: '14px', background: 'var(--bg-raised)', borderRadius: 'var(--r-sm)', marginBottom: 14, border: '1px solid var(--b1)' }}>
+                  <div style={{ padding: '14px', background: 'var(--bg)', borderRadius: 'var(--r-sm)', marginBottom: 14, border: '1px solid var(--b1)' }}>
                     <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                       <input
                         value={projectName}
@@ -389,7 +389,7 @@ export default function TeamPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px,1fr))', gap: 10 }}>
                     {projects.map((p: any) => (
                       <div key={p.id} style={{
-                        padding: '12px 14px', background: 'var(--bg-raised)',
+                        padding: '12px 14px', background: 'var(--bg)',
                         borderRadius: 'var(--r-sm)', border: `1px solid var(--b1)`,
                         borderLeft: `3px solid ${p.color}`
                       }}>
@@ -418,7 +418,7 @@ export default function TeamPage() {
                     {reminders.map((r: any) => (
                       <div key={r.id} style={{
                         display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '10px 14px', background: 'var(--bg-raised)',
+                        padding: '10px 14px', background: 'var(--bg)',
                         borderRadius: 'var(--r-sm)', border: '1px solid var(--b1)'
                       }}>
                         <div style={{

@@ -87,7 +87,7 @@ export default function FamilyPage() {
   };
 
   const inputStyle: React.CSSProperties = {
-    background: 'var(--bg-raised)', border: '1px solid var(--b1)',
+    background: 'var(--bg)', border: '1px solid var(--b1)',
     borderRadius: 'var(--r-sm)', padding: '9px 12px',
     fontSize: 13, color: 'var(--t1)', fontFamily: 'var(--font-body)',
     outline: 'none', width: '100%', boxSizing: 'border-box'
@@ -101,7 +101,7 @@ export default function FamilyPage() {
   };
 
   const btnSecondary: React.CSSProperties = {
-    padding: '9px 16px', background: 'var(--bg-raised)',
+    padding: '9px 16px', background: 'var(--bg)',
     border: '1px solid var(--b1)', borderRadius: 'var(--r-sm)',
     cursor: 'pointer', fontFamily: 'var(--font-body)',
     fontSize: 12, fontWeight: 600, color: 'var(--t2)'
@@ -273,7 +273,7 @@ export default function FamilyPage() {
                 {(family.members ?? []).map((m: any) => (
                   <div key={m.userId} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 12px', background: 'var(--bg-raised)',
+                    padding: '10px 12px', background: 'var(--bg)',
                     borderRadius: 'var(--r-sm)', border: '1px solid var(--b1)'
                   }}>
                     <div style={{
@@ -390,7 +390,7 @@ export default function FamilyPage() {
                   {reminders.map((r: any) => (
                     <div key={r.id} style={{
                       display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 14px', background: 'var(--bg-raised)',
+                      padding: '10px 14px', background: 'var(--bg)',
                       borderRadius: 'var(--r-sm)', border: '1px solid var(--b1)'
                     }}>
                       <div style={{
