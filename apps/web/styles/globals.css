@@ -135,11 +135,19 @@
   --amber-glow: rgba(196,181,253,0.18);
   --amber-soft: rgba(196,181,253,0.11);
 }
-/* Restore dark text inside form controls on dark surfaces */
+/* Default text color for form controls on dark surfaces (no !important — inline styles override) */
 .dark-surface input,
 .dark-surface select,
 .dark-surface textarea {
-  color: #1E1B4B !important;
+  color: rgba(255,255,255,0.85);
+}
+.dark-surface input::placeholder,
+.dark-surface textarea::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+.dark-surface select option {
+  background: #2D1E8A;
+  color: #ffffff;
 }
 
 /* ─── Component Styles ─────────────────────────────────────────────────────── */
