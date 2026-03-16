@@ -91,6 +91,7 @@ const selectStyle: React.CSSProperties = {
   cursor: 'pointer',
   colorScheme: 'dark',
   appearance: 'auto',
+  backgroundColor: '#1e1460',
 };
 
 export default function RegisterPage() {
@@ -138,7 +139,7 @@ export default function RegisterPage() {
       api.categories.list(),
       api.professions.list(),
     ]).then(([countriesRes, catsRes, profsRes]) => {
-      const ctries: ApiCountry[]    = countriesRes?.data ?? [];
+      const ctries: ApiCountry[]    = (countriesRes?.data ?? []).sort((a: ApiCountry, b: ApiCountry) => a.name.localeCompare(b.name));
       const cats: ApiCategory[]     = catsRes?.data ?? [];
       const profs: ApiProfession[]  = profsRes?.data ?? [];
       setProfessions(profs);
