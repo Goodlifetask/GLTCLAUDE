@@ -116,6 +116,11 @@ export const api = {
       client.get('/categories').then((r) => r.data),
   },
 
+  professions: {
+    list: () =>
+      client.get('/professions').then((r) => r.data),
+  },
+
   reminders: {
     list: (params?: Record<string, unknown>) =>
       client.get('/reminders', { params }).then((r) => r.data),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,11 +18,11 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-const PROFESSIONS = [
-  'Select Role', 'Student', 'Teacher', 'Nurse', 'Doctor', 'Engineer',
-  'Developer', 'Manager', 'Entrepreneur', 'Parent', 'Retiree', 'Chef',
-  'Carpenter', 'Other',
-];
+interface ApiProfession {
+  value: string;
+  label: string;
+  icon:  string;
+}
 
 const USE_CASES = [
   {
@@ -110,14 +110,38 @@ export default function RegisterPage() {
   const [selInterests,    setSelInterests]    = useState<string[]>([]);
   const [loadingData,     setLoadingData]     = useState(true);
 
-  /* Fetch countries + categories on mount */
+  /* ── Profession combobox state ─────────────────────────────────── */
+  const [professions,     setProfessions]     = useState<ApiProfession[]>([]);
+  const [profQuery,       setProfQuery]       = useState('');
+  const [profOpen,        setProfOpen]        = useState(false);
+  const profRef = useRef<HTMLDivElement>(null);
+
+  /* Close dropdown when clicking outside */
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (profRef.current && !profRef.current.contains(e.target as Node)) {
+        setProfOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const filteredProfs = professions.filter(p =>
+    p.label.toLowerCase().includes(profQuery.toLowerCase()),
+  );
+
+  /* Fetch countries + categories + professions on mount */
   useEffect(() => {
     Promise.all([
       api.countries.list(),
       api.categories.list(),
-    ]).then(([countriesRes, catsRes]) => {
-      const ctries: ApiCountry[] = countriesRes?.data ?? [];
-      const cats: ApiCategory[]  = catsRes?.data ?? [];
+      api.professions.list(),
+    ]).then(([countriesRes, catsRes, profsRes]) => {
+      const ctries: ApiCountry[]    = countriesRes?.data ?? [];
+      const cats: ApiCategory[]     = catsRes?.data ?? [];
+      const profs: ApiProfession[]  = profsRes?.data ?? [];
+      setProfessions(profs);
       setCountries(ctries);
       setCategories(cats);
 
@@ -156,7 +180,7 @@ export default function RegisterPage() {
     mutationFn: (data: FormData) => api.auth.register({
       ...data,
       categories:      selInterests,
-      profession,
+      profession:      profession || profQuery.trim(),
       country:         selectedCountry,
       languages:       selLangs,
       profile_category: useCase,
@@ -352,15 +376,87 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Profession + Country */}
+            {/* Profession (combobox) + Country */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>Profession</label>
-                <select value={profession} onChange={e => setProfession(e.target.value)} style={selectStyle}>
-                  {PROFESSIONS.map(p => (
-                    <option key={p} value={p === 'Select Role' ? '' : p}>{p}</option>
-                  ))}
-                </select>
+              <div ref={profRef} style={{ position: 'relative' }}>
+                <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
+                  Profession
+                </label>
+                {/* Text input — type freely or pick from dropdown */}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={profQuery}
+                    placeholder="Type or search…"
+                    autoComplete="off"
+                    onFocus={() => setProfOpen(true)}
+                    onChange={e => {
+                      setProfQuery(e.target.value);
+                      setProfession(e.target.value);
+                      setProfOpen(true);
+                    }}
+                    style={{ ...inputStyle, paddingRight: 32 }}
+                  />
+                  {/* chevron */}
+                  <span
+                    onClick={() => setProfOpen(o => !o)}
+                    style={{
+                      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                      color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, userSelect: 'none',
+                    }}
+                  >{profOpen ? '▲' : '▼'}</span>
+                </div>
+
+                {/* Dropdown suggestions */}
+                {profOpen && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                    background: '#1e1460',
+                    border: '1px solid rgba(196,181,253,0.2)',
+                    borderRadius: 10, marginTop: 4,
+                    maxHeight: 220, overflowY: 'auto',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                  }}>
+                    {/* "Use what I typed" option when query doesn't match any suggestion */}
+                    {profQuery.trim() && !filteredProfs.some(p => p.label.toLowerCase() === profQuery.toLowerCase()) && (
+                      <div
+                        onMouseDown={() => { setProfession(profQuery.trim()); setProfOpen(false); }}
+                        style={{
+                          padding: '9px 14px', fontSize: 12, cursor: 'pointer',
+                          color: '#C4B5FD', fontStyle: 'italic',
+                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        ✏️ Use "{profQuery.trim()}"
+                      </div>
+                    )}
+                    {(filteredProfs.length === 0 && !profQuery.trim()) ? (
+                      <div style={{ padding: '9px 14px', fontSize: 12, color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
+                        Start typing to search…
+                      </div>
+                    ) : filteredProfs.map(p => (
+                      <div
+                        key={p.value}
+                        onMouseDown={() => {
+                          setProfession(p.label);
+                          setProfQuery(p.label);
+                          setProfOpen(false);
+                        }}
+                        style={{
+                          padding: '9px 14px', fontSize: 12.5, cursor: 'pointer',
+                          color: '#ffffff', display: 'flex', alignItems: 'center', gap: 8,
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <span style={{ fontSize: 16 }}>{p.icon}</span>
+                        <span>{p.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>Country</label>

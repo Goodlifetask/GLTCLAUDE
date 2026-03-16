@@ -13,6 +13,7 @@ import { familyRoutes } from './family';
 import { teamRoutes } from './team';
 import { translationsRoutes } from './translations';
 import { categoriesRoutes } from './categories';
+import { professionsRoutes } from './professions';
 
 export async function registerRoutes(server: FastifyInstance) {
   await server.register(authRoutes,         { prefix: '/v1/auth' });
@@ -29,4 +30,5 @@ export async function registerRoutes(server: FastifyInstance) {
   await server.register(teamRoutes,         { prefix: '/v1/team' });
   await server.register(translationsRoutes, { prefix: '/v1/admin/translations' });
   await server.register(categoriesRoutes,   { prefix: '/v1/categories' });
+  await server.register(professionsRoutes,  { prefix: '/v1/professions' });
 }
