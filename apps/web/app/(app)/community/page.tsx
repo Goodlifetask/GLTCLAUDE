@@ -142,7 +142,7 @@ export default function CommunityPage() {
     <>
       {/* Topbar */}
       <div style={{
-        background: 'rgba(20,18,16,0.85)', backdropFilter: 'blur(12px)',
+        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)',
         borderBottom: '1px solid var(--b1)', padding: '0 26px', height: 56,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 40,
