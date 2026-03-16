@@ -69,12 +69,15 @@ export function Sidebar() {
           <div
             style={{
               width: 34, height: 34,
-              background: 'linear-gradient(145deg, #9E7BFF, #6C4EFF)',
-              borderRadius: 9,
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.28)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 16, color: '#ffffff',
-              boxShadow: '0 4px 16px rgba(108,78,255,0.5), inset 0 1px 0 rgba(255,255,255,0.25)',
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: '#FDE68A',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)',
               flexShrink: 0,
+              textShadow: '0 1px 6px rgba(253,230,138,0.6)',
             }}
           >
             G
