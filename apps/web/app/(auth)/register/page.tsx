@@ -190,7 +190,12 @@ export default function RegisterPage() {
       setUser({ ...u, avatarUrl: u.avatar_url ?? null });
       setAccessToken(res.data.tokens.access_token);
       toast.success('Welcome to GoodLifeTask!');
-      router.push('/dashboard');
+      const dest =
+        useCase === 'family'    ? '/family'    :
+        useCase === 'team'      ? '/team'      :
+        useCase === 'community' ? '/community' :
+        '/dashboard';
+      router.push(dest);
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message ?? 'Registration failed');

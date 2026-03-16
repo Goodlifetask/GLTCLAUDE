@@ -11,8 +11,9 @@ export default function FamilyPage() {
   const router = useRouter();
   const qc = useQueryClient();
 
-  const [showCreate, setShowCreate] = useState(false);
+  const [mode, setMode] = useState<'idle' | 'create' | 'join'>('idle');
   const [familyName, setFamilyName] = useState('');
+  const [joinToken, setJoinToken] = useState('');
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'adult' | 'child'>('adult');
@@ -35,10 +36,21 @@ export default function FamilyPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['family'] });
       toast.success('Family created!');
-      setShowCreate(false);
+      setMode('idle');
       setFamilyName('');
     },
     onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Failed to create family'),
+  });
+
+  const joinMutation = useMutation({
+    mutationFn: () => api.family.acceptInvite(joinToken.trim()),
+    onSuccess: (res: any) => {
+      qc.invalidateQueries({ queryKey: ['family'] });
+      toast.success(`Joined ${res?.data?.familyName ?? 'family'}! 🎉`);
+      setMode('idle');
+      setJoinToken('');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Invalid or expired invite token'),
   });
 
   const inviteMutation = useMutation({
@@ -95,6 +107,13 @@ export default function FamilyPage() {
     fontSize: 12, fontWeight: 600, color: 'var(--t2)'
   };
 
+  const btnOutline: React.CSSProperties = {
+    padding: '9px 20px', background: 'transparent',
+    border: '1.5px solid var(--amber)', borderRadius: 'var(--r-sm)',
+    cursor: 'pointer', fontFamily: 'var(--font-body)',
+    fontSize: 13, fontWeight: 700, color: 'var(--amber)'
+  };
+
   return (
     <>
       {/* Topbar */}
@@ -123,27 +142,71 @@ export default function FamilyPage() {
         {isLoading ? (
           <div style={{ color: 'var(--t3)', fontSize: 13 }}>Loading…</div>
         ) : !family ? (
-          /* No family yet */
-          <div style={{ maxWidth: 500, margin: '60px auto', textAlign: 'center' }}>
-            <div style={{ fontSize: 56, marginBottom: 20 }}>👨‍👩‍👧‍👦</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: 'var(--t1)', marginBottom: 10 }}>
-              Create Your Family
+          /* ── No family yet: Choose to Create or Join ── */
+          <div style={{ maxWidth: 540, margin: '48px auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 36 }}>
+              <div style={{ fontSize: 60, marginBottom: 16 }}>👨‍👩‍👧‍👦</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--t1)', marginBottom: 10 }}>
+                Get Started with Family
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--t3)', lineHeight: 1.7 }}>
+                Create a new family group or join one using an invite token sent by a family member.
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: 'var(--t3)', lineHeight: 1.6, marginBottom: 28 }}>
-              Bring your family together. Share tasks, reminders, and stay coordinated with everyone you care about.
-            </div>
-            {!showCreate ? (
-              <button onClick={() => setShowCreate(true)} style={btnPrimary}>
-                Create Family
-              </button>
-            ) : (
-              <div style={{ ...cardStyle, textAlign: 'left' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 12 }}>Name your family</div>
+
+            {/* Two action cards */}
+            {mode === 'idle' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                {/* Create */}
+                <div
+                  onClick={() => setMode('create')}
+                  style={{
+                    padding: '24px 20px', borderRadius: 16, cursor: 'pointer', textAlign: 'center',
+                    background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))',
+                    border: '1.5px solid rgba(245,158,11,0.35)',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(245,158,11,0.7)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(245,158,11,0.35)'}
+                >
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>🏡</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--amber)', marginBottom: 6 }}>Create Family</div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+                    Start a new family group and invite members
+                  </div>
+                </div>
+
+                {/* Join */}
+                <div
+                  onClick={() => setMode('join')}
+                  style={{
+                    padding: '24px 20px', borderRadius: 16, cursor: 'pointer', textAlign: 'center',
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04))',
+                    border: '1.5px solid rgba(99,102,241,0.35)',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(99,102,241,0.7)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(99,102,241,0.35)'}
+                >
+                  <div style={{ fontSize: 36, marginBottom: 10 }}>🔗</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#818cf8', marginBottom: 6 }}>Join a Family</div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+                    Use an invite token from your family member
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Create form */}
+            {mode === 'create' && (
+              <div style={{ ...cardStyle, marginBottom: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>🏡 Create Your Family</div>
+                <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>Give your family a name — you can invite members after.</div>
                 <input
                   value={familyName}
                   onChange={e => setFamilyName(e.target.value)}
                   placeholder="e.g. The Johnson Family"
-                  style={{ ...inputStyle, marginBottom: 12 }}
+                  style={{ ...inputStyle, marginBottom: 14 }}
                   autoFocus
                   onKeyDown={e => { if (e.key === 'Enter' && familyName.trim()) createMutation.mutate(); }}
                 />
@@ -153,7 +216,32 @@ export default function FamilyPage() {
                     disabled={!familyName.trim() || createMutation.isPending}
                     style={{ ...btnPrimary, opacity: !familyName.trim() ? 0.6 : 1 }}
                   >{createMutation.isPending ? 'Creating…' : 'Create Family'}</button>
-                  <button onClick={() => setShowCreate(false)} style={btnSecondary}>Cancel</button>
+                  <button onClick={() => setMode('idle')} style={btnSecondary}>Back</button>
+                </div>
+              </div>
+            )}
+
+            {/* Join form */}
+            {mode === 'join' && (
+              <div style={{ ...cardStyle, marginBottom: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>🔗 Join a Family</div>
+                <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
+                  Paste the invite token shared by your family member. Tokens are valid for 7 days.
+                </div>
+                <input
+                  value={joinToken}
+                  onChange={e => setJoinToken(e.target.value)}
+                  placeholder="Paste invite token here…"
+                  style={{ ...inputStyle, marginBottom: 14, fontFamily: 'monospace', fontSize: 12 }}
+                  autoFocus
+                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => joinMutation.mutate()}
+                    disabled={!joinToken.trim() || joinMutation.isPending}
+                    style={{ ...btnOutline, opacity: !joinToken.trim() ? 0.6 : 1 }}
+                  >{joinMutation.isPending ? 'Joining…' : 'Join Family'}</button>
+                  <button onClick={() => setMode('idle')} style={btnSecondary}>Back</button>
                 </div>
               </div>
             )}
@@ -257,12 +345,19 @@ export default function FamilyPage() {
                 {inviteToken && (
                   <div style={{
                     background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
-                    borderRadius: 'var(--r-sm)', padding: '10px 14px', marginBottom: 12,
-                    fontSize: 12, color: '#10b981'
+                    borderRadius: 'var(--r-sm)', padding: '12px 14px', marginBottom: 14,
                   }}>
-                    <strong>Invite token generated:</strong>
-                    <div style={{ fontFamily: 'monospace', wordBreak: 'break-all', marginTop: 4, fontSize: 11 }}>{inviteToken}</div>
-                    <div style={{ marginTop: 4, color: 'var(--t3)', fontSize: 11 }}>Share this token with the invitee. They can accept it at /accept-invite.</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#10b981', marginBottom: 6 }}>
+                      ✓ Invite token generated — share this with your family member:
+                    </div>
+                    <div style={{
+                      fontFamily: 'monospace', wordBreak: 'break-all', fontSize: 11,
+                      background: 'rgba(0,0,0,0.2)', borderRadius: 6, padding: '8px 10px',
+                      color: '#a7f3d0', marginBottom: 6
+                    }}>{inviteToken}</div>
+                    <div style={{ fontSize: 11, color: 'var(--t3)' }}>
+                      They can enter this token on the Family page to join. Valid for 7 days.
+                    </div>
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 8 }}>

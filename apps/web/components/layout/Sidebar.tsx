@@ -16,11 +16,11 @@ export function Sidebar() {
 
   /* ── Conditional plan item ─────────────────────────────────────── */
   const planItem: NavEntry | null =
-    user?.plan === 'family'
+    (user?.plan === 'family'    || user?.profileCategory === 'family')
       ? { label: 'Family',    icon: '👨‍👩‍👧', href: '/family' }
-      : user?.plan === 'team'
+      : (user?.plan === 'team'  || user?.profileCategory === 'team')
       ? { label: 'Team',      icon: '🏢',    href: '/team' }
-      : user?.plan === 'community'
+      : (user?.plan === 'community' || user?.profileCategory === 'community')
       ? { label: 'Community', icon: '🌐',    href: '/community' }
       : null;
 

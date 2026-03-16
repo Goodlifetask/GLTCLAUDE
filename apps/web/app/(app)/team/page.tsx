@@ -208,13 +208,47 @@ export default function TeamPage() {
         {/* Main content */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {!selectedWs ? (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🏢</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--t1)', marginBottom: 8 }}>
-                No Workspace Selected
+            <div style={{ maxWidth: 520, margin: '40px auto' }}>
+              <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                <div style={{ fontSize: 52, marginBottom: 14 }}>🏢</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--t1)', marginBottom: 10 }}>
+                  Get Started with Team
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--t3)', lineHeight: 1.7 }}>
+                  Create a new workspace for your team, or ask a workspace admin to invite you by email — you'll be added automatically.
+                </div>
               </div>
-              <div style={{ fontSize: 13, color: 'var(--t3)' }}>
-                Create a workspace or select one from the left panel.
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div
+                  onClick={() => setShowCreateWs(true)}
+                  style={{
+                    padding: '22px 18px', borderRadius: 16, cursor: 'pointer', textAlign: 'center',
+                    background: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04))',
+                    border: '1.5px solid rgba(59,130,246,0.35)',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(59,130,246,0.7)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(59,130,246,0.35)'}
+                >
+                  <div style={{ fontSize: 34, marginBottom: 10 }}>🚀</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#60a5fa', marginBottom: 6 }}>Create Workspace</div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+                    Start a new workspace and invite your team
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: '22px 18px', borderRadius: 16, textAlign: 'center',
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.02))',
+                    border: '1.5px solid rgba(99,102,241,0.25)',
+                  }}
+                >
+                  <div style={{ fontSize: 34, marginBottom: 10 }}>📧</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', marginBottom: 6 }}>Join a Workspace</div>
+                  <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+                    Ask your workspace admin to invite you by email — you'll be added automatically
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
