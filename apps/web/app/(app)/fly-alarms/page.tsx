@@ -111,16 +111,17 @@ export default function FlyAlarmsPage() {
       {/* Header */}
       <div style={{
         padding: '24px 32px 20px',
-        borderBottom: '1px solid var(--b1)',
-        background: 'var(--bg-raised)',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        background: 'linear-gradient(135deg, #3D2BB8 0%, #2D1E8A 100%)',
+        flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 24 }}>⚡</span>
           <div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--t1)', margin: 0 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: '#ffffff', margin: 0 }}>
               Fly-Alarms
             </h1>
-            <p style={{ fontSize: 12, color: 'var(--t3)', margin: '2px 0 0' }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '2px 0 0' }}>
               Overdue &amp; firing within 24 hours · auto-refreshes every 30s
             </p>
           </div>

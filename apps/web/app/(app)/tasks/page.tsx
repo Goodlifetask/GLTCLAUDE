@@ -115,7 +115,7 @@ export default function TasksPage() {
         </div>
 
         {/* Grid */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 32px 32px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 32px 32px' }}>
           {isLoading ? (
             <div style={{ textAlign: 'center', paddingTop: 80, color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
               Loading categories…
