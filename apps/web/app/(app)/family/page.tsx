@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/auth';
 import { api } from '../../../lib/api';
@@ -8,7 +7,6 @@ import toast from 'react-hot-toast';
 
 export default function FamilyPage() {
   const { user } = useAuthStore();
-  const router = useRouter();
   const qc = useQueryClient();
 
   const [mode, setMode] = useState<'idle' | 'create' | 'join'>('idle');
@@ -18,6 +16,13 @@ export default function FamilyPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'adult' | 'child'>('adult');
   const [inviteToken, setInviteToken] = useState('');
+
+  /* ── New reminder form state ─────────────────────────────────── */
+  const [showNewReminder, setShowNewReminder] = useState(false);
+  const [reminderTitle,   setReminderTitle]   = useState('');
+  const [reminderDate,    setReminderDate]     = useState('');
+  const [reminderAssignee, setReminderAssignee] = useState('');
+  const [reminderPriority, setReminderPriority] = useState<'normal' | 'high' | 'urgent'>('normal');
 
   const { data: familyData, isLoading } = useQuery({
     queryKey: ['family'],
@@ -71,6 +76,24 @@ export default function FamilyPage() {
       toast.success('Member removed');
     },
     onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Failed to remove member'),
+  });
+
+  const createReminderMutation = useMutation({
+    mutationFn: () => api.family.createReminder({
+      title:       reminderTitle.trim(),
+      fireAt:      reminderDate || undefined,
+      assigneeId:  reminderAssignee || undefined,
+      priority:    reminderPriority,
+      shareScope:  'family',
+      type:        'task',
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['family-reminders'] });
+      toast.success('Reminder created!');
+      setShowNewReminder(false);
+      setReminderTitle(''); setReminderDate(''); setReminderAssignee(''); setReminderPriority('normal');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message ?? 'Failed to create reminder'),
   });
 
   const family = familyData?.data;
@@ -376,14 +399,98 @@ export default function FamilyPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <span style={labelStyle}>Shared Reminders</span>
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => setShowNewReminder(v => !v)}
                   style={{ ...btnSecondary, fontSize: 11, padding: '6px 12px' }}
                 >+ Add Reminder</button>
               </div>
 
+              {/* Inline create form */}
+              {showNewReminder && (
+                <div style={{
+                  background: 'var(--bg)', border: '1px solid var(--b1)',
+                  borderRadius: 'var(--r-sm)', padding: '16px', marginBottom: 16,
+                }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--t1)', marginBottom: 12 }}>
+                    New Family Reminder
+                  </div>
+
+                  {/* Title */}
+                  <input
+                    value={reminderTitle}
+                    onChange={e => setReminderTitle(e.target.value)}
+                    placeholder="What needs to be done?"
+                    style={{ ...inputStyle, marginBottom: 10 }}
+                    autoFocus
+                  />
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                    {/* Date/time */}
+                    <div>
+                      <label style={{ fontSize: 11, color: 'var(--t3)', display: 'block', marginBottom: 4 }}>Date & Time</label>
+                      <input
+                        type="datetime-local"
+                        value={reminderDate}
+                        onChange={e => setReminderDate(e.target.value)}
+                        style={{ ...inputStyle, colorScheme: 'light' }}
+                      />
+                    </div>
+
+                    {/* Assign to */}
+                    <div>
+                      <label style={{ fontSize: 11, color: 'var(--t3)', display: 'block', marginBottom: 4 }}>Assign to</label>
+                      <select
+                        value={reminderAssignee}
+                        onChange={e => setReminderAssignee(e.target.value)}
+                        style={{ ...inputStyle, cursor: 'pointer' }}
+                      >
+                        <option value="">— Unassigned —</option>
+                        {(family?.members ?? []).map((m: any) => (
+                          <option key={m.userId} value={m.userId}>
+                            {m.user?.name}{m.userId === user?.id ? ' (me)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Priority */}
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+                    {(['normal', 'high', 'urgent'] as const).map(p => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setReminderPriority(p)}
+                        style={{
+                          padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
+                          fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600,
+                          border: `1px solid ${reminderPriority === p
+                            ? p === 'urgent' ? 'var(--coral)' : p === 'high' ? '#f59e0b' : 'var(--amber)'
+                            : 'var(--b1)'}`,
+                          background: reminderPriority === p
+                            ? p === 'urgent' ? 'var(--coral-bg)' : p === 'high' ? 'rgba(245,158,11,0.1)' : 'var(--amber-glow)'
+                            : 'transparent',
+                          color: reminderPriority === p
+                            ? p === 'urgent' ? 'var(--coral)' : p === 'high' ? '#d97706' : 'var(--amber)'
+                            : 'var(--t3)',
+                        }}
+                      >{p === 'normal' ? '● Normal' : p === 'high' ? '▲ High' : '🔴 Urgent'}</button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => createReminderMutation.mutate()}
+                      disabled={!reminderTitle.trim() || createReminderMutation.isPending}
+                      style={{ ...btnPrimary, opacity: !reminderTitle.trim() ? 0.6 : 1 }}
+                    >{createReminderMutation.isPending ? 'Saving…' : 'Create Reminder'}</button>
+                    <button onClick={() => setShowNewReminder(false)} style={btnSecondary}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
               {reminders.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--t4)', fontSize: 13 }}>
-                  No shared reminders yet. Create a reminder and set share scope to "family".
+                  No shared reminders yet. Click "+ Add Reminder" to create one.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -408,8 +515,8 @@ export default function FamilyPage() {
                       </div>
                       {r.assignee && (
                         <div style={{
-                          fontSize: 10, padding: '2px 8px', borderRadius: 4,
-                          background: 'rgba(255,255,255,0.06)', color: 'var(--t3)'
+                          fontSize: 11, padding: '3px 10px', borderRadius: 20,
+                          background: 'var(--amber-glow)', color: 'var(--amber)', fontWeight: 600,
                         }}>→ {r.assignee.name}</div>
                       )}
                       <div style={{
