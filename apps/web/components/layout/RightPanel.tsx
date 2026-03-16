@@ -19,12 +19,12 @@ const MONTHS = ['January','February','March','April','May','June',
 const DOWS_S = ['S','M','T','W','T','F','S'];
 
 const TYPE_BTNS = [
-  { type: 'task',      icon: '✓',  label: 'Task',     color: '#A78BFA' },
-  { type: 'call',      icon: '📞', label: 'Call',     color: '#6EE7B7' },
-  { type: 'email',     icon: '✉️', label: 'Email',    color: '#93C5FD' },
-  { type: 'location',  icon: '📍', label: 'Location', color: '#818CF8' },
+  { type: 'task',      icon: '✓',  label: 'Task',     color: '#FDE68A' },
+  { type: 'call',      icon: '📞', label: 'Call',     color: '#FDE68A' },
+  { type: 'email',     icon: '✉️', label: 'Email',    color: '#FDE68A' },
+  { type: 'location',  icon: '📍', label: 'Location', color: '#FDE68A' },
   { type: 'event',     icon: '📅', label: 'Event',    color: '#FDE68A' },
-  { type: 'recurring', icon: '🔁', label: 'Repeat',   color: '#C4B5FD' },
+  { type: 'recurring', icon: '🔁', label: 'Repeat',   color: '#FDE68A' },
 ];
 
 /* glass input shared style */
@@ -154,13 +154,13 @@ export function RightPanel() {
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                   padding: '10px 4px 8px',
                   borderRadius: 12,
-                  border: active ? `1.5px solid ${btn.color}` : '1.5px solid rgba(255,255,255,0.1)',
+                  border: active ? '1.5px solid #FDE68A' : '1.5px solid rgba(255,255,255,0.1)',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700,
-                  color: active ? btn.color : 'rgba(255,255,255,0.5)',
-                  background: active ? `${btn.color}1A` : 'rgba(255,255,255,0.05)',
+                  color: '#FDE68A',
+                  background: active ? 'rgba(253,230,138,0.15)' : 'rgba(255,255,255,0.05)',
                   transition: 'all 0.15s',
-                  boxShadow: active ? `0 0 12px ${btn.color}33` : 'none',
+                  boxShadow: active ? '0 0 12px rgba(253,230,138,0.35)' : 'none',
                 }}
               >
                 <span style={{ fontSize: 17 }}>{btn.icon}</span>
