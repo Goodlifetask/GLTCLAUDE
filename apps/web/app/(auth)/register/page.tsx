@@ -24,6 +24,41 @@ const PROFESSIONS = [
   'Carpenter', 'Other',
 ];
 
+const USE_CASES = [
+  {
+    value: 'individual',
+    label: 'Just Me',
+    icon: '👤',
+    desc: 'Personal tasks & reminders',
+    color: '#6C4EFF',
+    glow: 'rgba(108,78,255,0.25)',
+  },
+  {
+    value: 'family',
+    label: 'Family',
+    icon: '👨‍👩‍👧',
+    desc: 'Household & family planning',
+    color: '#f59e0b',
+    glow: 'rgba(245,158,11,0.25)',
+  },
+  {
+    value: 'team',
+    label: 'Office / Team',
+    icon: '🏢',
+    desc: 'Work tasks & collaboration',
+    color: '#3b82f6',
+    glow: 'rgba(59,130,246,0.25)',
+  },
+  {
+    value: 'community',
+    label: 'Community',
+    icon: '🌐',
+    desc: 'Groups, clubs & organisations',
+    color: '#10b981',
+    glow: 'rgba(16,185,129,0.25)',
+  },
+];
+
 interface ApiCountry {
   id: string;
   name: string;
@@ -63,6 +98,7 @@ export default function RegisterPage() {
   const { setUser, setAccessToken } = useAuthStore();
   const [showPw, setShowPw]         = useState(false);
   const [profession, setProfession] = useState('');
+  const [useCase, setUseCase]       = useState('individual');
   const [fontSize, setFontSize]     = useState(14);
 
   /* ── DB-backed state ──────────────────────────────────────────── */
@@ -119,10 +155,11 @@ export default function RegisterPage() {
   const mutation = useMutation({
     mutationFn: (data: FormData) => api.auth.register({
       ...data,
-      categories: selInterests,
+      categories:      selInterests,
       profession,
-      country:    selectedCountry,
-      languages:  selLangs,
+      country:         selectedCountry,
+      languages:       selLangs,
+      profile_category: useCase,
     } as any),
     onSuccess: (res: any) => {
       const u = res.data.user;
@@ -265,6 +302,47 @@ export default function RegisterPage() {
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#facc15', marginBottom: 20, letterSpacing: '0.01em' }}>
               Profile Setup
             </h2>
+
+            {/* Use-case selector */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 10 }}>
+                I'm using GoodLifeTask for…
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                {USE_CASES.map(uc => {
+                  const active = useCase === uc.value;
+                  return (
+                    <button
+                      key={uc.value}
+                      type="button"
+                      onClick={() => setUseCase(uc.value)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: active ? `1.5px solid ${uc.color}` : '1px solid rgba(255,255,255,0.12)',
+                        background: active ? uc.glow : 'rgba(255,255,255,0.04)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s',
+                        boxShadow: active ? `0 0 12px ${uc.glow}` : 'none',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      <span style={{ fontSize: 22, flexShrink: 0 }}>{uc.icon}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: active ? uc.color : '#ffffff', lineHeight: 1.2 }}>
+                          {uc.label}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2, lineHeight: 1.3 }}>
+                          {uc.desc}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Profession + Country */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
