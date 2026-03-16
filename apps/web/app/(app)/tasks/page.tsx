@@ -90,24 +90,25 @@ export default function TasksPage() {
   /* ── CATEGORY GRID VIEW ──────────────────────────────────────────── */
   if (!activeCat) {
     return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, background: '#0D0F1E' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, background: 'var(--bg)' }}>
 
         {/* Header */}
         <div style={{
-          padding: '28px 32px 20px',
-          background: 'transparent',
+          padding: '26px 32px 18px',
+          background: 'var(--card)',
+          borderBottom: '1px solid var(--b1)',
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--t1)', margin: 0, letterSpacing: '-0.02em' }}>
                 Task Categories
               </h1>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '4px 0 0' }}>
+              <p style={{ fontSize: 12, color: 'var(--t3)', margin: '4px 0 0' }}>
                 Pick a category to view tasks
               </p>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.55)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--amber)', background: 'var(--amber-glow)', padding: '5px 14px', borderRadius: 20 }}>
               {allTasks.length} Total Task{allTasks.length !== 1 ? 's' : ''}
             </div>
           </div>
