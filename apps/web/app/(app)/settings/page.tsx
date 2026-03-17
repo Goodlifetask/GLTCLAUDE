@@ -38,18 +38,55 @@ const THEMES = [
 ];
 
 const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Español (Spanish)' },
-  { value: 'fr', label: 'Français (French)' },
-  { value: 'de', label: 'Deutsch (German)' },
-  { value: 'pt', label: 'Português (Portuguese)' },
-  { value: 'ar', label: 'العربية (Arabic)' },
-  { value: 'hi', label: 'हिन्दी (Hindi)' },
-  { value: 'zh', label: '中文 (Chinese)' },
-  { value: 'ja', label: '日本語 (Japanese)' },
-  { value: 'ko', label: '한국어 (Korean)' },
-  { value: 'ru', label: 'Русский (Russian)' },
-  { value: 'tr', label: 'Türkçe (Turkish)' },
+  { value: 'en',    label: 'English' },
+  { value: 'en-GB', label: 'English (UK)' },
+  { value: 'es',    label: 'Español (Spanish)' },
+  { value: 'es-MX', label: 'Español — México (Spanish Mexico)' },
+  { value: 'fr',    label: 'Français (French)' },
+  { value: 'fr-CA', label: 'Français — Canada (French Canada)' },
+  { value: 'de',    label: 'Deutsch (German)' },
+  { value: 'pt',    label: 'Português (Portuguese)' },
+  { value: 'pt-BR', label: 'Português — Brasil (Portuguese Brazil)' },
+  { value: 'it',    label: 'Italiano (Italian)' },
+  { value: 'nl',    label: 'Nederlands (Dutch)' },
+  { value: 'pl',    label: 'Polski (Polish)' },
+  { value: 'sv',    label: 'Svenska (Swedish)' },
+  { value: 'da',    label: 'Dansk (Danish)' },
+  { value: 'no',    label: 'Norsk (Norwegian)' },
+  { value: 'fi',    label: 'Suomi (Finnish)' },
+  { value: 'cs',    label: 'Čeština (Czech)' },
+  { value: 'ro',    label: 'Română (Romanian)' },
+  { value: 'hu',    label: 'Magyar (Hungarian)' },
+  { value: 'el',    label: 'Ελληνικά (Greek)' },
+  { value: 'ru',    label: 'Русский (Russian)' },
+  { value: 'uk',    label: 'Українська (Ukrainian)' },
+  { value: 'tr',    label: 'Türkçe (Turkish)' },
+  { value: 'ar',    label: 'العربية (Arabic)' },
+  { value: 'he',    label: 'עברית (Hebrew)' },
+  { value: 'fa',    label: 'فارسی (Persian)' },
+  { value: 'ur',    label: 'اردو (Urdu)' },
+  { value: 'hi',    label: 'हिन्दी (Hindi)' },
+  { value: 'bn',    label: 'বাংলা (Bengali)' },
+  { value: 'ta',    label: 'தமிழ் (Tamil)' },
+  { value: 'te',    label: 'తెలుగు (Telugu)' },
+  { value: 'mr',    label: 'मराठी (Marathi)' },
+  { value: 'gu',    label: 'ગુજરાતી (Gujarati)' },
+  { value: 'pa',    label: 'ਪੰਜਾਬੀ (Punjabi)' },
+  { value: 'ml',    label: 'മലയാളം (Malayalam)' },
+  { value: 'kn',    label: 'ಕನ್ನಡ (Kannada)' },
+  { value: 'zh',    label: '中文简体 (Chinese Simplified)' },
+  { value: 'zh-TW', label: '中文繁體 (Chinese Traditional)' },
+  { value: 'ja',    label: '日本語 (Japanese)' },
+  { value: 'ko',    label: '한국어 (Korean)' },
+  { value: 'th',    label: 'ภาษาไทย (Thai)' },
+  { value: 'vi',    label: 'Tiếng Việt (Vietnamese)' },
+  { value: 'id',    label: 'Bahasa Indonesia (Indonesian)' },
+  { value: 'ms',    label: 'Bahasa Melayu (Malay)' },
+  { value: 'tl',    label: 'Filipino (Filipino)' },
+  { value: 'sw',    label: 'Kiswahili (Swahili)' },
+  { value: 'am',    label: 'አማርኛ (Amharic)' },
+  { value: 'yo',    label: 'Yorùbá (Yoruba)' },
+  { value: 'ha',    label: 'Hausa' },
 ];
 
 export default function SettingsPage() {
@@ -481,10 +518,17 @@ export default function SettingsPage() {
                 setLanguage(e.target.value);
                 updateProfileMutation.mutate({ locale: e.target.value });
               }}
-              style={{ ...inputStyle, cursor: 'pointer' }}
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+                background: '#ffffff',
+                color: '#1a1a2e',
+              }}
             >
               {LANGUAGES.map(lang => (
-                <option key={lang.value} value={lang.value}>{lang.label}</option>
+                <option key={lang.value} value={lang.value} style={{ background: '#ffffff', color: '#1a1a2e' }}>
+                  {lang.label}
+                </option>
               ))}
             </select>
           </div>
