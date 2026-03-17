@@ -37,6 +37,21 @@ const THEMES = [
   { value: 'system', label: 'System' },
 ];
 
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español (Spanish)' },
+  { value: 'fr', label: 'Français (French)' },
+  { value: 'de', label: 'Deutsch (German)' },
+  { value: 'pt', label: 'Português (Portuguese)' },
+  { value: 'ar', label: 'العربية (Arabic)' },
+  { value: 'hi', label: 'हिन्दी (Hindi)' },
+  { value: 'zh', label: '中文 (Chinese)' },
+  { value: 'ja', label: '日本語 (Japanese)' },
+  { value: 'ko', label: '한국어 (Korean)' },
+  { value: 'ru', label: 'Русский (Russian)' },
+  { value: 'tr', label: 'Türkçe (Turkish)' },
+];
+
 export default function SettingsPage() {
   const { user, setUser, logout } = useAuthStore();
   const router = useRouter();
@@ -46,6 +61,7 @@ export default function SettingsPage() {
   const [nameInput, setNameInput] = useState(user?.name || '');
   const [timezone, setTimezone] = useState(user?.timezone || 'UTC');
   const [theme, setTheme] = useState(user?.theme || 'dark');
+  const [language, setLanguage] = useState((user as any)?.language || 'en');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [selectedPersona, setSelectedPersona] = useState((user as any)?.persona || '');
@@ -452,6 +468,23 @@ export default function SettingsPage() {
             >
               {TIMEZONES.map(tz => (
                 <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Language */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Language</label>
+            <select
+              value={language}
+              onChange={e => {
+                setLanguage(e.target.value);
+                updateProfileMutation.mutate({ language: e.target.value });
+              }}
+              style={{ ...inputStyle, cursor: 'pointer' }}
+            >
+              {LANGUAGES.map(lang => (
+                <option key={lang.value} value={lang.value}>{lang.label}</option>
               ))}
             </select>
           </div>

@@ -25,7 +25,7 @@ const TYPE_BG: Record<string, string> = {
   location: 'var(--mauve-bg)', event: 'var(--rose-bg)'
 };
 const TYPE_ICON: Record<string, string> = {
-  call: 'ðŸ“ž', task: 'âœ“', email: 'âœ‰ï¸', location: 'ðŸ“', event: 'ðŸ“…'
+  call: '📞', task: '✓', email: '✉️', location: '📍', event: '📅'
 };
 const TYPE_LABEL: Record<string, string> = {
   call: 'Call', task: 'Task', email: 'Email', location: 'Location', event: 'Event'
@@ -147,11 +147,11 @@ export default function DashboardPage() {
             {greeting}, {firstName}.
           </div>
           <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>
-            {dateLabel} Â· {stats.upcoming} reminders pending today
+            {dateLabel} · {stats.upcoming} reminders pending today
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {['ðŸ”', 'ðŸ””'].map(icon => (
+          {['🔍', '🔔'].map(icon => (
             <div key={icon} style={{
               width: 34, height: 34, borderRadius: 'var(--r-sm)',
               border: '1px solid var(--b1)', background: 'var(--card)',
@@ -166,7 +166,7 @@ export default function DashboardPage() {
               border: '1px solid var(--b1)', background: 'var(--card)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 15, cursor: 'pointer', color: 'var(--t2)'
-            }}>âš™</div>
+            }}>⚙</div>
           <button
             onClick={() => setShowModal(true)}
             style={{
@@ -240,7 +240,7 @@ export default function DashboardPage() {
               display: 'flex', alignItems: 'center', gap: 6
             }}>
               {TYPE_ICON[type]} {TYPE_LABEL[type] || type}
-              <span onClick={() => router.push('/dashboard')} style={{ marginLeft: 4, opacity: 0.6, fontSize: 11 }}>âœ•</span>
+              <span onClick={() => router.push('/dashboard')} style={{ marginLeft: 4, opacity: 0.6, fontSize: 11 }}>✕</span>
             </div>
           )}
         </div>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--t3)', fontSize: 13 }}>Loading...</div>
         ) : reminders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: 42, marginBottom: 14, opacity: 0.35 }}>âœ¦</div>
+            <div style={{ fontSize: 42, marginBottom: 14, opacity: 0.35 }}>✦</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, fontStyle: 'italic', color: 'var(--t2)', marginBottom: 6 }}>Nothing here yet.</div>
             <div style={{ fontSize: 12, color: 'var(--t3)' }}>Add a reminder to get started.</div>
           </div>
@@ -343,7 +343,7 @@ function ReminderCard({
           transition: 'all 0.12s'
         }}
         title={isDone ? 'Completed' : 'Mark complete'}
-      >{isDone ? 'âœ“' : ''}</div>
+      >{isDone ? '✓' : ''}</div>
 
       {/* Main content */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -354,7 +354,7 @@ function ReminderCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {reminder.fireAt && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: isOverdue ? 'var(--coral)' : 'var(--t3)', fontWeight: isOverdue ? 600 : 500 }}>
-              {isOverdue ? 'âš¡ ' : ''}{new Date(reminder.fireAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+              {isOverdue ? '⚡ ' : ''}{new Date(reminder.fireAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
             </span>
           )}
           <span style={{
@@ -362,9 +362,9 @@ function ReminderCard({
             fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
             background: TYPE_BG[type] || 'var(--amber-glow)',
             color: TYPE_COLOR[type] || 'var(--amber)'
-          }}>{TYPE_ICON[type] || 'âœ“'} {TYPE_LABEL[type] || type}</span>
+          }}>{TYPE_ICON[type] || '✓'} {TYPE_LABEL[type] || type}</span>
           {reminder.is_recurring && (
-            <span style={{ fontSize: 10, color: 'var(--t4)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>ðŸ” recurring</span>
+            <span style={{ fontSize: 10, color: 'var(--t4)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>🔁 recurring</span>
           )}
         </div>
       </div>
@@ -387,7 +387,7 @@ function ReminderCard({
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', fontSize: 13, color: 'var(--t2)'
               }}
-            >â°</button>
+            >⏰</button>
             {snoozeOpen && (
               <div style={{
                 position: 'absolute', right: 0, top: 34,
