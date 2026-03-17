@@ -61,7 +61,7 @@ export default function SettingsPage() {
   const [nameInput, setNameInput] = useState(user?.name || '');
   const [timezone, setTimezone] = useState(user?.timezone || 'UTC');
   const [theme, setTheme] = useState(user?.theme || 'dark');
-  const [language, setLanguage] = useState((user as any)?.language || 'en');
+  const [language, setLanguage] = useState(user?.locale || 'en');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [selectedPersona, setSelectedPersona] = useState((user as any)?.persona || '');
@@ -479,7 +479,7 @@ export default function SettingsPage() {
               value={language}
               onChange={e => {
                 setLanguage(e.target.value);
-                updateProfileMutation.mutate({ language: e.target.value });
+                updateProfileMutation.mutate({ locale: e.target.value });
               }}
               style={{ ...inputStyle, cursor: 'pointer' }}
             >
