@@ -157,6 +157,18 @@
     "delete": "Delete",
     "close": "Close",
     "add": "+ Add",
-    "search": "Search…"
+    "search": "Search…",
+    "createAccount": "Create Account",
+    "creating": "Creating account...",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Login"
+  },
+  "register": {
+    "accountDetails": "Account Details",
+    "fullName": "Full Name",
+    "password": "Password",
+    "profileSetup": "Profile Setup",
+    "createAccount": "Create Account",
+    "creating": "Creating account…"
   }
 }

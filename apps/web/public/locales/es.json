@@ -157,6 +157,16 @@
     "delete": "Eliminar",
     "close": "Cerrar",
     "add": "+ Añadir",
-    "search": "Buscar…"
+    "search": "Buscar…",
+    "createAccount": "Crear cuenta",
+    "creating": "Creando cuenta...",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "login": "Iniciar sesión"
+  },
+  "register": {
+    "accountDetails": "Datos de la cuenta",
+    "fullName": "Nombre completo",
+    "password": "Contraseña",
+    "profileSetup": "Configuración del perfil"
   }
 }

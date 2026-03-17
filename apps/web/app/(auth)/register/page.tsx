@@ -10,6 +10,24 @@ import Link from 'next/link';
 import { api } from '../../../lib/api';
 import { useAuthStore } from '../../../store/auth';
 import toast from 'react-hot-toast';
+import '../../../lib/i18n';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../lib/i18n';
+
+const UI_LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'pt', name: 'Português' },
+  { code: 'ar', name: 'العربية' },
+  { code: 'hi', name: 'हिन्दी' },
+  { code: 'zh', name: '中文' },
+  { code: 'ja', name: '日本語' },
+  { code: 'ko', name: '한국어' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'tr', name: 'Türkçe' },
+];
 
 const schema = z.object({
   name:     z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -97,10 +115,17 @@ const selectStyle: React.CSSProperties = {
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser, setAccessToken } = useAuthStore();
+  const { t } = useTranslation();
   const [showPw, setShowPw]         = useState(false);
   const [profession, setProfession] = useState('');
   const [useCase, setUseCase]       = useState('individual');
   const [fontSize, setFontSize]     = useState(14);
+  const [uiLocale, setUiLocale]     = useState('en');
+
+  function handleLocaleChange(code: string) {
+    setUiLocale(code);
+    i18n.changeLanguage(code);
+  }
 
   /* ── DB-backed state ──────────────────────────────────────────── */
   const [countries,       setCountries]       = useState<ApiCountry[]>([]);
@@ -185,6 +210,7 @@ export default function RegisterPage() {
       country:         selectedCountry,
       languages:       selLangs,
       profile_category: useCase,
+      locale:          uiLocale,
     } as any),
     onSuccess: (res: any) => {
       const u = res.data.user;
@@ -240,8 +266,33 @@ export default function RegisterPage() {
       position: 'relative',
     }}>
 
-      {/* Font size controls */}
-      <div style={{ position: 'absolute', top: 16, right: 20, display: 'flex', gap: 6 }}>
+      {/* Top controls: language picker + font size */}
+      <div style={{ position: 'absolute', top: 16, right: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Language selector */}
+        <select
+          value={uiLocale}
+          onChange={e => handleLocaleChange(e.target.value)}
+          style={{
+            background: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            borderRadius: 8,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 600,
+            padding: '5px 8px',
+            cursor: 'pointer',
+            outline: 'none',
+            fontFamily: 'inherit',
+          }}
+        >
+          {UI_LANGUAGES.map(l => (
+            <option key={l.code} value={l.code} style={{ background: '#1e1460', color: '#fff' }}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Font size controls */}
         {[12, 14, 16].map((s, i) => (
           <button key={s} onClick={() => setFontSize(s)} style={{
             width: 32, height: 32, borderRadius: 8,
@@ -274,7 +325,7 @@ export default function RegisterPage() {
           GoodLifeTask
         </h1>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '4px 0 0' }}>
-          Create your account
+          {t('common.createAccount', 'Create your account')}
         </p>
       </div>
 
@@ -296,23 +347,23 @@ export default function RegisterPage() {
           {/* ── LEFT: Account Details ── */}
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#C4B5FD', marginBottom: 20, letterSpacing: '0.01em' }}>
-              Account Details
+              {t('register.accountDetails', 'Account Details')}
             </h2>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>Full Name</label>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{t('register.fullName', 'Full Name')}</label>
               <input {...register('name')} placeholder="" style={inputStyle} autoComplete="name" />
               {errors.name && <p style={{ color: '#f87171', fontSize: 11, marginTop: 4 }}>{errors.name.message}</p>}
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>Email Address</label>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{t('settings.email', 'Email Address')}</label>
               <input type="email" {...register('email')} placeholder="" style={inputStyle} autoComplete="email" />
               {errors.email && <p style={{ color: '#f87171', fontSize: 11, marginTop: 4 }}>{errors.email.message}</p>}
             </div>
 
             <div style={{ marginBottom: 8 }}>
-              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>Password</label>
+              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{t('register.password', 'Password')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -338,7 +389,7 @@ export default function RegisterPage() {
           {/* ── RIGHT: Profile Setup ── */}
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#FDE68A', marginBottom: 20, letterSpacing: '0.01em' }}>
-              Profile Setup
+              {t('register.profileSetup', 'Profile Setup')}
             </h2>
 
             {/* Use-case selector */}
@@ -565,14 +616,14 @@ export default function RegisterPage() {
             transition: 'all 0.2s', fontFamily: 'inherit',
           }}
         >
-          {mutation.isPending ? 'Creating account…' : '🎯 Create Account'}
+          {mutation.isPending ? t('common.creating', 'Creating account…') : `🎯 ${t('common.createAccount', 'Create Account')}`}
         </button>
 
         {/* Footer links */}
         <div style={{ textAlign: 'center', marginTop: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-            Already have an account?{' '}
-            <Link href="/login" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>Login</Link>
+            {t('common.alreadyHaveAccount', 'Already have an account?')}{' '}
+            <Link href="/login" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>{t('common.login', 'Login')}</Link>
           </p>
           <Link href="/verify" style={{ fontSize: 13, color: '#60a5fa', textDecoration: 'none' }}>
             Has verification code?
