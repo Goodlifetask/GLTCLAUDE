@@ -7,6 +7,7 @@ import { useAuthStore } from '../../../store/auth';
 import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
 import { REMINDER_CATEGORIES } from '@glt/shared';
+import { useTranslation } from 'react-i18next';
 
 const PERSONAS = [
   { value: 'student',       label: 'Student',       icon: '📚', desc: 'Classes, assignments, study sessions' },
@@ -29,12 +30,6 @@ const TIMEZONES = [
   'America/Los_Angeles', 'America/Toronto', 'Europe/London', 'Europe/Paris',
   'Europe/Berlin', 'Europe/Madrid', 'Asia/Tokyo', 'Asia/Shanghai',
   'Asia/Kolkata', 'Asia/Singapore', 'Australia/Sydney', 'Pacific/Auckland',
-];
-
-const THEMES = [
-  { value: 'dark', label: 'Dark (default)' },
-  { value: 'light', label: 'Light' },
-  { value: 'system', label: 'System' },
 ];
 
 const LANGUAGES = [
@@ -93,6 +88,7 @@ export default function SettingsPage() {
   const { user, setUser, logout } = useAuthStore();
   const router = useRouter();
   const qc = useQueryClient();
+  const { t } = useTranslation();
 
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(user?.name || '');
@@ -126,6 +122,12 @@ export default function SettingsPage() {
   const [newCatIcon, setNewCatIcon] = useState('');
   const [newCatColor, setNewCatColor] = useState('#6C4EFF');
 
+  const THEMES = [
+    { value: 'dark', label: t('settings.theme_dark') },
+    { value: 'light', label: t('settings.theme_light') },
+    { value: 'system', label: t('settings.theme_system') },
+  ];
+
   function toggleMyCategory(slug: string) {
     setMyCategoryIds(prev =>
       prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
@@ -155,28 +157,28 @@ export default function SettingsPage() {
         setUser({ ...user, ...updated });
       }
       qc.invalidateQueries({ queryKey: ['me'] });
-      toast.success('Profile updated!');
+      toast.success(t('settings.profileUpdated'));
       setEditingName(false);
     },
-    onError: () => toast.error('Failed to update profile'),
+    onError: () => toast.error(t('settings.profileUpdateFailed')),
   });
 
   const exportMutation = useMutation({
     mutationFn: () => api.users.requestExport(),
-    onSuccess: () => toast.success('Export requested! You will receive an email shortly.'),
-    onError: () => toast.error('Failed to request export'),
+    onSuccess: () => toast.success(t('settings.exportRequested')),
+    onError: () => toast.error(t('settings.exportFailed')),
   });
 
   const changePasswordMutation = useMutation({
     mutationFn: () => api.users.changePassword(currentPw, newPw),
     onSuccess: () => {
-      toast.success('Password updated successfully!');
+      toast.success(t('settings.passwordUpdated'));
       setCurrentPw('');
       setNewPw('');
       setConfirmPw('');
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? 'Failed to update password';
+      const msg = err?.response?.data?.message ?? t('settings.passwordFailed');
       toast.error(msg);
     },
   });
@@ -184,11 +186,11 @@ export default function SettingsPage() {
   const deleteAccountMutation = useMutation({
     mutationFn: () => api.users.deleteAccount(),
     onSuccess: () => {
-      toast.success('Account deleted');
+      toast.success(t('settings.accountDeleted'));
       logout();
       router.push('/login');
     },
-    onError: () => toast.error('Failed to delete account'),
+    onError: () => toast.error(t('settings.accountDeleteFailed')),
   });
 
   const initials = user?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'U';
@@ -226,10 +228,10 @@ export default function SettingsPage() {
       }}>
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, color: 'var(--t1)', letterSpacing: '-0.01em' }}>
-            Settings
+            {t('settings.title')}
           </div>
           <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>
-            Manage your account and preferences
+            {t('settings.subtitle')}
           </div>
         </div>
         <button
@@ -240,7 +242,7 @@ export default function SettingsPage() {
             cursor: 'pointer', fontFamily: 'var(--font-body)',
             fontSize: 12, fontWeight: 600, color: 'var(--t2)'
           }}
-        >← Back to Dashboard</button>
+        >{t('settings.backToDashboard')}</button>
       </div>
 
       {/* Content */}
@@ -248,7 +250,7 @@ export default function SettingsPage() {
 
         {/* Profile Section */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>Profile</span>
+          <span style={labelStyle}>{t('settings.profile')}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 22 }}>
             <div style={{
               width: 64, height: 64, borderRadius: 18,
@@ -265,13 +267,13 @@ export default function SettingsPage() {
                 display: 'inline-block', fontSize: 10, color: 'var(--amber)',
                 background: 'var(--amber-glow)', padding: '2px 8px',
                 borderRadius: 4, marginTop: 5, fontWeight: 700
-              }}>✦ {user?.plan || 'free'} plan</div>
+              }}>✦ {user?.plan || 'free'} {t('settings.planLabel')}</div>
             </div>
           </div>
 
           {/* Name field */}
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Display Name</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>{t('settings.displayName')}</label>
             {editingName ? (
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
@@ -295,7 +297,7 @@ export default function SettingsPage() {
                     cursor: 'pointer', fontFamily: 'var(--font-body)',
                     fontSize: 12, fontWeight: 700
                   }}
-                >{updateProfileMutation.isPending ? '...' : 'Save'}</button>
+                >{updateProfileMutation.isPending ? '...' : t('settings.save')}</button>
                 <button
                   onClick={() => { setEditingName(false); setNameInput(user?.name || ''); }}
                   style={{
@@ -304,7 +306,7 @@ export default function SettingsPage() {
                     cursor: 'pointer', fontFamily: 'var(--font-body)',
                     fontSize: 12, fontWeight: 600, color: 'var(--t3)'
                   }}
-                >Cancel</button>
+                >{t('settings.cancel')}</button>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -317,23 +319,23 @@ export default function SettingsPage() {
                     cursor: 'pointer', fontFamily: 'var(--font-body)',
                     fontSize: 12, fontWeight: 600, color: 'var(--t2)'
                   }}
-                >Edit</button>
+                >{t('settings.edit')}</button>
               </div>
             )}
           </div>
 
           {/* Email field (read only) */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Email</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>{t('settings.email')}</label>
             <div style={{ ...inputStyle, color: 'var(--t3)', cursor: 'default' }}>{user?.email}</div>
           </div>
         </div>
 
         {/* Your Profile / Persona Section */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>Your Profile</span>
+          <span style={labelStyle}>{t('settings.yourProfile')}</span>
           <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
-            Tell us about yourself so we can suggest relevant task templates for your daily life.
+            {t('settings.personaSubtitle')}
           </div>
 
           {/* Persona grid */}
@@ -364,13 +366,13 @@ export default function SettingsPage() {
           {/* Occupation text field */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>
-              Job Title / Occupation <span style={{ color: 'var(--t4)', fontWeight: 400 }}>(optional)</span>
+              {t('settings.jobTitle')} <span style={{ color: 'var(--t4)', fontWeight: 400 }}>{t('settings.jobTitleOptional')}</span>
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 value={occupation}
                 onChange={e => setOccupation(e.target.value)}
-                placeholder="e.g. Senior Software Engineer, High School Teacher…"
+                placeholder={t('settings.jobTitlePlaceholder')}
                 style={{ ...inputStyle, flex: 1 }}
                 onKeyDown={e => {
                   if (e.key === 'Enter') updateProfileMutation.mutate({ occupation: occupation.trim() });
@@ -385,16 +387,16 @@ export default function SettingsPage() {
                   cursor: 'pointer', fontFamily: 'var(--font-body)',
                   fontSize: 12, fontWeight: 600, color: 'var(--t2)', flexShrink: 0
                 }}
-              >Save</button>
+              >{t('settings.save')}</button>
             </div>
           </div>
         </div>
 
         {/* My Categories Section */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>My Categories</span>
+          <span style={labelStyle}>{t('settings.myCategories')}</span>
           <div style={{ fontSize: 12, color: 'var(--t3)', marginBottom: 16 }}>
-            Choose which categories you use and add your own custom ones.
+            {t('settings.categoriesSubtitle')}
           </div>
 
           {/* System category toggles */}
@@ -425,7 +427,7 @@ export default function SettingsPage() {
           {/* Custom categories list */}
           {customCats.length > 0 && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 8 }}>Your Custom Categories</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 8 }}>{t('settings.customCategories')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {customCats.map((cat, i) => (
                   <div key={i} style={{
@@ -452,12 +454,12 @@ export default function SettingsPage() {
 
           {/* Add new custom category */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 8 }}>Add Custom Category</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 8 }}>{t('settings.addCustomCategory')}</div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
               <input
                 value={newCatName}
                 onChange={e => setNewCatName(e.target.value)}
-                placeholder="Category name"
+                placeholder={t('settings.categoryName')}
                 maxLength={60}
                 style={{ ...inputStyle, flex: '1 1 130px' }}
                 onKeyDown={e => e.key === 'Enter' && handleAddCustomCat()}
@@ -483,18 +485,18 @@ export default function SettingsPage() {
                   cursor: 'pointer', fontFamily: 'var(--font-body)',
                   fontSize: 12, fontWeight: 700, flexShrink: 0,
                 }}
-              >+ Add</button>
+              >{t('common.add')}</button>
             </div>
           </div>
         </div>
 
         {/* Preferences Section */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>Preferences</span>
+          <span style={labelStyle}>{t('settings.preferences')}</span>
 
           {/* Timezone */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Timezone</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>{t('settings.timezone')}</label>
             <select
               value={timezone}
               onChange={e => {
@@ -511,7 +513,7 @@ export default function SettingsPage() {
 
           {/* Language */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Language</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>{t('settings.language')}</label>
             <select
               value={language}
               onChange={e => {
@@ -535,24 +537,24 @@ export default function SettingsPage() {
 
           {/* Theme */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 8 }}>Theme</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 8 }}>{t('settings.theme')}</label>
             <div style={{ display: 'flex', gap: 8 }}>
-              {THEMES.map(t => (
+              {THEMES.map(th => (
                 <div
-                  key={t.value}
+                  key={th.value}
                   onClick={() => {
-                    setTheme(t.value);
-                    updateProfileMutation.mutate({ theme: t.value });
+                    setTheme(th.value);
+                    updateProfileMutation.mutate({ theme: th.value });
                   }}
                   style={{
                     flex: 1, padding: '10px 12px', borderRadius: 'var(--r-sm)',
-                    border: `1px solid ${theme === t.value ? 'rgba(124,58,237,0.4)' : 'var(--b1)'}`,
+                    border: `1px solid ${theme === th.value ? 'rgba(124,58,237,0.4)' : 'var(--b1)'}`,
                     cursor: 'pointer', textAlign: 'center',
                     fontSize: 12, fontWeight: 600,
-                    color: theme === t.value ? 'var(--amber)' : 'var(--t2)',
-                    background: theme === t.value ? 'var(--amber-glow)' : 'var(--bg-raised)',
+                    color: theme === th.value ? 'var(--amber)' : 'var(--t2)',
+                    background: theme === th.value ? 'var(--amber-glow)' : 'var(--bg-raised)',
                   }}
-                >{t.label}</div>
+                >{th.label}</div>
               ))}
             </div>
           </div>
@@ -560,15 +562,15 @@ export default function SettingsPage() {
 
         {/* Notifications Section */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>Notifications</span>
+          <span style={labelStyle}>{t('settings.notifications')}</span>
           <div style={{ fontSize: 11, color: 'var(--t4)', marginBottom: 14 }}>
-            Configure how and when you receive notifications.
+            {t('settings.notificationsSubtitle')}
           </div>
           {[
-            { key: 'email', label: 'Email reminders', desc: 'Receive reminder alerts via email' },
-            { key: 'push', label: 'Push notifications', desc: 'Browser and mobile push alerts' },
-            { key: 'reminders', label: 'Reminder digest', desc: 'Daily summary of upcoming reminders' },
-            { key: 'weekly', label: 'Weekly report', desc: 'Weekly productivity summary' },
+            { key: 'email', label: t('settings.notif_email'), desc: t('settings.notif_email_desc') },
+            { key: 'push', label: t('settings.notif_push'), desc: t('settings.notif_push_desc') },
+            { key: 'reminders', label: t('settings.notif_reminders'), desc: t('settings.notif_reminders_desc') },
+            { key: 'weekly', label: t('settings.notif_weekly'), desc: t('settings.notif_weekly_desc') },
           ].map(({ key, label, desc }) => (
             <div key={key} style={{ ...rowStyle, borderBottom: key === 'weekly' ? 'none' : '1px solid var(--b1)' }}>
               <div>
@@ -598,21 +600,21 @@ export default function SettingsPage() {
 
         {/* Security Section */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>Security</span>
+          <span style={labelStyle}>{t('settings.security')}</span>
 
           <div style={{ marginBottom: 4 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 4 }}>Change Password</div>
-            <div style={{ fontSize: 11, color: 'var(--t4)', marginBottom: 16 }}>Update your password. You will need your current password to confirm.</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 4 }}>{t('settings.changePassword')}</div>
+            <div style={{ fontSize: 11, color: 'var(--t4)', marginBottom: 16 }}>{t('settings.changePasswordDesc')}</div>
 
             {/* Current password */}
             <div style={{ marginBottom: 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Current Password</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>{t('settings.currentPassword')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showCurrPw ? 'text' : 'password'}
                   value={currentPw}
                   onChange={e => setCurrentPw(e.target.value)}
-                  placeholder="Your current password"
+                  placeholder={t('settings.currentPasswordPlaceholder')}
                   style={{ ...inputStyle, paddingRight: 40 }}
                   autoComplete="current-password"
                 />
@@ -633,13 +635,13 @@ export default function SettingsPage() {
 
             {/* New password */}
             <div style={{ marginBottom: 10 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>New Password</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>{t('settings.newPassword')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showNewPw ? 'text' : 'password'}
                   value={newPw}
                   onChange={e => setNewPw(e.target.value)}
-                  placeholder="Min. 8 characters"
+                  placeholder={t('settings.newPasswordPlaceholder')}
                   style={{ ...inputStyle, paddingRight: 40 }}
                   autoComplete="new-password"
                 />
@@ -660,12 +662,12 @@ export default function SettingsPage() {
 
             {/* Confirm new password */}
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>Confirm New Password</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 6 }}>{t('settings.confirmPassword')}</label>
               <input
                 type="password"
                 value={confirmPw}
                 onChange={e => setConfirmPw(e.target.value)}
-                placeholder="Repeat new password"
+                placeholder={t('settings.confirmPasswordPlaceholder')}
                 style={{
                   ...inputStyle,
                   borderColor: confirmPw && confirmPw !== newPw ? 'var(--coral)' : undefined,
@@ -673,14 +675,14 @@ export default function SettingsPage() {
                 autoComplete="new-password"
               />
               {confirmPw && confirmPw !== newPw && (
-                <p style={{ color: 'var(--coral)', fontSize: 11, marginTop: 4 }}>Passwords do not match</p>
+                <p style={{ color: 'var(--coral)', fontSize: 11, marginTop: 4 }}>{t('settings.passwordMismatch')}</p>
               )}
             </div>
 
             <button
               onClick={() => {
-                if (newPw !== confirmPw) { toast.error('Passwords do not match'); return; }
-                if (newPw.length < 8) { toast.error('New password must be at least 8 characters'); return; }
+                if (newPw !== confirmPw) { toast.error(t('settings.passwordsMismatch')); return; }
+                if (newPw.length < 8) { toast.error(t('settings.passwordTooShort')); return; }
                 changePasswordMutation.mutate();
               }}
               disabled={changePasswordMutation.isPending || !currentPw || !newPw || !confirmPw || newPw !== confirmPw}
@@ -692,20 +694,20 @@ export default function SettingsPage() {
                 opacity: changePasswordMutation.isPending || !currentPw || !newPw || !confirmPw || newPw !== confirmPw ? 0.6 : 1,
               }}
             >
-              {changePasswordMutation.isPending ? 'Updating…' : 'Update Password'}
+              {changePasswordMutation.isPending ? t('settings.updatingPassword') : t('settings.updatePassword')}
             </button>
           </div>
         </div>
 
         {/* Account Section */}
         <div style={sectionStyle}>
-          <span style={labelStyle}>Account</span>
+          <span style={labelStyle}>{t('settings.account')}</span>
 
           {/* Export */}
           <div style={rowStyle}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>Export Data</div>
-              <div style={{ fontSize: 11, color: 'var(--t4)' }}>Download all your reminders and data as JSON</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>{t('settings.exportData')}</div>
+              <div style={{ fontSize: 11, color: 'var(--t4)' }}>{t('settings.exportDataDesc')}</div>
             </div>
             <button
               onClick={() => exportMutation.mutate()}
@@ -717,15 +719,15 @@ export default function SettingsPage() {
                 fontSize: 12, fontWeight: 600, color: 'var(--t2)',
                 flexShrink: 0
               }}
-            >{exportMutation.isPending ? 'Requesting...' : 'Export'}</button>
+            >{exportMutation.isPending ? t('settings.exporting') : t('settings.export')}</button>
           </div>
 
           {/* Upgrade (only show for free plan) */}
           {user?.plan === 'free' && (
             <div style={rowStyle}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>Upgrade to Pro</div>
-                <div style={{ fontSize: 11, color: 'var(--t4)' }}>Unlock unlimited reminders, integrations, and more</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>{t('settings.upgradeToPro')}</div>
+                <div style={{ fontSize: 11, color: 'var(--t4)' }}>{t('settings.upgradeDesc')}</div>
               </div>
               <button
                 style={{
@@ -735,15 +737,15 @@ export default function SettingsPage() {
                   fontSize: 12, fontWeight: 700, boxShadow: 'var(--sh-amber)',
                   flexShrink: 0
                 }}
-              >✦ Upgrade</button>
+              >{t('settings.upgrade')}</button>
             </div>
           )}
 
           {/* Sign Out */}
           <div style={rowStyle}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>Sign Out</div>
-              <div style={{ fontSize: 11, color: 'var(--t4)' }}>Sign out of your account on this device</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>{t('settings.signOut')}</div>
+              <div style={{ fontSize: 11, color: 'var(--t4)' }}>{t('settings.signOutDesc')}</div>
             </div>
             <button
               onClick={() => { logout(); router.push('/login'); }}
@@ -754,15 +756,15 @@ export default function SettingsPage() {
                 fontSize: 12, fontWeight: 600, color: 'var(--t2)',
                 flexShrink: 0
               }}
-            >Sign Out</button>
+            >{t('settings.signOut')}</button>
           </div>
 
           {/* Delete Account — danger zone */}
           <div style={{ marginTop: 4, padding: '16px', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 'var(--r)', background: 'rgba(255,80,80,0.04)' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#ff5050', marginBottom: 6 }}>Danger Zone</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#ff5050', marginBottom: 6 }}>{t('settings.dangerZone')}</div>
             {!showDeleteConfirm ? (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 12, color: 'var(--t3)' }}>Permanently delete your account and all data. This cannot be undone.</div>
+                <div style={{ fontSize: 12, color: 'var(--t3)' }}>{t('settings.deleteAccountDesc')}</div>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   style={{
@@ -772,18 +774,18 @@ export default function SettingsPage() {
                     fontSize: 12, fontWeight: 700, color: '#ff5050',
                     flexShrink: 0, marginLeft: 14
                   }}
-                >Delete Account</button>
+                >{t('settings.deleteAccount')}</button>
               </div>
             ) : (
               <div>
                 <div style={{ fontSize: 12, color: 'var(--t2)', marginBottom: 10 }}>
-                  Type <strong style={{ color: 'var(--t1)' }}>DELETE</strong> to confirm. This action is permanent and irreversible.
+                  {t('settings.deleteConfirmPrompt')}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     value={deleteInput}
                     onChange={e => setDeleteInput(e.target.value)}
-                    placeholder="Type DELETE"
+                    placeholder={t('settings.deleteConfirmPlaceholder')}
                     style={{
                       ...inputStyle, flex: 1,
                       border: '1px solid rgba(255,80,80,0.3)',
@@ -803,7 +805,7 @@ export default function SettingsPage() {
                       cursor: deleteInput === 'DELETE' ? 'pointer' : 'not-allowed',
                       fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700
                     }}
-                  >{deleteAccountMutation.isPending ? 'Deleting...' : 'Confirm Delete'}</button>
+                  >{deleteAccountMutation.isPending ? t('settings.deleting') : t('settings.confirmDelete')}</button>
                   <button
                     onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); }}
                     style={{
@@ -812,7 +814,7 @@ export default function SettingsPage() {
                       cursor: 'pointer', fontFamily: 'var(--font-body)',
                       fontSize: 12, fontWeight: 600, color: 'var(--t3)'
                     }}
-                  >Cancel</button>
+                  >{t('settings.cancel')}</button>
                 </div>
               </div>
             )}

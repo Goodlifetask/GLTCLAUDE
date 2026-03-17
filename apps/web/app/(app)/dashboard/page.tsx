@@ -6,15 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { CreateReminderModal } from './CreateReminderModal';
 import toast from 'react-hot-toast';
-
-const FILTER_PILLS = [
-  { label: 'All', value: 'all' },
-  { label: 'Today', value: 'today' },
-  { label: 'Upcoming', value: 'upcoming' },
-  { label: 'Overdue', value: 'overdue' },
-  { label: 'Recurring', value: 'recurring' },
-  { label: 'Done', value: 'done' },
-];
+import { useTranslation } from 'react-i18next';
 
 const TYPE_COLOR: Record<string, string> = {
   call: 'var(--sage)', task: 'var(--amber)', email: 'var(--sky)',
@@ -26,9 +18,6 @@ const TYPE_BG: Record<string, string> = {
 };
 const TYPE_ICON: Record<string, string> = {
   call: '📞', task: '✓', email: '✉️', location: '📍', event: '📅'
-};
-const TYPE_LABEL: Record<string, string> = {
-  call: 'Call', task: 'Task', email: 'Email', location: 'Location', event: 'Event'
 };
 
 function buildApiParams(filter: string, type: string): Record<string, unknown> {
@@ -69,9 +58,27 @@ export default function DashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const qc = useQueryClient();
+  const { t } = useTranslation();
 
   const filter = searchParams.get('filter') || 'all';
   const type = searchParams.get('type') || '';
+
+  const FILTER_PILLS = [
+    { label: t('dashboard.filter_all'), value: 'all' },
+    { label: t('dashboard.filter_today'), value: 'today' },
+    { label: t('dashboard.filter_upcoming'), value: 'upcoming' },
+    { label: t('dashboard.filter_overdue'), value: 'overdue' },
+    { label: t('dashboard.filter_recurring'), value: 'recurring' },
+    { label: t('dashboard.filter_done'), value: 'done' },
+  ];
+
+  const TYPE_LABEL: Record<string, string> = {
+    call: t('dashboard.type_call'),
+    task: t('dashboard.type_task'),
+    email: t('dashboard.type_email'),
+    location: t('dashboard.type_location'),
+    event: t('dashboard.type_event'),
+  };
 
   const [showModal, setShowModal] = useState(false);
   const [snoozeOpen, setSnoozeOpen] = useState<string | null>(null);
@@ -122,7 +129,7 @@ export default function DashboardPage() {
   const stats = (statsData as any)?.data || { total: 0, completed: 0, overdue: 0, upcoming: 0 };
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? t('dashboard.greeting_morning') : hour < 17 ? t('dashboard.greeting_afternoon') : t('dashboard.greeting_evening');
   const firstName = user?.name?.split(' ')[0] || 'there';
 
   const today = new Date();
@@ -147,7 +154,7 @@ export default function DashboardPage() {
             {greeting}, {firstName}.
           </div>
           <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>
-            {dateLabel} · {stats.upcoming} reminders pending today
+            {dateLabel} · {t('dashboard.pendingToday', { count: stats.upcoming })}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -176,7 +183,7 @@ export default function DashboardPage() {
               border: 'none', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
               boxShadow: 'var(--sh-amber)'
-            }}>+ New Reminder</button>
+            }}>{t('dashboard.newReminder')}</button>
         </div>
       </div>
 
@@ -193,15 +200,15 @@ export default function DashboardPage() {
           <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{dateLabel}</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, fontStyle: 'italic', color: 'var(--t1)', lineHeight: 1.2 }}>
-              Here&apos;s what&apos;s on your plate today.
+              {t('dashboard.subtitle')}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 6 }}>Stay focused and make it count.</div>
+            <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 6 }}>{t('dashboard.subtitleMotivation')}</div>
           </div>
           <div style={{ display: 'flex', gap: 14 }}>
             {[
-              { num: stats.completed, label: 'Done', color: 'var(--amber)', bg: 'var(--amber-glow)', border: 'rgba(124,58,237,0.2)' },
-              { num: stats.overdue, label: 'Overdue', color: 'var(--coral)', bg: 'var(--coral-bg)', border: 'rgba(220,38,38,0.15)' },
-              { num: stats.upcoming, label: 'Remaining', color: 'var(--sky)', bg: 'var(--sky-bg)', border: 'rgba(14,165,233,0.15)' },
+              { num: stats.completed, label: t('dashboard.done'), color: 'var(--amber)', bg: 'var(--amber-glow)', border: 'rgba(124,58,237,0.2)' },
+              { num: stats.overdue, label: t('dashboard.overdue'), color: 'var(--coral)', bg: 'var(--coral-bg)', border: 'rgba(220,38,38,0.15)' },
+              { num: stats.upcoming, label: t('dashboard.remaining'), color: 'var(--sky)', bg: 'var(--sky-bg)', border: 'rgba(14,165,233,0.15)' },
             ].map(({ num, label, color, bg, border }) => (
               <div key={label} style={{
                 textAlign: 'center', background: bg,
@@ -247,12 +254,12 @@ export default function DashboardPage() {
 
         {/* Reminder list */}
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--t3)', fontSize: 13 }}>Loading...</div>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--t3)', fontSize: 13 }}>{t('dashboard.loading')}</div>
         ) : reminders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 42, marginBottom: 14, opacity: 0.35 }}>✦</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, fontStyle: 'italic', color: 'var(--t2)', marginBottom: 6 }}>Nothing here yet.</div>
-            <div style={{ fontSize: 12, color: 'var(--t3)' }}>Add a reminder to get started.</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 500, fontStyle: 'italic', color: 'var(--t2)', marginBottom: 6 }}>{t('dashboard.emptyTitle')}</div>
+            <div style={{ fontSize: 12, color: 'var(--t3)' }}>{t('dashboard.emptySubtitle')}</div>
           </div>
         ) : (
           reminders.map((reminder: any) => (
@@ -298,15 +305,24 @@ function ReminderCard({
   isCompleting: boolean;
   isDeleting: boolean;
 }) {
+  const { t } = useTranslation();
   const type = reminder.type || 'task';
   const isOverdue = new Date(reminder.fireAt) < new Date() && reminder.status !== 'completed';
   const isDone = reminder.status === 'completed';
   const [hovered, setHovered] = useState(false);
 
+  const TYPE_LABEL: Record<string, string> = {
+    call: t('dashboard.type_call'),
+    task: t('dashboard.type_task'),
+    email: t('dashboard.type_email'),
+    location: t('dashboard.type_location'),
+    event: t('dashboard.type_event'),
+  };
+
   const snoozeOptions = [
-    { label: '15 minutes', minutes: 15 },
-    { label: '1 hour', minutes: 60 },
-    { label: 'Tomorrow', minutes: 1440 },
+    { label: t('dashboard.snooze15'), minutes: 15 },
+    { label: t('dashboard.snooze1h'), minutes: 60 },
+    { label: t('dashboard.snoozeTomorrow'), minutes: 1440 },
   ];
 
   return (
@@ -342,7 +358,7 @@ function ReminderCard({
           color: isDone ? '#fff' : 'transparent', fontSize: 11,
           transition: 'all 0.12s'
         }}
-        title={isDone ? 'Completed' : 'Mark complete'}
+        title={isDone ? t('dashboard.completed') : t('dashboard.markComplete')}
       >{isDone ? '✓' : ''}</div>
 
       {/* Main content */}
@@ -364,7 +380,7 @@ function ReminderCard({
             color: TYPE_COLOR[type] || 'var(--amber)'
           }}>{TYPE_ICON[type] || '✓'} {TYPE_LABEL[type] || type}</span>
           {reminder.is_recurring && (
-            <span style={{ fontSize: 10, color: 'var(--t4)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>🔁 recurring</span>
+            <span style={{ fontSize: 10, color: 'var(--t4)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>🔁 {t('dashboard.recurring')}</span>
           )}
         </div>
       </div>
@@ -380,7 +396,7 @@ function ReminderCard({
           <div style={{ position: 'relative' }}>
             <button
               onClick={onSnoozeToggle}
-              title="Snooze"
+              title={t('dashboard.snooze')}
               style={{
                 width: 28, height: 28, borderRadius: 7,
                 border: '1px solid var(--b1)', background: 'var(--card)',
@@ -417,7 +433,7 @@ function ReminderCard({
         <button
           onClick={onDelete}
           disabled={isDeleting}
-          title="Delete"
+          title={t('dashboard.delete')}
           style={{
             width: 28, height: 28, borderRadius: 7,
             border: '1px solid rgba(220,38,38,0.2)', background: '#fff5f5',

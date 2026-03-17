@@ -5,6 +5,7 @@ import { api } from '../../../lib/api';
 import { parseVoiceTranscript, type VoiceParsedReminder } from '../../../lib/voice-parser';
 import { REMINDER_CATEGORIES } from '@glt/shared';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const VOICE_TYPE_ICON: Record<string, string> = {
   task: '✓', call: '📞', email: '✉️', location: '📍', event: '📅',
@@ -18,6 +19,7 @@ const PRIORITY_COLOR: Record<string, { bg: string; color: string }> = {
 
 export function CreateReminderModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   const [selType, setSelType] = useState('task');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -181,12 +183,12 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
   });
 
   const typeButtons = [
-    { type: 'task', icon: '✓', label: 'Task' },
-    { type: 'call', icon: '📞', label: 'Call' },
-    { type: 'email', icon: '✉️', label: 'Email' },
-    { type: 'location', icon: '📍', label: 'Location' },
-    { type: 'event', icon: '📅', label: 'Event' },
-    { type: 'recurring', icon: '🔁', label: 'Repeat' },
+    { type: 'task', icon: '✓', label: t('modal.type_task') },
+    { type: 'call', icon: '📞', label: t('modal.type_call') },
+    { type: 'email', icon: '✉️', label: t('modal.type_email') },
+    { type: 'location', icon: '📍', label: t('modal.type_location') },
+    { type: 'event', icon: '📅', label: t('modal.type_event') },
+    { type: 'recurring', icon: '🔁', label: t('modal.type_repeat') },
   ];
 
   const inputStyle: React.CSSProperties = {
@@ -230,13 +232,13 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 600, color: 'var(--t1)' }}>
-            New Reminder
+            {t('modal.createReminder')}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {isVoiceSupported && (
               <button
                 onClick={toggleVoice}
-                title="Voice input"
+                title={t('modal.voiceInput')}
                 style={{
                   width: 30, height: 30, borderRadius: 8,
                   border: `1px solid ${voiceOpen ? 'var(--amber)' : 'var(--b1)'}`,
@@ -305,7 +307,7 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
                     animation: 'voicePulse 1.2s ease-in-out infinite',
                   }}>🎙️</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', marginBottom: 10 }}>
-                    Listening...
+                    {t('modal.listening')}
                   </div>
                   {transcript && (
                     <div style={{
@@ -385,7 +387,7 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
                         border: '1px solid var(--b1)', background: '#f8fafc',
                         cursor: 'pointer', fontSize: 11, fontWeight: 600, color: 'var(--t2)',
                       }}
-                    >Try Again</button>
+                    >{t('modal.tapToRetry')}</button>
                     <button
                       onClick={applyParsed}
                       style={{
@@ -395,7 +397,7 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
                         fontSize: 11, fontWeight: 700,
                         boxShadow: 'var(--sh-amber)',
                       }}
-                    >✓ Fill Form</button>
+                    >✓ {t('modal.fillForm')}</button>
                   </div>
                 </div>
               )}
@@ -427,11 +429,11 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
 
             {/* Title */}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>Title *</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>{t('modal.title')} *</label>
               <input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="What do you need to remember?"
+                placeholder={t('modal.titlePlaceholder')}
                 autoFocus={!voiceOpen}
                 style={inputStyle}
               />
@@ -440,11 +442,11 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
             {/* Date + Time */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>Date</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>{t('modal.date')}</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} style={inputStyle} />
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>Time</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>{t('modal.time')}</label>
                 <input type="time" value={time} onChange={e => setTime(e.target.value)} style={inputStyle} />
               </div>
             </div>
@@ -462,19 +464,19 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
 
             {/* Recurrence */}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>Repeat</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>{t('modal.repeat')}</label>
               <select value={recur} onChange={e => setRecur(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                <option value="">No repeat</option>
-                <option>Daily</option>
-                <option>Weekly</option>
-                <option>Monthly</option>
-                <option>Yearly</option>
+                <option value="">{t('modal.noRepeat')}</option>
+                <option value="Daily">{t('modal.daily')}</option>
+                <option value="Weekly">{t('modal.weekly')}</option>
+                <option value="Monthly">{t('modal.monthly')}</option>
+                <option value="Yearly">Yearly</option>
               </select>
             </div>
 
             {/* Category */}
             <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 8 }}>Category</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 8 }}>{t('modal.category')}</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {REMINDER_CATEGORIES.map(cat => (
                   <button
@@ -499,12 +501,12 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
             {/* Notes */}
             <div style={{ marginBottom: 18 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 5 }}>
-                Notes <span style={{ color: 'var(--t4)', fontWeight: 400 }}>(optional)</span>
+                {t('modal.note')}
               </label>
               <textarea
                 value={note}
                 onChange={e => setNote(e.target.value)}
-                placeholder="Any extra details..."
+                placeholder={t('modal.notePlaceholder')}
                 rows={2}
                 style={{ ...inputStyle, resize: 'none' }}
               />
@@ -520,7 +522,7 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
                   cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 13,
                   fontWeight: 600, color: 'var(--t2)',
                 }}
-              >Cancel</button>
+              >{t('common.cancel')}</button>
               <button
                 onClick={() => { if (title.trim()) createMutation.mutate(); }}
                 disabled={!title.trim() || createMutation.isPending}
@@ -533,7 +535,7 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
                   boxShadow: 'var(--sh-amber)',
                   opacity: (!title.trim() || createMutation.isPending) ? 0.6 : 1,
                 }}
-              >{createMutation.isPending ? 'Creating...' : 'Create Reminder'}</button>
+              >{createMutation.isPending ? t('common.loading') : t('modal.addReminder')}</button>
             </div>
           </div>
         </div>

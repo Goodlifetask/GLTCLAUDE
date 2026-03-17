@@ -3,6 +3,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '../../store/auth';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
+import { useTranslation } from 'react-i18next';
 
 type NavEntry = {
   label: string;
@@ -15,6 +16,7 @@ export function Sidebar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   /* ── Family pending count for badge ────────────────────────────── */
   const isFamilyUser = user?.plan === 'family' || user?.profileCategory === 'family';
@@ -29,7 +31,7 @@ export function Sidebar() {
   /* ── Conditional plan item ─────────────────────────────────────── */
   const planItem: NavEntry | null =
     (user?.plan === 'family'    || user?.profileCategory === 'family')
-      ? { label: 'Family',    icon: '👨‍👩‍👧', href: '/family' }
+      ? { label: t('nav.family'),    icon: '👨‍👩‍👧', href: '/family' }
       : (user?.plan === 'team'  || user?.profileCategory === 'team')
       ? { label: 'Team',      icon: '🏢',    href: '/team' }
       : (user?.plan === 'community' || user?.profileCategory === 'community')
@@ -38,12 +40,12 @@ export function Sidebar() {
 
   /* ── Main nav items ────────────────────────────────────────────── */
   const navItems: NavEntry[] = [
-    { label: 'Dashboard',  icon: '⊞',  href: '/dashboard', exact: true },
-    { label: 'Tasks',      icon: '◎',  href: '/tasks' },
+    { label: t('nav.dashboard'),  icon: '⊞',  href: '/dashboard', exact: true },
+    { label: t('nav.tasks'),      icon: '◎',  href: '/tasks' },
     ...(planItem ? [planItem] : []),
-    { label: 'Calendar',   icon: '📅', href: '/calendar' },
-    { label: 'Fly-Alarms', icon: '⚡', href: '/fly-alarms' },
-    { label: 'Settings',   icon: '⊙',  href: '/settings' },
+    { label: t('nav.calendar'),   icon: '📅', href: '/calendar' },
+    { label: t('nav.flyAlarms'),  icon: '⚡', href: '/fly-alarms' },
+    { label: t('nav.settings'),   icon: '⊙',  href: '/settings' },
   ];
 
   const isActive = (item: NavEntry) => {
@@ -97,7 +99,7 @@ export function Sidebar() {
               GoodLifeTask
             </div>
             <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 400, letterSpacing: '0.04em' }}>
-              Your life, organised
+              {t('nav.tagline')}
             </div>
           </div>
         </div>
@@ -115,7 +117,7 @@ export function Sidebar() {
           <span style={{ fontSize: 13, color: 'var(--t3)', flexShrink: 0 }}>⌕</span>
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t('common.search')}
             style={{
               background: 'none', border: 'none', outline: 'none',
               fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--t1)', width: '100%',
@@ -241,7 +243,7 @@ export function Sidebar() {
             color: 'var(--t3)', transition: 'all 0.12s',
           }}
         >
-          Sign Out
+          {t('nav.signOut')}
         </button>
       </div>
     </aside>

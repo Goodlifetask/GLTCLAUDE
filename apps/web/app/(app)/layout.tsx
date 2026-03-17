@@ -6,6 +6,7 @@ import { RightPanel } from '../../components/layout/RightPanel';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../store/auth';
+import { I18nProvider } from '../../components/I18nProvider';
 
 function UrgentRemindersPopup() {
   const { user } = useAuthStore();
@@ -126,13 +127,15 @@ function UrgentRemindersPopup() {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 288px', minHeight: '100vh' }}>
-      <Sidebar />
-      <main style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
-        {children}
-      </main>
-      <RightPanel />
-      <UrgentRemindersPopup />
-    </div>
+    <I18nProvider>
+      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 288px', minHeight: '100vh' }}>
+        <Sidebar />
+        <main style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+          {children}
+        </main>
+        <RightPanel />
+        <UrgentRemindersPopup />
+      </div>
+    </I18nProvider>
   );
 }
