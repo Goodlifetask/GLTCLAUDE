@@ -8,6 +8,7 @@ import { api } from '../../../lib/api';
 import toast from 'react-hot-toast';
 import { REMINDER_CATEGORIES } from '@glt/shared';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../../lib/i18n';
 
 const PERSONAS = [
   { value: 'student',       label: 'Student',       icon: '📚', desc: 'Classes, assignments, study sessions' },
@@ -517,8 +518,10 @@ export default function SettingsPage() {
             <select
               value={language}
               onChange={e => {
-                setLanguage(e.target.value);
-                updateProfileMutation.mutate({ locale: e.target.value });
+                const loc = e.target.value;
+                setLanguage(loc);
+                i18n.changeLanguage(loc);
+                updateProfileMutation.mutate({ locale: loc });
               }}
               style={{
                 ...inputStyle,
