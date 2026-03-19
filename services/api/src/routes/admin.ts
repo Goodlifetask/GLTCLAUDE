@@ -43,6 +43,7 @@ export async function adminRoutes(server: FastifyInstance) {
   // POST /admin/auth/login
   server.post(
     '/auth/login',
+    { config: { rateLimit: { max: 10, timeWindow: '15 minutes' } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({ email: z.string().email(), password: z.string() });
       const input  = schema.parse(request.body);
@@ -53,6 +54,8 @@ export async function adminRoutes(server: FastifyInstance) {
       });
 
       if (!admin || !admin.isActive) {
+        // Timing-safe: always run bcrypt to prevent user enumeration via response time
+        await bcrypt.hash('dummy', 12);
         return reply.status(401).send({ error: 'UNAUTHORIZED', message: 'Invalid email or password' });
       }
 

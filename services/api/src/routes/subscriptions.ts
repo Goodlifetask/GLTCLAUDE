@@ -5,8 +5,8 @@ export async function subscriptionsRoutes(server: FastifyInstance) {
   // GET /v1/subscriptions/me
   server.get('/me', { preHandler: authenticate }, async (request, reply) => {
     const subscription = await server.prisma.subscription.findFirst({
-      where: { user_id: request.user.sub },
-      orderBy: { created_at: 'desc' },
+      where: { userId: request.user.sub },
+      orderBy: { createdAt: 'desc' },
     });
 
     return reply.send({ success: true, data: subscription });

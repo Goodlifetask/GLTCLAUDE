@@ -127,14 +127,14 @@ export async function familyRoutes(server: FastifyInstance) {
     });
 
     // TODO: send invite email with rawToken
-    return reply.status(201).send({
-      success: true,
-      data: {
-        message: `Invite sent to ${body.email}`,
-        // In dev: expose token for testing
-        inviteToken: rawToken,
-      },
-    });
+    const responseData: Record<string, unknown> = {
+      message: `Invite sent to ${body.email}`,
+    };
+    // Only expose the raw token in non-production environments for testing
+    if (process.env['NODE_ENV'] !== 'production') {
+      responseData['inviteToken'] = rawToken;
+    }
+    return reply.status(201).send({ success: true, data: responseData });
   });
 
   // ── POST /v1/family/invite/accept — accept a family invite

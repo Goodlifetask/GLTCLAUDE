@@ -100,7 +100,7 @@ function UrgentRemindersPopup() {
         {/* Actions */}
         <div style={{ display: 'flex', gap: 10 }}>
           <button
-            onClick={() => { setDismissed(true); router.push('/tasks?filter=urgent'); }}
+            onClick={() => { setDismissed(true); router.push('/tasks?status=pending&sort=fireAt&order=asc'); }}
             style={{
               flex: 1, padding: '10px 0', borderRadius: 10,
               background: '#dc2626', border: 'none', cursor: 'pointer',

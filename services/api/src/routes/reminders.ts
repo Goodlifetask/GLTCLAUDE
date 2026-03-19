@@ -51,6 +51,17 @@ const snoozeSchema = z.object({
   ),
 });
 
+const uuidParam = z.string().uuid();
+
+function parseIdParam(id: string, reply: FastifyReply): string | null {
+  const result = uuidParam.safeParse(id);
+  if (!result.success) {
+    reply.status(400).send({ error: 'VALIDATION_ERROR', message: 'Invalid reminder ID format', code: 'VALIDATION_ERROR' });
+    return null;
+  }
+  return result.data;
+}
+
 const listQuerySchema = z.object({
   status:   z.enum(['pending', 'completed', 'snoozed']).optional(),
   type:     z.enum(['call', 'task', 'email', 'location', 'event']).optional(),
@@ -148,7 +159,8 @@ export async function remindersRoutes(server: FastifyInstance) {
     '/:id',
     { preHandler: [authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string };
+      const id = parseIdParam((request.params as { id: string }).id, reply);
+      if (!id) return;
       const reminder = await reminderService.findById(id, request.user.sub);
       return reply.send({ data: reminder });
     },
@@ -159,7 +171,8 @@ export async function remindersRoutes(server: FastifyInstance) {
     '/:id',
     { preHandler: [authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string };
+      const id = parseIdParam((request.params as { id: string }).id, reply);
+      if (!id) return;
       const input  = updateReminderSchema.parse(request.body);
       const reminder = await reminderService.update(id, request.user.sub, {
         title:      input.title,
@@ -182,7 +195,8 @@ export async function remindersRoutes(server: FastifyInstance) {
     '/:id',
     { preHandler: [authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string };
+      const id = parseIdParam((request.params as { id: string }).id, reply);
+      if (!id) return;
       await reminderService.softDelete(id, request.user.sub);
       return reply.status(204).send();
     },
@@ -193,7 +207,8 @@ export async function remindersRoutes(server: FastifyInstance) {
     '/:id/complete',
     { preHandler: [authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string };
+      const id = parseIdParam((request.params as { id: string }).id, reply);
+      if (!id) return;
       const reminder = await reminderService.complete(id, request.user.sub);
       return reply.send({ data: reminder });
     },
@@ -204,7 +219,8 @@ export async function remindersRoutes(server: FastifyInstance) {
     '/:id/snooze',
     { preHandler: [authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id }  = request.params as { id: string };
+      const id = parseIdParam((request.params as { id: string }).id, reply);
+      if (!id) return;
       const { duration_minutes } = snoozeSchema.parse(request.body);
       const reminder = await reminderService.snooze(id, request.user.sub, duration_minutes);
       return reply.send({ data: reminder });
@@ -216,7 +232,8 @@ export async function remindersRoutes(server: FastifyInstance) {
     '/:id/duplicate',
     { preHandler: [authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string };
+      const id = parseIdParam((request.params as { id: string }).id, reply);
+      if (!id) return;
       const reminder = await reminderService.duplicate(id, request.user.sub);
       return reply.status(201).send({ data: reminder });
     },

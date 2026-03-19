@@ -215,8 +215,13 @@ export class ReminderService {
   }
 
   async findById(id: string, userId: string): Promise<Reminder> {
+    // Owner or assignee can access the reminder
     const reminder = await this.prisma.reminder.findFirst({
-      where: { id, userId, deletedAt: null },
+      where: {
+        id,
+        deletedAt: null,
+        OR: [{ userId }, { assigneeId: userId }],
+      },
       include: { list: true, recurrence: true, contact: true, location: true },
     });
 
@@ -271,22 +276,22 @@ export class ReminderService {
       include: { list: true, recurrence: true, contact: true, location: true },
     });
 
-    // If recurring, create next occurrence
+    // If recurring, create next occurrence (skip plan limit check — this is a continuation, not a new reminder)
     if (updated.recurrenceId && updated.recurrence) {
       const nextFireAt = getNextFireTime(updated.fireAt, updated.recurrence as any);
       if (nextFireAt) {
-        await this.create({
-          userId:       userId,
-          listId:       updated.listId ?? undefined,
-          type:         updated.type,
-          title:        updated.title,
-          notes:        updated.notes ?? undefined,
-          priority:     updated.priority,
-          fireAt:       nextFireAt,
-          recurrence:   updated.recurrence as any,
-          contactId:    updated.contactId ?? undefined,
-          locationId:   updated.locationId ?? undefined,
-          metadata:     updated.metadata as any,
+        await this.createRecurringOccurrence({
+          userId:     userId,
+          listId:     updated.listId ?? undefined,
+          type:       updated.type,
+          title:      updated.title,
+          notes:      updated.notes ?? undefined,
+          priority:   updated.priority,
+          fireAt:     nextFireAt,
+          recurrence: updated.recurrence as any,
+          contactId:  updated.contactId ?? undefined,
+          locationId: updated.locationId ?? undefined,
+          metadata:   updated.metadata as any,
         });
       }
     }
@@ -337,6 +342,31 @@ export class ReminderService {
       fireAt,
       metadata:  original.metadata as any,
     });
+  }
+
+  /**
+   * Creates the next occurrence of a recurring reminder WITHOUT checking plan limits.
+   * Plan limits only apply when a user manually creates a new reminder.
+   */
+  private async createRecurringOccurrence(input: Omit<CreateReminderInput, 'userId'> & { userId: string }): Promise<void> {
+    const reminder = await this.prisma.reminder.create({
+      data: {
+        userId:      input.userId,
+        listId:      input.listId ?? null,
+        contactId:   input.contactId ?? null,
+        locationId:  input.locationId ?? null,
+        type:        input.type as any,
+        title:       input.title,
+        notes:       input.notes ?? null,
+        priority:    (input.priority as any) ?? 'medium',
+        status:      'pending',
+        fireAt:      input.fireAt,
+        metadata:    input.metadata ?? {},
+        shareScope:  'private',
+      },
+    });
+    await this.scheduleNotification(reminder);
+    logger.info({ reminderId: reminder.id, userId: input.userId }, 'Recurring reminder occurrence created');
   }
 
   private async scheduleNotification(reminder: Reminder): Promise<void> {

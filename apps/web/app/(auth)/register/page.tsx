@@ -625,18 +625,8 @@ export default function RegisterPage() {
             {t('common.alreadyHaveAccount', 'Already have an account?')}{' '}
             <Link href="/login" style={{ color: '#60a5fa', fontWeight: 600, textDecoration: 'none' }}>{t('common.login', 'Login')}</Link>
           </p>
-          <Link href="/verify" style={{ fontSize: 13, color: '#60a5fa', textDecoration: 'none' }}>
-            Has verification code?
-          </Link>
-          <Link href="/dashboard" style={{
-            display: 'inline-block', margin: '0 auto',
-            padding: '7px 18px', borderRadius: 8,
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            color: 'rgba(255,255,255,0.55)',
-            fontSize: 12, textDecoration: 'none',
-          }}>
-            🔓 Bypass Login (Debug Mode)
+          <Link href="/login?mode=magic" style={{ fontSize: 13, color: '#60a5fa', textDecoration: 'none' }}>
+            Sign in with a magic link instead
           </Link>
         </div>
 

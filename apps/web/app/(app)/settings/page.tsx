@@ -130,9 +130,11 @@ export default function SettingsPage() {
   ];
 
   function toggleMyCategory(slug: string) {
-    setMyCategoryIds(prev =>
-      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
-    );
+    setMyCategoryIds(prev => {
+      const next = prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug];
+      updateProfileMutation.mutate({ taskPreferences: next });
+      return next;
+    });
   }
 
   function handleAddCustomCat() {
@@ -150,7 +152,7 @@ export default function SettingsPage() {
   }
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data: Partial<{ name: string; timezone: string; theme: string }>) =>
+    mutationFn: (data: Partial<{ name: string; timezone: string; theme: string; locale: string; persona: string; occupation: string; taskPreferences: string[]; notificationPreferences: { email: boolean; push: boolean; sms: boolean } }>) =>
       api.users.updateProfile(data),
     onSuccess: (res: any) => {
       const updated = res?.data;
@@ -581,7 +583,13 @@ export default function SettingsPage() {
                 <div style={{ fontSize: 11, color: 'var(--t4)' }}>{desc}</div>
               </div>
               <div
-                onClick={() => setNotifs(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
+                onClick={() => {
+                  const updated = { ...notifs, [key]: !notifs[key as keyof typeof notifs] };
+                  setNotifs(updated);
+                  updateProfileMutation.mutate({
+                    notificationPreferences: { email: updated.email, push: updated.push, sms: false },
+                  });
+                }}
                 style={{
                   width: 42, height: 24, borderRadius: 12,
                   background: notifs[key as keyof typeof notifs] ? 'var(--amber)' : 'var(--b1)',
@@ -733,6 +741,7 @@ export default function SettingsPage() {
                 <div style={{ fontSize: 11, color: 'var(--t4)' }}>{t('settings.upgradeDesc')}</div>
               </div>
               <button
+                onClick={() => router.push('/settings/billing')}
                 style={{
                   padding: '8px 18px', borderRadius: 'var(--r-sm)',
                   background: 'var(--amber)', color: '#fff',

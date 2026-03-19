@@ -101,7 +101,7 @@ export const api = {
     requestExport: () =>
       client.post('/users/me/export').then((r) => r.data),
     deleteAccount: () =>
-      client.delete('/users/me/delete').then((r) => r.data),
+      client.delete('/users/me').then((r) => r.data),
     changePassword: (currentPassword: string, newPassword: string) =>
       client.patch('/users/me/password', { currentPassword, newPassword }).then((r) => r.data),
   },
@@ -173,7 +173,7 @@ export const api = {
 
   subscriptions: {
     current: () =>
-      client.get('/subscriptions/current').then((r) => r.data),
+      client.get('/subscriptions/me').then((r) => r.data),
     createCheckout: (plan: string, successUrl: string, cancelUrl: string) =>
       client.post('/subscriptions/checkout', { plan, success_url: successUrl, cancel_url: cancelUrl }).then((r) => r.data),
     openPortal: () =>

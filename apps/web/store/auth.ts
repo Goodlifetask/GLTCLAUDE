@@ -44,7 +44,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'glt-auth',
       storage: createJSONStorage(() => sessionStorage), // session only
-      partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
+      // accessToken is a short-lived credential — never persist it to storage (XSS risk)
+      // It will be re-acquired via the refresh token cookie on next page load
+      partialize: (state) => ({ user: state.user }),
     },
   ),
 );

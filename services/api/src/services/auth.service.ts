@@ -197,7 +197,8 @@ export class AuthService {
     });
 
     // TODO: send actual email with reset URL containing rawToken
-    logger.info({ userId: user.id, email }, `Password reset token generated (token: ${rawToken})`);
+    // IMPORTANT: never log rawToken — it is a credential
+    logger.info({ userId: user.id }, 'Password reset token generated');
   }
 
   async resetPassword(rawToken: string, newPassword: string): Promise<void> {
