@@ -377,7 +377,7 @@ export default function FamilyPage() {
           <div style={{ maxWidth: 720 }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
             {/* Family header */}
-            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', position: 'relative' }}>
               {/* Header bar with family name + upload button */}
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -414,22 +414,7 @@ export default function FamilyPage() {
                 )}
               </div>
               {/* Rest of card content */}
-              <div style={{ padding: '18px 22px 20px', position: 'relative' }}>
-                {/* Watermark — photo behind card body only */}
-                {family.avatarUrl && (
-                  <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    pointerEvents: 'none',
-                    zIndex: 0,
-                    backgroundImage: `url(http://localhost:3001${family.avatarUrl})`,
-                    backgroundSize: 'contain',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                    opacity: 0.25,
-                  }} />
-                )}
-                <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ padding: '18px 22px 20px', position: 'relative', zIndex: 1 }}>
 
               {/* Members */}
               <span style={labelStyle}>Members</span>
@@ -470,9 +455,30 @@ export default function FamilyPage() {
                   </div>
                 ))}
               </div>
-                </div>{/* /inner zIndex:1 */}
               </div>{/* /padding div */}
             </div>{/* /card */}
+
+            {/* Family photo — full image centered between members and reminders */}
+            {family.avatarUrl && activeTab === 'reminders' && (
+              <div style={{
+                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                padding: '20px 24px',
+                background: 'var(--card)', border: '1px solid var(--b1)',
+                borderRadius: 'var(--r-xl)', marginBottom: 18,
+              }}>
+                <img
+                  src={`http://localhost:3001${family.avatarUrl}`}
+                  alt="Family photo"
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    borderRadius: 12,
+                    opacity: 0.85,
+                    display: 'block',
+                  }}
+                />
+              </div>
+            )}
 
             {/* Invite modal inline */}
             {showInvite && (
