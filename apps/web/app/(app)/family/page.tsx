@@ -264,7 +264,22 @@ export default function FamilyPage() {
         </div>
       </div>
 
-      <div style={{ padding: '24px 26px', flex: 1 }}>
+      <div style={{ padding: '24px 26px', flex: 1, position: 'relative' }}>
+        {/* Full-page watermark — family photo behind all content */}
+        {family?.avatarUrl && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: 'none',
+            backgroundImage: `url(http://localhost:3001${family.avatarUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.08,
+          }} />
+        )}
+        <div style={{ position: 'relative', zIndex: 1 }}>
         {isLoading ? (
           <div style={{ color: 'var(--t3)', fontSize: 13 }}>Loading…</div>
         ) : !family ? (
@@ -376,38 +391,29 @@ export default function FamilyPage() {
           <div style={{ maxWidth: 720 }}>
             {/* Family header */}
             <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-              {/* Cover photo banner */}
+              {/* Header bar with family name + upload button */}
               <div style={{
-                position: 'relative',
-                height: 160,
-                background: family.avatarUrl
-                  ? `url(http://localhost:3001${family.avatarUrl}) center/cover no-repeat`
-                  : 'linear-gradient(135deg, #3D2BB8 0%, #6C4EFF 60%, #f59e0b 100%)',
-                display: 'flex', alignItems: 'flex-end',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, rgba(61,43,184,0.08) 0%, rgba(108,78,255,0.06) 100%)',
+                borderBottom: '1px solid var(--b1)',
               }}>
-                {/* Overlay for text readability */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.45) 100%)',
-                }} />
-                {/* Family name overlay */}
-                <div style={{ position: 'relative', padding: '14px 20px', flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: '#fff', textShadow: '0 1px 6px rgba(0,0,0,0.4)' }}>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--t1)' }}>
                     {family.name}
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: 'var(--t3)', marginTop: 2 }}>
                     {family.members?.length ?? 0} member{(family.members?.length ?? 0) !== 1 ? 's' : ''}
                   </div>
                 </div>
                 {/* Upload button — owner only */}
                 {family.ownerId === user?.id && (
                   <label style={{
-                    position: 'relative', margin: '14px 16px', cursor: 'pointer',
-                    background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)',
-                    border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10,
-                    padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6,
+                    cursor: 'pointer',
+                    background: 'var(--amber)', borderRadius: 10,
+                    padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 6,
                     fontSize: 12, fontWeight: 600, color: '#fff', flexShrink: 0,
-                    transition: 'background 0.15s',
+                    boxShadow: 'var(--sh-amber)',
                   }}>
                     <input
                       type="file"
@@ -934,6 +940,7 @@ export default function FamilyPage() {
             </div>}
           </div>
         )}
+        </div>{/* end zIndex:1 wrapper */}
       </div>
     </>
   );
