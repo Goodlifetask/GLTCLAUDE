@@ -117,13 +117,20 @@ export default function SettingsPage() {
     weekly: false,
   });
 
-  // My Categories state (local-only for now)
+  // My Categories state — slugs from server, custom metadata from localStorage
   const [myCategoryIds, setMyCategoryIds] = useState<string[]>(() => {
     const saved = (user as any)?.taskPreferences;
     if (Array.isArray(saved) && saved.length > 0) return saved as string[];
     return ['work', 'personal'];
   });
-  const [customCats, setCustomCats] = useState<{ name: string; icon: string; color: string }[]>([]);
+
+  type CustomCat = { slug: string; name: string; icon: string; color: string };
+  const [customCats, setCustomCats] = useState<CustomCat[]>(() => {
+    try {
+      const raw = localStorage.getItem(`glt_custom_cats_${user?.id}`);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('');
   const [newCatColor, setNewCatColor] = useState('#6C4EFF');
@@ -150,6 +157,12 @@ export default function SettingsPage() {
     if (Array.isArray(prefs) && prefs.length > 0) {
       setMyCategoryIds(prefs as string[]);
     }
+
+    // Reload custom cat metadata from localStorage for this user
+    try {
+      const raw = localStorage.getItem(`glt_custom_cats_${user.id}`);
+      if (raw) setCustomCats(JSON.parse(raw));
+    } catch { /* ignore */ }
   }, [user]);
 
   const THEMES = [
@@ -169,15 +182,37 @@ export default function SettingsPage() {
   function handleAddCustomCat() {
     const name = newCatName.trim();
     if (!name) { toast.error('Please enter a category name.'); return; }
-    setCustomCats(prev => [...prev, { name, icon: newCatIcon.trim() || '📁', color: newCatColor }]);
+    const slug = `custom_${name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`;
+    if (customCats.some(c => c.slug === slug)) { toast.error('Category already exists.'); return; }
+
+    const newCat: CustomCat = { slug, name, icon: newCatIcon.trim() || '📁', color: newCatColor };
+    const updatedCats = [...customCats, newCat];
+    const updatedIds = [...myCategoryIds, slug];
+
+    // Update state
+    setCustomCats(updatedCats);
+    setMyCategoryIds(updatedIds);
+
+    // Persist metadata to localStorage
+    localStorage.setItem(`glt_custom_cats_${user?.id}`, JSON.stringify(updatedCats));
+
+    // Save slugs to server
+    updateProfileMutation.mutate({ taskPreferences: updatedIds });
+
     setNewCatName('');
     setNewCatIcon('');
     setNewCatColor('#6C4EFF');
-    toast.success(`Category "${name}" added.`);
   }
 
-  function handleRemoveCustomCat(i: number) {
-    setCustomCats(prev => prev.filter((_, idx) => idx !== i));
+  function handleRemoveCustomCat(slug: string) {
+    const updatedCats = customCats.filter(c => c.slug !== slug);
+    const updatedIds  = myCategoryIds.filter(s => s !== slug);
+
+    setCustomCats(updatedCats);
+    setMyCategoryIds(updatedIds);
+
+    localStorage.setItem(`glt_custom_cats_${user?.id}`, JSON.stringify(updatedCats));
+    updateProfileMutation.mutate({ taskPreferences: updatedIds });
   }
 
   const updateProfileMutation = useMutation({
@@ -522,17 +557,18 @@ export default function SettingsPage() {
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', marginBottom: 8 }}>{t('settings.customCategories')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {customCats.map((cat, i) => (
-                  <div key={i} style={{
+                {customCats.map((cat) => (
+                  <div key={cat.slug} style={{
                     display: 'flex', alignItems: 'center', gap: 10,
                     background: 'var(--bg-raised)', borderRadius: 'var(--r-sm)',
-                    padding: '8px 12px', border: '1px solid var(--b1)',
+                    padding: '8px 12px', border: `1px solid ${myCategoryIds.includes(cat.slug) ? 'rgba(124,58,237,0.35)' : 'var(--b1)'}`,
                   }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
                     <span style={{ fontSize: 16 }}>{cat.icon}</span>
                     <span style={{ fontSize: 13, color: 'var(--t1)', flex: 1 }}>{cat.name}</span>
+                    <span style={{ fontSize: 10, color: 'var(--t4)', marginRight: 4 }}>saved ✓</span>
                     <button
-                      onClick={() => handleRemoveCustomCat(i)}
+                      onClick={() => handleRemoveCustomCat(cat.slug)}
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer',
                         color: 'var(--t4)', fontSize: 14, padding: '0 4px',
