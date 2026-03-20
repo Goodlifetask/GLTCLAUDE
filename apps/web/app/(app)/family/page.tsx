@@ -265,20 +265,6 @@ export default function FamilyPage() {
       </div>
 
       <div style={{ padding: '24px 26px', flex: 1, position: 'relative' }}>
-        {/* Full-page watermark — family photo behind all content */}
-        {family?.avatarUrl && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: 'none',
-            backgroundImage: `url(http://localhost:3001${family.avatarUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            opacity: 0.08,
-          }} />
-        )}
         <div style={{ position: 'relative', zIndex: 1 }}>
         {isLoading ? (
           <div style={{ color: 'var(--t3)', fontSize: 13 }}>Loading…</div>
@@ -388,7 +374,23 @@ export default function FamilyPage() {
             )}
           </div>
         ) : (
-          <div style={{ maxWidth: 720 }}>
+          <div style={{ maxWidth: 720, position: 'relative' }}>
+            {/* Watermark — family photo inside content area only */}
+            {family.avatarUrl && (
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 0,
+                pointerEvents: 'none',
+                backgroundImage: `url(http://localhost:3001${family.avatarUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                opacity: 0.25,
+                borderRadius: 'var(--r-lg)',
+              }} />
+            )}
+            <div style={{ position: 'relative', zIndex: 1 }}>
             {/* Family header */}
             <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
               {/* Header bar with family name + upload button */}
@@ -938,9 +940,10 @@ export default function FamilyPage() {
                 </div>
               )}
             </div>}
+            </div>{/* end watermark zIndex:1 wrapper */}
           </div>
         )}
-        </div>{/* end zIndex:1 wrapper */}
+        </div>{/* end outer zIndex:1 wrapper */}
       </div>
     </>
   );
