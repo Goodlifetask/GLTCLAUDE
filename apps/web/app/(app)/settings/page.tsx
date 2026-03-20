@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff } from 'lucide-react';
@@ -128,6 +128,30 @@ export default function SettingsPage() {
   const [newCatIcon, setNewCatIcon] = useState('');
   const [newCatColor, setNewCatColor] = useState('#6C4EFF');
 
+  /* Sync all settings state whenever the user object is refreshed from /me */
+  const prevUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    // Only sync on initial load or when user id changes (avoid overwriting in-flight edits)
+    if (prevUserId.current === user.id) return;
+    prevUserId.current = user.id;
+
+    setNameInput(user.name || '');
+    setTimezone(user.timezone || 'UTC');
+    setTheme(user.theme || 'dark');
+    setLanguage(user.locale || 'en');
+
+    const persona = (user as any).persona || '';
+    setSelectedPersona(persona);
+    setEditingPersona(!persona);
+    setOccupation((user as any).occupation || '');
+
+    const prefs = (user as any).taskPreferences;
+    if (Array.isArray(prefs) && prefs.length > 0) {
+      setMyCategoryIds(prefs as string[]);
+    }
+  }, [user]);
+
   const THEMES = [
     { value: 'dark', label: t('settings.theme_dark') },
     { value: 'light', label: t('settings.theme_light') },
@@ -162,7 +186,21 @@ export default function SettingsPage() {
     onSuccess: (res: any) => {
       const updated = res?.data;
       if (updated && user) {
-        setUser({ ...user, ...updated });
+        // Map API response (avatarUrl from DB) into store shape
+        setUser({
+          ...user,
+          ...updated,
+          avatarUrl: updated.avatarUrl ?? user.avatarUrl,
+          taskPreferences: updated.taskPreferences ?? user.taskPreferences,
+        });
+        // Sync local state immediately
+        if (updated.persona !== undefined) {
+          setSelectedPersona(updated.persona || '');
+          setEditingPersona(!updated.persona);
+        }
+        if (Array.isArray(updated.taskPreferences)) {
+          setMyCategoryIds(updated.taskPreferences);
+        }
       }
       qc.invalidateQueries({ queryKey: ['me'] });
       toast.success(t('settings.profileUpdated'));
