@@ -423,7 +423,7 @@ export default function FamilyPage() {
                     pointerEvents: 'none',
                     zIndex: 0,
                     backgroundImage: `url(http://localhost:3001${family.avatarUrl})`,
-                    backgroundSize: 'cover',
+                    backgroundSize: 'contain',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
                     opacity: 0.25,
