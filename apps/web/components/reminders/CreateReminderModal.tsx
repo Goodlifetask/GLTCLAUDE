@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { X, Phone, CheckSquare, Mail, MapPin, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../lib/api';
-import { REMINDER_CATEGORIES } from '@glt/shared';
+import { useAllCategories } from '../../hooks/useAllCategories';
 import toast from 'react-hot-toast';
 
 const schema = z.object({
@@ -35,6 +35,7 @@ interface CreateReminderModalProps {
 
 export function CreateReminderModal({ onClose }: CreateReminderModalProps) {
   const qc = useQueryClient();
+  const allCategories = useAllCategories();
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -176,7 +177,7 @@ export function CreateReminderModal({ onClose }: CreateReminderModalProps) {
                 Category
               </label>
               <div className="flex flex-wrap gap-2">
-                {REMINDER_CATEGORIES.map((cat) => (
+                {allCategories.map((cat) => (
                   <button
                     key={cat.slug}
                     type="button"

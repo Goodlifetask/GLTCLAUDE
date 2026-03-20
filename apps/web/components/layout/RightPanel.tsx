@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import { REMINDER_CATEGORIES } from '@glt/shared';
+import { useAllCategories } from '../../hooks/useAllCategories';
 import toast from 'react-hot-toast';
 
 const QUOTES = [
@@ -63,6 +63,7 @@ export function RightPanel() {
   const [category, setCategory] = useState('');
   const [note, setNote]       = useState('');
   const [quote, setQuote]     = useState(QUOTES[0]);
+  const allCategories = useAllCategories();
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear,  setCalYear]  = useState(new Date().getFullYear());
 
@@ -224,7 +225,7 @@ export function RightPanel() {
             style={{ ...glassInput, cursor: 'pointer', colorScheme: 'dark' }}
           >
             <option value="">— No category —</option>
-            {REMINDER_CATEGORIES.map(cat => (
+            {allCategories.map(cat => (
               <option key={cat.slug} value={cat.slug}>
                 {cat.icon} {cat.name}
               </option>

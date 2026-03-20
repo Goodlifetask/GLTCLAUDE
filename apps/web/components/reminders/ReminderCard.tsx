@@ -10,7 +10,7 @@ import {
 import { formatDistanceToNow, format, isPast } from 'date-fns';
 import { api } from '../../lib/api';
 import type { Reminder } from '@glt/shared';
-import { REMINDER_CATEGORIES } from '@glt/shared';
+import { useAllCategories } from '../../hooks/useAllCategories';
 import { clsx } from 'clsx';
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -43,6 +43,7 @@ interface ReminderCardProps {
 export function ReminderCard({ reminder }: ReminderCardProps) {
   const [showActions, setShowActions] = useState(false);
   const qc = useQueryClient();
+  const allCategories = useAllCategories();
 
   const completeMutation = useMutation({
     mutationFn: () => api.reminders.complete(reminder.id),
@@ -120,7 +121,7 @@ export function ReminderCard({ reminder }: ReminderCardProps) {
 
             {/* Category badge */}
             {(reminder as any).category && (() => {
-              const cat = REMINDER_CATEGORIES.find((c) => c.slug === (reminder as any).category);
+              const cat = allCategories.find((c) => c.slug === (reminder as any).category);
               return cat ? (
                 <span
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"

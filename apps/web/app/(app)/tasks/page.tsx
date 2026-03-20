@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { REMINDER_CATEGORIES } from '@glt/shared';
+import { useAllCategories } from '../../../hooks/useAllCategories';
 import toast from 'react-hot-toast';
 
 /* ── Category gradient map ─────────────────────────────────────────── */
@@ -210,6 +211,7 @@ function TaskCard({
 /* ── Page ──────────────────────────────────────────────────────────── */
 export default function TasksPage() {
   const qc = useQueryClient();
+  const allCategories = useAllCategories();
   const [activeCat,    setActiveCat]    = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('pending');
   const [snoozeOpen,   setSnoozeOpen]   = useState<string | null>(null);
@@ -253,7 +255,7 @@ export default function TasksPage() {
   /* Count per slug */
   const countByCat = useMemo(() => {
     const m: Record<string, number> = { all: allTasks.length, none: 0 };
-    REMINDER_CATEGORIES.forEach(c => { m[c.slug] = 0; });
+    allCategories.forEach(c => { m[c.slug] = 0; });
     allTasks.forEach(t => {
       const s = t.category ?? '';
       if (s && m[s] !== undefined) m[s]++;
@@ -283,10 +285,10 @@ export default function TasksPage() {
     if (!activeCat) return null;
     if (activeCat === 'all')  return ALL_CAT;
     if (activeCat === 'none') return NONE_CAT;
-    return REMINDER_CATEGORIES.find(c => c.slug === activeCat) ?? null;
+    return allCategories.find(c => c.slug === activeCat) ?? null;
   }, [activeCat]);
 
-  const categories = [ALL_CAT, ...REMINDER_CATEGORIES, NONE_CAT];
+  const categories = [ALL_CAT, ...allCategories, NONE_CAT];
 
   /* ── CATEGORY GRID VIEW ──────────────────────────────────────────── */
   if (!activeCat) {

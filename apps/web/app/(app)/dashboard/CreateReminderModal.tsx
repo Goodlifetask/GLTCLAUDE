@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../../lib/api';
 import { parseVoiceTranscript, type VoiceParsedReminder } from '../../../lib/voice-parser';
-import { REMINDER_CATEGORIES } from '@glt/shared';
+import { useAllCategories } from '../../../hooks/useAllCategories';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -20,6 +20,7 @@ const PRIORITY_COLOR: Record<string, { bg: string; color: string }> = {
 export function CreateReminderModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
   const { t } = useTranslation();
+  const allCategories = useAllCategories();
   const [selType, setSelType] = useState('task');
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -478,7 +479,7 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t2)', display: 'block', marginBottom: 8 }}>{t('modal.category')}</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {REMINDER_CATEGORIES.map(cat => (
+                {allCategories.map(cat => (
                   <button
                     key={cat.slug}
                     type="button"
