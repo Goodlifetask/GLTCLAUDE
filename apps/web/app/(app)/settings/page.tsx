@@ -99,6 +99,7 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [selectedPersona, setSelectedPersona] = useState((user as any)?.persona || '');
+  const [editingPersona, setEditingPersona]   = useState(!(user as any)?.persona);
   const [occupation, setOccupation] = useState((user as any)?.occupation || '');
 
   // Change password state
@@ -341,30 +342,77 @@ export default function SettingsPage() {
             {t('settings.personaSubtitle')}
           </div>
 
-          {/* Persona grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-            {PERSONAS.map(p => (
-              <div
-                key={p.value}
-                onClick={() => {
-                  setSelectedPersona(p.value);
-                  updateProfileMutation.mutate({ persona: p.value });
-                }}
+          {/* Persona — chip if selected, full grid if editing */}
+          {!editingPersona && selectedPersona ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              {(() => {
+                const p = PERSONAS.find(p => p.value === selectedPersona);
+                return p ? (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 16px',
+                    border: '1px solid rgba(124,58,237,0.5)',
+                    borderRadius: 'var(--r-sm)',
+                    background: 'var(--amber-glow)',
+                    flex: 1, marginRight: 12,
+                  }}>
+                    <span style={{ fontSize: 22 }}>{p.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--amber)' }}>{p.label}</div>
+                      <div style={{ fontSize: 11, color: 'var(--t3)' }}>{p.desc}</div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+              <button
+                onClick={() => setEditingPersona(true)}
                 style={{
-                  padding: '10px 10px 8px',
-                  border: `1px solid ${selectedPersona === p.value ? 'rgba(124,58,237,0.5)' : 'var(--b1)'}`,
-                  borderRadius: 'var(--r-sm)',
-                  background: selectedPersona === p.value ? 'var(--amber-glow)' : 'var(--bg-raised)',
-                  cursor: 'pointer',
-                  transition: 'all 0.12s',
+                  padding: '8px 16px', borderRadius: 'var(--r-sm)',
+                  border: '1px solid var(--b1)', background: 'var(--bg-raised)',
+                  cursor: 'pointer', fontFamily: 'var(--font-body)',
+                  fontSize: 12, fontWeight: 600, color: 'var(--t2)', flexShrink: 0,
                 }}
-              >
-                <div style={{ fontSize: 18, marginBottom: 4 }}>{p.icon}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: selectedPersona === p.value ? 'var(--amber)' : 'var(--t1)', marginBottom: 2 }}>{p.label}</div>
-                <div style={{ fontSize: 10, color: 'var(--t4)', lineHeight: 1.3 }}>{p.desc}</div>
+              >Change</button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
+                {PERSONAS.map(p => (
+                  <div
+                    key={p.value}
+                    onClick={() => {
+                      setSelectedPersona(p.value);
+                      setEditingPersona(false);
+                      updateProfileMutation.mutate({ persona: p.value });
+                    }}
+                    style={{
+                      padding: '10px 10px 8px',
+                      border: `1px solid ${selectedPersona === p.value ? 'rgba(124,58,237,0.5)' : 'var(--b1)'}`,
+                      borderRadius: 'var(--r-sm)',
+                      background: selectedPersona === p.value ? 'var(--amber-glow)' : 'var(--bg-raised)',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s',
+                    }}
+                  >
+                    <div style={{ fontSize: 18, marginBottom: 4 }}>{p.icon}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: selectedPersona === p.value ? 'var(--amber)' : 'var(--t1)', marginBottom: 2 }}>{p.label}</div>
+                    <div style={{ fontSize: 10, color: 'var(--t4)', lineHeight: 1.3 }}>{p.desc}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              {selectedPersona && (
+                <button
+                  onClick={() => setEditingPersona(false)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 'var(--r-sm)',
+                    border: '1px solid var(--b1)', background: 'var(--bg-raised)',
+                    cursor: 'pointer', fontFamily: 'var(--font-body)',
+                    fontSize: 11, fontWeight: 600, color: 'var(--t3)',
+                  }}
+                >Cancel</button>
+              )}
+            </div>
+          )}
 
           {/* Occupation text field */}
           <div>
