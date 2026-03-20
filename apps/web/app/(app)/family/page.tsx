@@ -374,22 +374,7 @@ export default function FamilyPage() {
             )}
           </div>
         ) : (
-          <div style={{ maxWidth: 720, position: 'relative' }}>
-            {/* Watermark — family photo inside content area only */}
-            {family.avatarUrl && (
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 0,
-                pointerEvents: 'none',
-                backgroundImage: `url(http://localhost:3001${family.avatarUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                opacity: 0.25,
-                borderRadius: 'var(--r-lg)',
-              }} />
-            )}
+          <div style={{ maxWidth: 720 }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
             {/* Family header */}
             <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
@@ -429,7 +414,22 @@ export default function FamilyPage() {
                 )}
               </div>
               {/* Rest of card content */}
-              <div style={{ padding: '18px 22px 20px' }}>
+              <div style={{ padding: '18px 22px 20px', position: 'relative' }}>
+                {/* Watermark — photo behind card body only */}
+                {family.avatarUrl && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                    backgroundImage: `url(http://localhost:3001${family.avatarUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    opacity: 0.25,
+                  }} />
+                )}
+                <div style={{ position: 'relative', zIndex: 1 }}>
 
               {/* Members */}
               <span style={labelStyle}>Members</span>
@@ -470,6 +470,7 @@ export default function FamilyPage() {
                   </div>
                 ))}
               </div>
+                </div>{/* /inner zIndex:1 */}
               </div>{/* /padding div */}
             </div>{/* /card */}
 
