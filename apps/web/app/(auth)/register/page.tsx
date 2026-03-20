@@ -97,8 +97,8 @@ const inputStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.07)',
   border: '1px solid rgba(255,255,255,0.15)',
   borderRadius: 10,
-  padding: '12px 14px',
-  fontSize: 14,
+  padding: '9px 12px',
+  fontSize: 13,
   color: '#ffffff',
   fontFamily: 'inherit',
   outline: 'none',
@@ -353,20 +353,20 @@ export default function RegisterPage() {
       {/* Logo */}
       <div style={{ marginBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{
-          width: 80, height: 80, borderRadius: '50%',
+          width: 60, height: 60, borderRadius: '50%',
           background: 'linear-gradient(135deg, #3D2BB8, #6C4EFF)',
           border: '3px solid rgba(196,181,253,0.5)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 0 30px rgba(108,78,255,0.45)',
-          marginBottom: 10, overflow: 'hidden',
+          marginBottom: 6, overflow: 'hidden',
         }}>
           <div style={{ textAlign: 'center', lineHeight: 1.1 }}>
-            <div style={{ fontSize: 9, fontWeight: 900, color: '#4ade80', letterSpacing: '0.05em' }}>Good</div>
-            <div style={{ fontSize: 11, fontWeight: 900, color: '#facc15', letterSpacing: '0.05em' }}>Life</div>
-            <div style={{ fontSize: 9, fontWeight: 900, color: '#4ade80', letterSpacing: '0.05em' }}>Tasks</div>
+            <div style={{ fontSize: 7, fontWeight: 900, color: '#4ade80', letterSpacing: '0.05em' }}>Good</div>
+            <div style={{ fontSize: 9, fontWeight: 900, color: '#facc15', letterSpacing: '0.05em' }}>Life</div>
+            <div style={{ fontSize: 7, fontWeight: 900, color: '#4ade80', letterSpacing: '0.05em' }}>Tasks</div>
           </div>
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>
           GoodLifeTask
         </h1>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '4px 0 0' }}>
@@ -377,13 +377,13 @@ export default function RegisterPage() {
       {/* Main form */}
       <form
         onSubmit={handleSubmit(d => mutation.mutate(d))}
-        style={{ width: '100%', maxWidth: 820, marginTop: 16 }}
+        style={{ width: '100%', maxWidth: 760, marginTop: 10 }}
       >
         <div style={{
           background: 'rgba(255,255,255,0.05)',
           border: '1px solid rgba(196,181,253,0.15)',
           borderRadius: 20,
-          padding: '28px 28px 24px',
+          padding: '20px 22px 18px',
           backdropFilter: 'blur(12px)',
           boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
         }}>
@@ -452,8 +452,8 @@ export default function RegisterPage() {
                       onClick={() => setUseCase(uc.value)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '10px 12px',
-                        borderRadius: 12,
+                        padding: '7px 10px',
+                        borderRadius: 10,
                         border: active ? `1.5px solid ${uc.color}` : '1px solid rgba(255,255,255,0.12)',
                         background: active ? uc.glow : 'rgba(255,255,255,0.04)',
                         cursor: 'pointer',
@@ -468,7 +468,7 @@ export default function RegisterPage() {
                         <div style={{ fontSize: 13, fontWeight: 700, color: active ? uc.color : '#ffffff', lineHeight: 1.2 }}>
                           {uc.label}
                         </div>
-                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2, lineHeight: 1.3 }}>
+                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', marginTop: 1, lineHeight: 1.3 }}>
                           {uc.desc}
                         </div>
                       </div>
@@ -606,8 +606,22 @@ export default function RegisterPage() {
               </div>
             </div>
 
+          </div>{/* end right col */}
+        </div>{/* end 2-col grid */}
+
+        {/* ── Full-width row: Languages + Task category ── */}
+        <div style={{
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          margin: '14px 0 0',
+          paddingTop: 14,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 24,
+          alignItems: 'start',
+        }}>
+
             {/* Languages — filtered by selected country */}
-            <div style={{ marginBottom: 16 }}>
+            <div>
               <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
                 Spoken Languages
                 {selectedCountry && (
@@ -704,7 +718,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
               )}
-            </div>
+            </div>{/* end languages */}
 
             {/* Task Categories — from DB with per-category colors */}
             <div>
@@ -804,9 +818,9 @@ export default function RegisterPage() {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+            </div>{/* end task categories */}
+
+        </div>{/* end full-width 2-col */}
         </div>{/* end glass card */}
 
         {/* Submit */}
@@ -814,7 +828,7 @@ export default function RegisterPage() {
           type="submit"
           disabled={mutation.isPending}
           style={{
-            width: '100%', marginTop: 28, padding: '15px 0',
+            width: '100%', marginTop: 18, padding: '12px 0',
             background: mutation.isPending
               ? 'rgba(255,255,255,0.1)'
               : 'linear-gradient(90deg, #3b82f6 0%, #6C4EFF 40%, #a855f7 70%, #facc15 100%)',
