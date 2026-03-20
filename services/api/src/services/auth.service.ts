@@ -9,9 +9,13 @@ import { logger } from '../lib/logger';
 const BCRYPT_ROUNDS = 12;
 
 interface RegisterInput {
-  email:    string;
-  password: string;
-  name:     string;
+  email:             string;
+  password:          string;
+  name:              string;
+  categories?:       string[];
+  persona?:          string;
+  locale?:           string;
+  profile_category?: string;
 }
 
 interface LoginInput {
@@ -41,13 +45,16 @@ export class AuthService {
 
     const user = await this.prisma.user.create({
       data: {
-        email:        input.email.toLowerCase().trim(),
-        name:         input.name.trim(),
+        email:            input.email.toLowerCase().trim(),
+        name:             input.name.trim(),
         passwordHash,
-        plan:         'free',
-        locale:       'en',
-        timezone:     'UTC',
-        theme:        'warm_corporate',
+        plan:             'free',
+        locale:           input.locale ?? 'en',
+        timezone:         'UTC',
+        theme:            'warm_corporate',
+        ...(input.persona         && { persona: input.persona as any }),
+        ...(input.profile_category && { profileCategory: input.profile_category }),
+        ...(input.categories?.length && { taskPreferences: input.categories }),
       },
     });
 

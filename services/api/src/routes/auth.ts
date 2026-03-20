@@ -4,9 +4,15 @@ import { AuthService } from '../services/auth.service';
 import { authenticate } from '../middleware/auth';
 
 const registerSchema = z.object({
-  email:    z.string().email().max(255),
-  password: z.string().min(8).max(128),
-  name:     z.string().min(1).max(100),
+  email:            z.string().email().max(255),
+  password:         z.string().min(8).max(128),
+  name:             z.string().min(1).max(100),
+  categories:       z.array(z.string()).optional(),
+  persona:          z.string().optional(),
+  profession:       z.string().optional(),
+  locale:           z.string().optional(),
+  country:          z.string().optional(),
+  profile_category: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -24,15 +30,19 @@ const magicLinkSchema = z.object({
 
 function serializeUser(user: Record<string, unknown>) {
   return {
-    id:          user['id'],
-    email:       user['email'],
-    name:        user['name'],
-    avatar_url:  user['avatarUrl'] ?? null,
-    plan:        user['plan'],
-    locale:      user['locale'],
-    timezone:    user['timezone'],
-    theme:       user['theme'],
-    created_at:  user['createdAt'],
+    id:               user['id'],
+    email:            user['email'],
+    name:             user['name'],
+    avatar_url:       user['avatarUrl'] ?? null,
+    plan:             user['plan'],
+    locale:           user['locale'],
+    timezone:         user['timezone'],
+    theme:            user['theme'],
+    created_at:       user['createdAt'],
+    persona:          user['persona'] ?? null,
+    occupation:       user['occupation'] ?? null,
+    taskPreferences:  user['taskPreferences'] ?? [],
+    profileCategory:  user['profileCategory'] ?? null,
   };
 }
 

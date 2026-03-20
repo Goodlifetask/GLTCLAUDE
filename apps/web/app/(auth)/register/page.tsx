@@ -259,7 +259,7 @@ export default function RegisterPage() {
     } as any),
     onSuccess: (res: any) => {
       const u = res.data.user;
-      setUser({ ...u, avatarUrl: u.avatar_url ?? null });
+      setUser({ ...u, avatarUrl: u.avatar_url ?? null, taskPreferences: u.taskPreferences ?? selInterests });
       setAccessToken(res.data.tokens.access_token);
       toast.success('Welcome to GoodLifeTask!');
       const dest =

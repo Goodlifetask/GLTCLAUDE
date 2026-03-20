@@ -118,7 +118,11 @@ export default function SettingsPage() {
   });
 
   // My Categories state (local-only for now)
-  const [myCategoryIds, setMyCategoryIds] = useState<string[]>(['work', 'personal']);
+  const [myCategoryIds, setMyCategoryIds] = useState<string[]>(() => {
+    const saved = (user as any)?.taskPreferences;
+    if (Array.isArray(saved) && saved.length > 0) return saved as string[];
+    return ['work', 'personal'];
+  });
   const [customCats, setCustomCats] = useState<{ name: string; icon: string; color: string }[]>([]);
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('');
