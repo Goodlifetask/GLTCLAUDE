@@ -29,6 +29,7 @@ export async function registerPlugins(server: FastifyInstance) {
       },
     },
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   });
 
   // CORS
