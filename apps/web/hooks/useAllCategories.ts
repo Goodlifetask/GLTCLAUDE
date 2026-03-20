@@ -27,7 +27,7 @@ export function useAllCategories(): CategoryDef[] {
       color: c.color,
     }));
 
-    if (!user?.id) return system;
+    if (!user?.id || typeof window === 'undefined') return system;
 
     try {
       const raw = localStorage.getItem(`glt_custom_cats_${user.id}`);
