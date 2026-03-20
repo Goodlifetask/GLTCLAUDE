@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -140,18 +140,51 @@ export default function RegisterPage() {
   const [professions,     setProfessions]     = useState<ApiProfession[]>([]);
   const [profQuery,       setProfQuery]       = useState('');
   const [profOpen,        setProfOpen]        = useState(false);
+  const [profConfirmed,   setProfConfirmed]   = useState(false);
   const profRef = useRef<HTMLDivElement>(null);
 
-  /* Close dropdown when clicking outside */
+  /* ── Language add state ─────────────────────────────────────────── */
+  const [showLangAdd,  setShowLangAdd]  = useState(false);
+  const [langAddQuery, setLangAddQuery] = useState('');
+  const langAddRef = useRef<HTMLDivElement>(null);
+
+  /* ── Custom category state ──────────────────────────────────────── */
+  const [showCustomCat,    setShowCustomCat]    = useState(false);
+  const [customCatInput,   setCustomCatInput]   = useState('');
+  const [customCategories, setCustomCategories] = useState<{ slug: string; name: string }[]>([]);
+
+  /* Close dropdowns when clicking outside */
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (profRef.current && !profRef.current.contains(e.target as Node)) {
         setProfOpen(false);
       }
+      if (langAddRef.current && !langAddRef.current.contains(e.target as Node)) {
+        setShowLangAdd(false);
+      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  /* All unique languages across all countries (for the Add Language picker) */
+  const allAvailableLangs = useMemo(() => {
+    const seen = new Set<string>();
+    const result: { id: string; name: string; code: string }[] = [];
+    countries.forEach(c => c.languages.forEach(l => {
+      if (!seen.has(l.name)) { seen.add(l.name); result.push(l); }
+    }));
+    return result.sort((a, b) => a.name.localeCompare(b.name));
+  }, [countries]);
+
+  /* Languages not already shown in the current country list */
+  const filteredLangAdd = useMemo(() => {
+    const q = langAddQuery.toLowerCase().trim();
+    return allAvailableLangs.filter(l =>
+      !availableLangs.some(al => al.id === l.id) &&
+      (!q || l.name.toLowerCase().includes(q)),
+    );
+  }, [allAvailableLangs, availableLangs, langAddQuery]);
 
   const filteredProfs = professions.filter(p =>
     p.label.toLowerCase().includes(profQuery.toLowerCase()),
@@ -196,6 +229,18 @@ export default function RegisterPage() {
   }
   function toggleInterest(slug: string) {
     setSelInterests(p => p.includes(slug) ? p.filter(x => x !== slug) : [...p, slug]);
+  }
+
+  function addCustomCategory() {
+    const name = customCatInput.trim();
+    if (!name) return;
+    const slug = `custom_${name.toLowerCase().replace(/\s+/g, '_')}`;
+    if (!customCategories.some(c => c.slug === slug)) {
+      setCustomCategories(prev => [...prev, { slug, name }]);
+      setSelInterests(prev => [...prev, slug]);
+    }
+    setCustomCatInput('');
+    setShowCustomCat(false);
   }
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -439,80 +484,105 @@ export default function RegisterPage() {
                 <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>
                   Profession
                 </label>
-                {/* Text input — type freely or pick from dropdown */}
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    value={profQuery}
-                    placeholder="Type or search…"
-                    autoComplete="off"
-                    onFocus={() => setProfOpen(true)}
-                    onChange={e => {
-                      setProfQuery(e.target.value);
-                      setProfession(e.target.value);
-                      setProfOpen(true);
-                    }}
-                    style={{ ...inputStyle, paddingRight: 32 }}
-                  />
-                  {/* chevron */}
-                  <span
-                    onClick={() => setProfOpen(o => !o)}
-                    style={{
-                      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                      color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, userSelect: 'none',
-                    }}
-                  >{profOpen ? '▲' : '▼'}</span>
-                </div>
 
-                {/* Dropdown suggestions */}
-                {profOpen && (
+                {/* ── Confirmed chip view ── */}
+                {profConfirmed ? (
                   <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                    background: '#1e1460',
-                    border: '1px solid rgba(196,181,253,0.2)',
-                    borderRadius: 10, marginTop: 4,
-                    maxHeight: 220, overflowY: 'auto',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: 'rgba(108,78,255,0.18)',
+                    border: '1.5px solid #6C4EFF',
+                    borderRadius: 10, padding: '10px 14px',
                   }}>
-                    {/* "Use what I typed" option when query doesn't match any suggestion */}
-                    {profQuery.trim() && !filteredProfs.some(p => p.label.toLowerCase() === profQuery.toLowerCase()) && (
-                      <div
-                        onMouseDown={() => { setProfession(profQuery.trim()); setProfOpen(false); }}
-                        style={{
-                          padding: '9px 14px', fontSize: 12, cursor: 'pointer',
-                          color: '#C4B5FD', fontStyle: 'italic',
-                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    <span style={{ fontSize: 14, color: '#C4B5FD', fontWeight: 600 }}>
+                      {professions.find(p => p.label === profession)?.icon ?? '💼'}{' '}
+                      {profession}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setProfConfirmed(false); setProfQuery(''); setProfOpen(true); }}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'rgba(196,181,253,0.6)', fontSize: 11, fontWeight: 600,
+                        fontFamily: 'inherit', textDecoration: 'underline',
+                      }}
+                    >Change</button>
+                  </div>
+                ) : (
+                  /* ── Combobox search view ── */
+                  <>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={profQuery}
+                        placeholder="Type or search…"
+                        autoComplete="off"
+                        onFocus={() => setProfOpen(true)}
+                        onChange={e => {
+                          setProfQuery(e.target.value);
+                          setProfession(e.target.value);
+                          setProfOpen(true);
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        ✏️ Use "{profQuery.trim()}"
+                        style={{ ...inputStyle, paddingRight: 32 }}
+                      />
+                      <span
+                        onClick={() => setProfOpen(o => !o)}
+                        style={{
+                          position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                          color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, userSelect: 'none',
+                        }}
+                      >{profOpen ? '▲' : '▼'}</span>
+                    </div>
+
+                    {profOpen && (
+                      <div style={{
+                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                        background: '#1e1460',
+                        border: '1px solid rgba(196,181,253,0.2)',
+                        borderRadius: 10, marginTop: 4,
+                        maxHeight: 220, overflowY: 'auto',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                      }}>
+                        {profQuery.trim() && !filteredProfs.some(p => p.label.toLowerCase() === profQuery.toLowerCase()) && (
+                          <div
+                            onMouseDown={() => { setProfession(profQuery.trim()); setProfOpen(false); setProfConfirmed(true); }}
+                            style={{
+                              padding: '9px 14px', fontSize: 12, cursor: 'pointer',
+                              color: '#C4B5FD', fontStyle: 'italic',
+                              borderBottom: '1px solid rgba(255,255,255,0.06)',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            ✏️ Use "{profQuery.trim()}"
+                          </div>
+                        )}
+                        {(filteredProfs.length === 0 && !profQuery.trim()) ? (
+                          <div style={{ padding: '9px 14px', fontSize: 12, color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
+                            Start typing to search…
+                          </div>
+                        ) : filteredProfs.map(p => (
+                          <div
+                            key={p.value}
+                            onMouseDown={() => {
+                              setProfession(p.label);
+                              setProfQuery(p.label);
+                              setProfOpen(false);
+                              setProfConfirmed(true);
+                            }}
+                            style={{
+                              padding: '9px 14px', fontSize: 12.5, cursor: 'pointer',
+                              color: '#ffffff', display: 'flex', alignItems: 'center', gap: 8,
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <span style={{ fontSize: 16 }}>{p.icon}</span>
+                            <span>{p.label}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
-                    {(filteredProfs.length === 0 && !profQuery.trim()) ? (
-                      <div style={{ padding: '9px 14px', fontSize: 12, color: 'rgba(255,255,255,0.35)', fontStyle: 'italic' }}>
-                        Start typing to search…
-                      </div>
-                    ) : filteredProfs.map(p => (
-                      <div
-                        key={p.value}
-                        onMouseDown={() => {
-                          setProfession(p.label);
-                          setProfQuery(p.label);
-                          setProfOpen(false);
-                        }}
-                        style={{
-                          padding: '9px 14px', fontSize: 12.5, cursor: 'pointer',
-                          color: '#ffffff', display: 'flex', alignItems: 'center', gap: 8,
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <span style={{ fontSize: 16 }}>{p.icon}</span>
-                        <span>{p.label}</span>
-                      </div>
-                    ))}
-                  </div>
+                  </>
                 )}
               </div>
               <div>
@@ -551,7 +621,7 @@ export default function RegisterPage() {
                   {selectedCountry ? 'No languages on record for this country' : 'Select a country to see its languages'}
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
                   {availableLangs.map(l => (
                     <button
                       key={l.id}
@@ -562,20 +632,130 @@ export default function RegisterPage() {
                       {l.name}
                     </button>
                   ))}
+                  {/* Add language button */}
+                  <div ref={langAddRef} style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => { setShowLangAdd(o => !o); setLangAddQuery(''); }}
+                      style={{
+                        ...pillBase,
+                        border: '1px dashed rgba(108,78,255,0.6)',
+                        color: '#C4B5FD',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >
+                      + Add language
+                    </button>
+                    {showLangAdd && (
+                      <div style={{
+                        position: 'absolute', bottom: '110%', left: 0, zIndex: 200,
+                        background: '#1e1460',
+                        border: '1px solid rgba(196,181,253,0.25)',
+                        borderRadius: 10, padding: 8,
+                        width: 200,
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                      }}>
+                        <input
+                          autoFocus
+                          type="text"
+                          value={langAddQuery}
+                          onChange={e => setLangAddQuery(e.target.value)}
+                          placeholder="Search language…"
+                          style={{ ...inputStyle, fontSize: 12, padding: '7px 10px', marginBottom: 6 }}
+                        />
+                        <div style={{ maxHeight: 150, overflowY: 'auto' }}>
+                          {/* Custom entry if not in list */}
+                          {langAddQuery.trim() && !filteredLangAdd.some(l => l.name.toLowerCase() === langAddQuery.toLowerCase()) && !selLangs.includes(langAddQuery.trim()) && (
+                            <div
+                              onMouseDown={() => {
+                                toggleLang(langAddQuery.trim());
+                                setShowLangAdd(false);
+                                setLangAddQuery('');
+                              }}
+                              style={{ padding: '7px 10px', fontSize: 12, cursor: 'pointer', color: '#C4B5FD', fontStyle: 'italic' }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              ✏️ Add "{langAddQuery.trim()}"
+                            </div>
+                          )}
+                          {filteredLangAdd.length === 0 && !langAddQuery.trim() ? (
+                            <div style={{ padding: '7px 10px', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>
+                              All languages for this country are shown
+                            </div>
+                          ) : filteredLangAdd.map(l => (
+                            <div
+                              key={l.id}
+                              onMouseDown={() => {
+                                toggleLang(l.name);
+                                setShowLangAdd(false);
+                                setLangAddQuery('');
+                              }}
+                              style={{ padding: '7px 10px', fontSize: 12.5, cursor: 'pointer', color: '#fff', borderRadius: 6 }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(108,78,255,0.2)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              {l.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Interests / Categories — from DB with per-category colors */}
+            {/* Task Categories — from DB with per-category colors */}
             <div>
-              <label style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
-                Interests
-                {categories.some(c => c.source === 'community') && (
-                  <span style={{ marginLeft: 6, fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>
-                    · includes community picks
-                  </span>
-                )}
-              </label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <label style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+                  Task category
+                  {categories.some(c => c.source === 'community') && (
+                    <span style={{ marginLeft: 6, fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>
+                      · includes community picks
+                    </span>
+                  )}
+                </label>
+                {/* Free user: custom add */}
+                <button
+                  type="button"
+                  onClick={() => setShowCustomCat(o => !o)}
+                  style={{
+                    background: 'none', border: '1px dashed rgba(108,78,255,0.5)',
+                    borderRadius: 8, padding: '3px 10px',
+                    color: '#C4B5FD', fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  + Custom
+                </button>
+              </div>
+
+              {/* Custom category input */}
+              {showCustomCat && (
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={customCatInput}
+                    onChange={e => setCustomCatInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomCategory(); } if (e.key === 'Escape') setShowCustomCat(false); }}
+                    placeholder="e.g. Hobbies, Pets…"
+                    style={{ ...inputStyle, flex: 1, fontSize: 12, padding: '7px 12px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomCategory}
+                    style={{
+                      background: '#6C4EFF', border: 'none', borderRadius: 8,
+                      color: '#fff', fontSize: 12, fontWeight: 700,
+                      padding: '0 14px', cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >Add</button>
+                </div>
+              )}
+
               {loadingData ? (
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', margin: 0, fontStyle: 'italic' }}>
                   Loading categories…
@@ -591,6 +771,36 @@ export default function RegisterPage() {
                     >
                       {cat.icon} {cat.name}
                     </button>
+                  ))}
+                  {/* Custom user-added categories */}
+                  {customCategories.map(cat => (
+                    <div key={cat.slug} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleInterest(cat.slug)}
+                        style={selInterests.includes(cat.slug)
+                          ? { ...pillActive('#f59e0b'), borderRadius: '20px 0 0 20px', borderRight: 'none' }
+                          : { ...pillBase, borderRadius: '20px 0 0 20px', borderRight: 'none' }
+                        }
+                      >
+                        ✨ {cat.name}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomCategories(p => p.filter(c => c.slug !== cat.slug));
+                          setSelInterests(p => p.filter(s => s !== cat.slug));
+                        }}
+                        style={{
+                          ...pillBase,
+                          borderRadius: '0 20px 20px 0',
+                          borderLeft: 'none',
+                          padding: '6px 10px',
+                          color: 'rgba(255,100,100,0.8)',
+                          fontSize: 11,
+                        }}
+                      >✕</button>
+                    </div>
                   ))}
                 </div>
               )}
