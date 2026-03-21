@@ -81,7 +81,9 @@ export default function DashboardPage() {
   };
 
   const [showModal, setShowModal] = useState(false);
+  const [startWithVoice, setStartWithVoice] = useState(false);
   const [snoozeOpen, setSnoozeOpen] = useState<string | null>(null);
+  const [repeatOpen, setRepeatOpen] = useState<string | null>(null);
 
   const apiParams = buildApiParams(filter, type);
 
@@ -123,6 +125,17 @@ export default function DashboardPage() {
       setSnoozeOpen(null);
     },
     onError: () => toast.error('Failed to snooze reminder'),
+  });
+
+  const repeatMutation = useMutation({
+    mutationFn: ({ id, fireAt }: { id: string; fireAt: string }) =>
+      api.reminders.update(id, { fire_at: fireAt, status: 'pending' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['reminders'] });
+      toast.success('Reminder rescheduled!');
+      setRepeatOpen(null);
+    },
+    onError: () => toast.error('Failed to reschedule reminder'),
   });
 
   const reminders = (remindersData as any)?.data || [];
@@ -175,7 +188,16 @@ export default function DashboardPage() {
               fontSize: 15, cursor: 'pointer', color: 'var(--t2)'
             }}>⚙</div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => { setStartWithVoice(true); setShowModal(true); }}
+            title="Voice quick-add"
+            style={{
+              width: 34, height: 34, borderRadius: 'var(--r-sm)',
+              border: '1px solid var(--b1)', background: 'var(--card)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 15, cursor: 'pointer', color: 'var(--t2)',
+            }}>🎤</button>
+          <button
+            onClick={() => { setStartWithVoice(false); setShowModal(true); }}
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '8px 16px', borderRadius: 'var(--r-sm)',
@@ -271,8 +293,12 @@ export default function DashboardPage() {
               onSnooze={(minutes: number) => snoozeMutation.mutate({ id: reminder.id, minutes })}
               snoozeOpen={snoozeOpen === reminder.id}
               onSnoozeToggle={() => setSnoozeOpen(snoozeOpen === reminder.id ? null : reminder.id)}
+              repeatOpen={repeatOpen === reminder.id}
+              onRepeatToggle={() => setRepeatOpen(repeatOpen === reminder.id ? null : reminder.id)}
+              onRepeat={(fireAt: string) => repeatMutation.mutate({ id: reminder.id, fireAt })}
               isCompleting={completeMutation.isPending}
               isDeleting={deleteMutation.isPending}
+              isRepeating={repeatMutation.isPending}
             />
           ))
         )}
@@ -280,7 +306,10 @@ export default function DashboardPage() {
 
       {/* New Reminder Modal */}
       {showModal && (
-        <CreateReminderModal onClose={() => setShowModal(false)} />
+        <CreateReminderModal
+          startWithVoice={startWithVoice}
+          onClose={() => { setShowModal(false); setStartWithVoice(false); }}
+        />
       )}
     </>
   );
@@ -293,8 +322,12 @@ function ReminderCard({
   onSnooze,
   snoozeOpen,
   onSnoozeToggle,
+  repeatOpen,
+  onRepeatToggle,
+  onRepeat,
   isCompleting,
   isDeleting,
+  isRepeating,
 }: {
   reminder: any;
   onComplete: () => void;
@@ -302,14 +335,28 @@ function ReminderCard({
   onSnooze: (minutes: number) => void;
   snoozeOpen: boolean;
   onSnoozeToggle: () => void;
+  repeatOpen: boolean;
+  onRepeatToggle: () => void;
+  onRepeat: (fireAt: string) => void;
   isCompleting: boolean;
   isDeleting: boolean;
+  isRepeating: boolean;
 }) {
   const { t } = useTranslation();
   const type = reminder.type || 'task';
   const isOverdue = new Date(reminder.fireAt) < new Date() && reminder.status !== 'completed';
   const isDone = reminder.status === 'completed';
-  const [hovered, setHovered] = useState(false);
+
+  // Default repeat date: tomorrow same time
+  const defaultRepeatDate = () => {
+    const d = reminder.fireAt ? new Date(reminder.fireAt) : new Date();
+    d.setDate(d.getDate() + 1);
+    // format for datetime-local input: YYYY-MM-DDTHH:MM
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [repeatDate, setRepeatDate] = useState('');
 
   const TYPE_LABEL: Record<string, string> = {
     call: t('dashboard.type_call'),
@@ -325,20 +372,30 @@ function ReminderCard({
     { label: t('dashboard.snoozeTomorrow'), minutes: 1440 },
   ];
 
+  const handleRepeatToggle = () => {
+    if (!repeatOpen) setRepeatDate(defaultRepeatDate());
+    onRepeatToggle();
+  };
+
+  const btnBase: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 5,
+    padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+    cursor: 'pointer', border: '1px solid var(--b1)',
+    background: 'var(--card)', color: 'var(--t2)',
+    transition: 'background 0.1s, color 0.1s',
+    lineHeight: 1,
+  };
+
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: 'var(--card)', border: '1px solid var(--b1)',
-        borderRadius: 'var(--r-lg)', padding: '15px 16px 15px 18px',
-        marginBottom: 6,
-        display: 'flex', alignItems: 'flex-start', gap: 13,
-        position: 'relative', opacity: isDone ? 0.55 : 1,
-        cursor: 'default',
-        transition: 'opacity 0.15s'
-      }}
-    >
+    <div style={{
+      background: 'var(--card)', border: '1px solid var(--b1)',
+      borderRadius: 'var(--r-lg)', padding: '14px 16px 12px 18px',
+      marginBottom: 6,
+      display: 'flex', alignItems: 'flex-start', gap: 13,
+      position: 'relative', opacity: isDone ? 0.55 : 1,
+      cursor: 'default',
+      transition: 'opacity 0.15s'
+    }}>
       {/* Color bar */}
       <div style={{
         position: 'absolute', left: 0, top: 10, bottom: 10,
@@ -354,7 +411,7 @@ function ReminderCard({
           border: isDone ? 'none' : '1.5px solid var(--t3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: isDone ? 'default' : 'pointer', flexShrink: 0, marginTop: 2,
-          background: isDone ? 'var(--sage)' : hovered && !isDone ? 'rgba(255,255,255,0.06)' : 'transparent',
+          background: isDone ? 'var(--sage)' : 'transparent',
           color: isDone ? '#fff' : 'transparent', fontSize: 11,
           transition: 'all 0.12s'
         }}
@@ -367,7 +424,7 @@ function ReminderCard({
           {reminder.title}
         </div>
         {reminder.notes && <div style={{ fontSize: 11.5, color: 'var(--t3)', marginBottom: 6, lineHeight: 1.5 }}>{reminder.notes}</div>}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           {reminder.fireAt && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: isOverdue ? 'var(--coral)' : 'var(--t3)', fontWeight: isOverdue ? 600 : 500 }}>
               {isOverdue ? '⚡ ' : ''}{new Date(reminder.fireAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
@@ -383,64 +440,94 @@ function ReminderCard({
             <span style={{ fontSize: 10, color: 'var(--t4)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>🔁 {t('dashboard.recurring')}</span>
           )}
         </div>
-      </div>
 
-      {/* Action buttons */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-        opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
-        position: 'relative'
-      }}>
-        {/* Snooze */}
+        {/* Action buttons — always visible */}
         {!isDone && (
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={onSnoozeToggle}
-              title={t('dashboard.snooze')}
-              style={{
-                width: 28, height: 28, borderRadius: 7,
-                border: '1px solid var(--b1)', background: 'var(--card)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', fontSize: 13, color: 'var(--t2)'
-              }}
-            >⏰</button>
-            {snoozeOpen && (
-              <div style={{
-                position: 'absolute', right: 0, top: 34,
-                background: 'var(--card)', border: '1px solid var(--b1)',
-                borderRadius: 'var(--r)', padding: '4px 0',
-                zIndex: 50, minWidth: 130,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
-              }}>
-                {snoozeOptions.map(opt => (
-                  <div
-                    key={opt.minutes}
-                    onClick={() => onSnooze(opt.minutes)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', position: 'relative' }}>
+            {/* Snooze */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={onSnoozeToggle} style={{ ...btnBase, color: 'var(--sky)' }}>
+                ⏰ Snooze
+              </button>
+              {snoozeOpen && (
+                <div style={{
+                  position: 'absolute', left: 0, top: 'calc(100% + 4px)',
+                  background: 'var(--card)', border: '1px solid var(--b1)',
+                  borderRadius: 'var(--r)', padding: '4px 0',
+                  zIndex: 50, minWidth: 140,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+                }}>
+                  {snoozeOptions.map(opt => (
+                    <div
+                      key={opt.minutes}
+                      onClick={() => onSnooze(opt.minutes)}
+                      style={{ padding: '8px 14px', fontSize: 12, color: 'var(--t2)', cursor: 'pointer', fontWeight: 500 }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >{opt.label}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Repeat */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={handleRepeatToggle} disabled={isRepeating} style={{ ...btnBase, color: 'var(--amber)' }}>
+                🔁 Repeat
+              </button>
+              {repeatOpen && (
+                <div style={{
+                  position: 'absolute', left: 0, top: 'calc(100% + 4px)',
+                  background: 'var(--card)', border: '1px solid var(--b1)',
+                  borderRadius: 'var(--r)', padding: '12px 14px',
+                  zIndex: 50, minWidth: 240,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', marginBottom: 8 }}>Choose next date &amp; time</div>
+                  <input
+                    type="datetime-local"
+                    value={repeatDate}
+                    onChange={e => setRepeatDate(e.target.value)}
                     style={{
-                      padding: '8px 14px', fontSize: 12, color: 'var(--t2)',
-                      cursor: 'pointer', fontWeight: 500
+                      width: '100%', padding: '6px 8px', borderRadius: 6,
+                      border: '1px solid var(--b1)', background: 'var(--bg-raised)',
+                      color: 'var(--t1)', fontSize: 12, marginBottom: 10,
+                      boxSizing: 'border-box' as const,
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >{opt.label}</div>
-                ))}
-              </div>
-            )}
+                  />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => repeatDate && onRepeat(new Date(repeatDate).toISOString())}
+                      disabled={!repeatDate || isRepeating}
+                      style={{
+                        flex: 1, padding: '6px 0', borderRadius: 6,
+                        background: 'var(--amber)', color: '#fff',
+                        border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer'
+                      }}
+                    >{isRepeating ? 'Saving…' : 'Confirm'}</button>
+                    <button
+                      onClick={onRepeatToggle}
+                      style={{
+                        padding: '6px 12px', borderRadius: 6,
+                        background: 'transparent', color: 'var(--t3)',
+                        border: '1px solid var(--b1)', fontSize: 12, cursor: 'pointer'
+                      }}
+                    >Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Done (delete) */}
+            <button
+              onClick={onDelete}
+              disabled={isDeleting}
+              style={{ ...btnBase, color: 'var(--coral)', borderColor: 'rgba(220,38,38,0.25)' }}
+            >
+              ✓ Done
+            </button>
           </div>
         )}
-
-        {/* Delete */}
-        <button
-          onClick={onDelete}
-          disabled={isDeleting}
-          title={t('dashboard.delete')}
-          style={{
-            width: 28, height: 28, borderRadius: 7,
-            border: '1px solid rgba(220,38,38,0.2)', background: '#fff5f5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', fontSize: 13, color: 'var(--coral)'
-          }}
-        >🗑</button>
       </div>
     </div>
   );

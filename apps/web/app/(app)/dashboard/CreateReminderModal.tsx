@@ -17,7 +17,7 @@ const PRIORITY_COLOR: Record<string, { bg: string; color: string }> = {
   low:    { bg: '#f0fdf4', color: '#16a34a' },
 };
 
-export function CreateReminderModal({ onClose }: { onClose: () => void }) {
+export function CreateReminderModal({ onClose, startWithVoice }: { onClose: () => void; startWithVoice?: boolean }) {
   const qc = useQueryClient();
   const { t } = useTranslation();
   const allCategories = useAllCategories();
@@ -47,6 +47,17 @@ export function CreateReminderModal({ onClose }: { onClose: () => void }) {
       isStoppingRef.current = true;
       recognitionRef.current?.abort();
     };
+  }, []);
+
+  // Auto-open voice panel and start listening when launched from mic button
+  useEffect(() => {
+    if (startWithVoice) {
+      setVoiceOpen(true);
+      // Small delay so the panel renders before we call startListening
+      const t = setTimeout(() => startListening(), 300);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startListening = async () => {
