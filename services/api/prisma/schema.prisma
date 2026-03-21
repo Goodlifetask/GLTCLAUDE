@@ -707,22 +707,24 @@ model AuditLog {
 
 model UserCategory {
   id            String         @id @default(uuid()) @db.Uuid
-  userId        String         @map("user_id") @db.Uuid
+  userId        String?        @map("user_id") @db.Uuid             // null = admin-created global category
   name          String         @db.VarChar(60)
   slug          String         @db.VarChar(60)
   icon          String         @default("📁") @db.VarChar(10)
   color         String         @default("#6C4EFF") @db.VarChar(7)
   status        CategoryStatus @default(pending)
   suggestCount  Int            @default(1) @map("suggest_count")
-  isGlobal      Boolean        @default(false) @map("is_global")  // true = promoted to system
+  isGlobal      Boolean        @default(false) @map("is_global")    // true = visible to all users
+  adminCreated  Boolean        @default(false) @map("admin_created") // true = created via admin panel
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, slug])
   @@index([status])
   @@index([name])
+  @@index([adminCreated])
   @@map("user_categories")
 }
 

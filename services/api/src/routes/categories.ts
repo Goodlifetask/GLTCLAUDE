@@ -115,4 +115,82 @@ export async function categoriesRoutes(server: FastifyInstance) {
       }
     },
   );
+
+  // ── Admin: GET /admin/custom ───────────────────────────────────────────────
+  /** List admin-created custom categories */
+  server.get('/admin/custom', { preHandler: authenticateAdmin }, async (_request, reply) => {
+    try {
+      const cats = await (server.prisma as any).userCategory.findMany({
+        where: { adminCreated: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      return reply.send({ success: true, data: cats });
+    } catch {
+      return reply.send({ success: true, data: [] });
+    }
+  });
+
+  // ── Admin: POST /admin/custom ──────────────────────────────────────────────
+  /** Create a new admin-managed global category */
+  server.post<{ Body: { name: string; icon?: string; color?: string } }>(
+    '/admin/custom',
+    { preHandler: authenticateAdmin },
+    async (request, reply) => {
+      const { name, icon = '📁', color = '#6366f1' } = request.body;
+
+      if (!name?.trim()) {
+        return reply.status(400).send({ success: false, message: 'Name is required' });
+      }
+
+      const slug = name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+      // Guard: prevent duplicate admin category with same slug
+      const existing = await (server.prisma as any).userCategory.findFirst({
+        where: { slug, adminCreated: true },
+      });
+      if (existing) {
+        return reply.status(409).send({ success: false, message: `A category named "${name}" already exists` });
+      }
+
+      try {
+        const cat = await (server.prisma as any).userCategory.create({
+          data: {
+            userId:       null,
+            name:         name.trim(),
+            slug,
+            icon:         icon.trim() || '📁',
+            color:        color || '#6366f1',
+            status:       'approved',
+            isGlobal:     true,
+            adminCreated: true,
+            suggestCount: 0,
+          },
+        });
+        return reply.status(201).send({ success: true, data: cat });
+      } catch (err: any) {
+        return reply.status(500).send({ success: false, message: 'Failed to create category' });
+      }
+    },
+  );
+
+  // ── Admin: DELETE /admin/custom/:id ───────────────────────────────────────
+  /** Delete an admin-created custom category */
+  server.delete<{ Params: { id: string } }>(
+    '/admin/custom/:id',
+    { preHandler: authenticateAdmin },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        const cat = await (server.prisma as any).userCategory.findUnique({ where: { id } });
+        if (!cat) return reply.status(404).send({ success: false, message: 'Category not found' });
+        if (!cat.adminCreated) return reply.status(403).send({ success: false, message: 'Cannot delete user-submitted categories' });
+
+        await (server.prisma as any).userCategory.delete({ where: { id } });
+        return reply.status(204).send();
+      } catch {
+        return reply.status(500).send({ success: false, message: 'Failed to delete category' });
+      }
+    },
+  );
 }

@@ -1775,57 +1775,79 @@ const USER_CATS_INITIAL = [
 ];
 
 function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'success' | 'error') => void }) {
-  const [custCats, setCustCats] = useState(CUSTCATS.map(c => ({ ...c })));
+  // ── Custom (admin-created) categories ──
+  const [custCats, setCustCats] = useState<Array<{ id?: string; n: string; c: string; i: string; cnt: number }>>([]);
+  const [custLoading, setCustLoading]     = useState(true);
+  const [addLoading, setAddLoading]       = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+
+  // ── User-submitted categories ──
   const [userCats, setUserCats] = useState<Array<{ id?: string; n: string; c: string; i: string; cnt: number; status: string; users: number }>>([]);
   const [userCatsLoading, setUserCatsLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [newName, setNewName] = useState('');
+  const [actionLoading, setActionLoading]     = useState<string | null>(null);
+
+  // ── Add-form state ──
+  const [newName,  setNewName]  = useState('');
   const [newEmoji, setNewEmoji] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
 
+  // Load custom (admin-created) categories on mount
+  useEffect(() => {
+    setCustLoading(true);
+    adminApi.categories.listCustom()
+      .then(res => setCustCats(res.data.map(c => ({ id: c.id, n: c.name, c: c.color, i: c.icon, cnt: c.suggestCount }))))
+      .catch(() => setCustCats(CUSTCATS.map(c => ({ ...c }))))
+      .finally(() => setCustLoading(false));
+  }, []);
+
+  // Load user-submitted categories on mount
   useEffect(() => {
     setUserCatsLoading(true);
     adminApi.categories.listUserCategories()
-      .then(res => {
-        setUserCats(res.data.map(c => ({
-          id:     c.id,
-          n:      c.name,
-          c:      c.color,
-          i:      c.icon,
-          cnt:    c.suggestCount,
-          status: c.status,
-          users:  c.suggestCount,
-        })));
-      })
-      .catch(() => {
-        // Fallback to mock data when API is unavailable
-        setUserCats(USER_CATS_INITIAL.map(c => ({ ...c })));
-      })
+      .then(res => setUserCats(res.data.map(c => ({ id: c.id, n: c.name, c: c.color, i: c.icon, cnt: c.suggestCount, status: c.status, users: c.suggestCount }))))
+      .catch(() => setUserCats(USER_CATS_INITIAL.map(c => ({ ...c }))))
       .finally(() => setUserCatsLoading(false));
   }, []);
 
-  function handleAddCategory() {
+  async function handleAddCategory() {
     const name = newName.trim();
     if (!name) { showToast('Please enter a category name.', 'error'); return; }
-    const emoji = newEmoji.trim() || '📁';
-    setCustCats(prev => [...prev, { n: name, c: newColor, i: emoji, cnt: 0 }]);
-    setNewName('');
-    setNewEmoji('');
-    setNewColor('#6366f1');
-    showToast(`Category "${name}" added successfully.`);
+    const icon = newEmoji.trim() || '📁';
+    setAddLoading(true);
+    try {
+      const res = await adminApi.categories.createCustom({ name, icon, color: newColor });
+      setCustCats(prev => [{ id: res.data.id, n: res.data.name, c: res.data.color, i: res.data.icon, cnt: 0 }, ...prev]);
+      setNewName('');
+      setNewEmoji('');
+      setNewColor('#6366f1');
+      showToast(`Category "${name}" saved successfully.`);
+    } catch (err: any) {
+      const msg = (() => { try { return JSON.parse(err.message)?.message; } catch { return null; } })();
+      showToast(msg || `Failed to save "${name}"`, 'error');
+    } finally {
+      setAddLoading(false);
+    }
   }
 
-  function handleDeleteCat(i: number) {
-    const name = custCats[i].n;
-    setCustCats(prev => prev.filter((_, idx) => idx !== i));
-    showToast(`Category "${name}" deleted.`);
+  async function handleDeleteCat(i: number) {
+    const cat = custCats[i];
+    if (!cat.id) { showToast('Cannot delete — no ID', 'error'); return; }
+    setDeleteLoading(cat.id);
+    try {
+      await adminApi.categories.deleteCustom(cat.id);
+      setCustCats(prev => prev.filter((_, idx) => idx !== i));
+      showToast(`Category "${cat.n}" deleted.`);
+    } catch {
+      showToast(`Failed to delete "${cat.n}"`, 'error');
+    } finally {
+      setDeleteLoading(null);
+    }
   }
 
   async function handleApproveUserCat(i: number) {
     const cat = userCats[i];
     if (!cat.id) { showToast('Cannot save — no ID for this category', 'error'); return; }
-    const key = cat.id + '_approve';
-    setActionLoading(key);
+    setActionLoading(cat.id + '_approve');
     try {
       await adminApi.categories.updateStatus(cat.id, 'approved');
       setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'approved' } : c));
@@ -1840,8 +1862,7 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
   async function handleRejectUserCat(i: number) {
     const cat = userCats[i];
     if (!cat.id) { showToast('Cannot save — no ID for this category', 'error'); return; }
-    const key = cat.id + '_reject';
-    setActionLoading(key);
+    setActionLoading(cat.id + '_reject');
     try {
       await adminApi.categories.updateStatus(cat.id, 'rejected');
       setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'rejected' } : c));
@@ -1856,8 +1877,7 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
   async function handlePromoteUserCat(i: number) {
     const cat = userCats[i];
     if (!cat.id) { showToast('Cannot save — no ID for this category', 'error'); return; }
-    const key = cat.id + '_promote';
-    setActionLoading(key);
+    setActionLoading(cat.id + '_promote');
     try {
       await adminApi.categories.promote(cat.id);
       setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'approved' } : c));
@@ -1952,19 +1972,25 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
           </div>
         </div>
 
-        {/* Column 3: Add New Custom */}
+        {/* Column 3: Custom Categories (admin-created) */}
         <div>
           <div className="section-label">Custom Categories</div>
           <div className="cat-list">
-            {custCats.map((c, i) => (
-              <div key={i} className="cat-item">
+            {custLoading ? (
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--t4)', fontSize: 13 }}>Loading…</div>
+            ) : custCats.length === 0 ? (
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--t4)', fontSize: 13 }}>No custom categories yet. Add one below.</div>
+            ) : custCats.map((c, i) => (
+              <div key={c.id ?? i} className="cat-item" style={{ opacity: deleteLoading === c.id ? 0.5 : 1 }}>
                 <div className="cat-swatch" style={{ background: c.c }} />
                 <span className="cat-emoji">{c.i}</span>
                 <span className="cat-name">{c.n}</span>
-                <span className="cat-count">{c.cnt.toLocaleString()} users</span>
                 <div className="cat-actions">
-                  <button className="btn btn-ghost btn-xs">Edit</button>
-                  <button className="btn btn-danger btn-xs" onClick={() => handleDeleteCat(i)}>Del</button>
+                  <button
+                    className="btn btn-danger btn-xs"
+                    onClick={() => handleDeleteCat(i)}
+                    disabled={deleteLoading === c.id}
+                  >{deleteLoading === c.id ? '…' : 'Del'}</button>
                 </div>
               </div>
             ))}
@@ -1981,7 +2007,8 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
                     placeholder="e.g. Hobbies"
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
+                    onKeyDown={e => e.key === 'Enter' && !addLoading && handleAddCategory()}
+                    disabled={addLoading}
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0, width: 80 }}>
@@ -1992,6 +2019,7 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
                     value={newEmoji}
                     onChange={e => setNewEmoji(e.target.value)}
                     maxLength={4}
+                    disabled={addLoading}
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0, width: 70 }}>
@@ -2002,10 +2030,16 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
                     value={newColor}
                     onChange={e => setNewColor(e.target.value)}
                     style={{ padding: 4, height: 38 }}
+                    disabled={addLoading}
                   />
                 </div>
-                <button className="btn btn-primary btn-sm" style={{ marginBottom: 1 }} onClick={handleAddCategory}>
-                  + Add
+                <button
+                  className="btn btn-primary btn-sm"
+                  style={{ marginBottom: 1, opacity: addLoading ? 0.7 : 1 }}
+                  onClick={handleAddCategory}
+                  disabled={addLoading || !newName.trim()}
+                >
+                  {addLoading ? 'Saving…' : '+ Save'}
                 </button>
               </div>
             </div>

@@ -409,6 +409,12 @@ export const adminApi = {
       request<{ success: boolean; data: UserCategoryItem }>(
         'PATCH', `/categories/admin/user/${id}/promote`,
       ),
+    listCustom: () =>
+      request<{ success: boolean; data: UserCategoryItem[] }>('GET', '/categories/admin/custom'),
+    createCustom: (data: { name: string; icon?: string; color?: string }) =>
+      request<{ success: boolean; data: UserCategoryItem }>('POST', '/categories/admin/custom', data),
+    deleteCustom: (id: string) =>
+      request<void>('DELETE', `/categories/admin/custom/${id}`),
   },
 
   translations: {
