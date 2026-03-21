@@ -256,6 +256,22 @@ export interface BulkUpsertTranslationsPayload {
   translations: Array<{ keyId: string; value: string }>;
 }
 
+// ─── Categories ──────────────────────────────────────────────────────────────
+
+export interface UserCategoryItem {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  color: string;
+  status: 'pending' | 'approved' | 'rejected';
+  isGlobal: boolean;
+  suggestCount: number;
+  createdAt: string;
+  updatedAt: string;
+  user?: { name: string; email: string };
+}
+
 // ─── Families ─────────────────────────────────────────────────────────────────
 
 export interface FamilyMemberItem {
@@ -378,6 +394,21 @@ export const adminApi = {
       request<void>('DELETE', `/admin/families/${familyId}/members/${userId}`),
     deleteFamily: (familyId: string) =>
       request<void>('DELETE', `/admin/families/${familyId}`),
+  },
+
+  categories: {
+    listUserCategories: (status?: string) =>
+      request<{ success: boolean; data: UserCategoryItem[] }>(
+        'GET', '/categories/admin/user' + (status ? `?status=${status}` : ''),
+      ),
+    updateStatus: (id: string, status: 'approved' | 'rejected') =>
+      request<{ success: boolean; data: UserCategoryItem }>(
+        'PATCH', `/categories/admin/user/${id}/status`, { status },
+      ),
+    promote: (id: string) =>
+      request<{ success: boolean; data: UserCategoryItem }>(
+        'PATCH', `/categories/admin/user/${id}/promote`,
+      ),
   },
 
   translations: {

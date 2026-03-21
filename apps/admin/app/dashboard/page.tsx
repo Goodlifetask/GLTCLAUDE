@@ -1776,10 +1776,33 @@ const USER_CATS_INITIAL = [
 
 function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'success' | 'error') => void }) {
   const [custCats, setCustCats] = useState(CUSTCATS.map(c => ({ ...c })));
-  const [userCats, setUserCats] = useState(USER_CATS_INITIAL.map(c => ({ ...c })));
+  const [userCats, setUserCats] = useState<Array<{ id?: string; n: string; c: string; i: string; cnt: number; status: string; users: number }>>([]);
+  const [userCatsLoading, setUserCatsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
+
+  useEffect(() => {
+    setUserCatsLoading(true);
+    adminApi.categories.listUserCategories()
+      .then(res => {
+        setUserCats(res.data.map(c => ({
+          id:     c.id,
+          n:      c.name,
+          c:      c.color,
+          i:      c.icon,
+          cnt:    c.suggestCount,
+          status: c.status,
+          users:  c.suggestCount,
+        })));
+      })
+      .catch(() => {
+        // Fallback to mock data when API is unavailable
+        setUserCats(USER_CATS_INITIAL.map(c => ({ ...c })));
+      })
+      .finally(() => setUserCatsLoading(false));
+  }, []);
 
   function handleAddCategory() {
     const name = newName.trim();
@@ -1798,18 +1821,52 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
     showToast(`Category "${name}" deleted.`);
   }
 
-  function handleApproveUserCat(i: number) {
-    setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'approved' } : c));
-    showToast('Category approved and visible to all users');
+  async function handleApproveUserCat(i: number) {
+    const cat = userCats[i];
+    if (!cat.id) { showToast('Cannot save — no ID for this category', 'error'); return; }
+    const key = cat.id + '_approve';
+    setActionLoading(key);
+    try {
+      await adminApi.categories.updateStatus(cat.id, 'approved');
+      setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'approved' } : c));
+      showToast('Category approved and visible to all users');
+    } catch {
+      showToast('Failed to approve category', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   }
 
-  function handleRejectUserCat(i: number) {
-    setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'rejected' } : c));
-    showToast(`Category "${userCats[i].n}" rejected.`);
+  async function handleRejectUserCat(i: number) {
+    const cat = userCats[i];
+    if (!cat.id) { showToast('Cannot save — no ID for this category', 'error'); return; }
+    const key = cat.id + '_reject';
+    setActionLoading(key);
+    try {
+      await adminApi.categories.updateStatus(cat.id, 'rejected');
+      setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'rejected' } : c));
+      showToast(`Category "${cat.n}" rejected.`);
+    } catch {
+      showToast('Failed to reject category', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   }
 
-  function handlePromoteUserCat(i: number) {
-    showToast('Category promoted to system categories!');
+  async function handlePromoteUserCat(i: number) {
+    const cat = userCats[i];
+    if (!cat.id) { showToast('Cannot save — no ID for this category', 'error'); return; }
+    const key = cat.id + '_promote';
+    setActionLoading(key);
+    try {
+      await adminApi.categories.promote(cat.id);
+      setUserCats(prev => prev.map((c, idx) => idx === i ? { ...c, status: 'approved' } : c));
+      showToast('Category promoted to system categories!');
+    } catch {
+      showToast('Failed to promote category', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   }
 
   const statusBadgeStyle: Record<string, React.CSSProperties> = {
@@ -1847,8 +1904,12 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
         <div>
           <div className="section-label">User Defined</div>
           <div className="cat-list">
-            {userCats.map((c, i) => (
-              <div key={i} className="cat-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8, padding: '10px 12px' }}>
+            {userCatsLoading ? (
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--t4)', fontSize: 13 }}>Loading…</div>
+            ) : userCats.length === 0 ? (
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--t4)', fontSize: 13 }}>No user-submitted categories yet.</div>
+            ) : userCats.map((c, i) => (
+              <div key={c.id ?? i} className="cat-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8, padding: '10px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
                   <div className="cat-swatch" style={{ background: c.c, flexShrink: 0 }} />
                   <span className="cat-emoji">{c.i}</span>
@@ -1866,22 +1927,25 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button
                       className="btn btn-xs"
-                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}
+                      style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600, opacity: actionLoading ? 0.6 : 1 }}
                       onClick={() => handleApproveUserCat(i)}
-                    >Approve</button>
+                      disabled={!!actionLoading}
+                    >{actionLoading === (c.id + '_approve') ? '…' : 'Approve'}</button>
                     <button
                       className="btn btn-xs"
-                      style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}
+                      style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600, opacity: actionLoading ? 0.6 : 1 }}
                       onClick={() => handleRejectUserCat(i)}
-                    >Reject</button>
+                      disabled={!!actionLoading}
+                    >{actionLoading === (c.id + '_reject') ? '…' : 'Reject'}</button>
                   </div>
                 )}
                 {c.status === 'approved' && c.users > 20 && (
                   <button
                     className="btn btn-xs"
-                    style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600 }}
+                    style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', fontSize: 11, padding: '3px 10px', borderRadius: 5, cursor: 'pointer', fontWeight: 600, opacity: actionLoading ? 0.6 : 1 }}
                     onClick={() => handlePromoteUserCat(i)}
-                  >⬆ Promote to System</button>
+                    disabled={!!actionLoading}
+                  >{actionLoading === (c.id + '_promote') ? '…' : '⬆ Promote to System'}</button>
                 )}
               </div>
             ))}
