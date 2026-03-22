@@ -135,25 +135,35 @@ export default function SettingsPage() {
   const [newCatIcon, setNewCatIcon] = useState('');
   const [newCatColor, setNewCatColor] = useState('#6C4EFF');
 
-  /* Sync all settings state whenever the user object is refreshed from /me */
-  const prevUserId = useRef<string | null>(null);
+  /* Sync settings state whenever the user object changes from /me refresh */
+  const prevUserRef = useRef<{ id: string; persona: string; prefs: string } | null>(null);
   useEffect(() => {
     if (!user) return;
-    // Only sync on initial load or when user id changes (avoid overwriting in-flight edits)
-    if (prevUserId.current === user.id) return;
-    prevUserId.current = user.id;
 
-    setNameInput(user.name || '');
-    setTimezone(user.timezone || 'UTC');
-    setTheme(user.theme || 'dark');
-    setLanguage(user.locale || 'en');
+    const persona  = (user as any).persona  || '';
+    const prefs    = (user as any).taskPreferences;
+    const prefsKey = JSON.stringify(prefs);
+    const prev     = prevUserRef.current;
 
-    const persona = (user as any).persona || '';
+    // Sync on first load OR when persona/taskPreferences change from server
+    const isNew    = !prev || prev.id !== user.id;
+    const changed  = prev && (prev.persona !== persona || prev.prefs !== prefsKey);
+    if (!isNew && !changed) return;
+
+    prevUserRef.current = { id: user.id, persona, prefs: prefsKey };
+
+    if (isNew) {
+      setNameInput(user.name || '');
+      setTimezone(user.timezone || 'UTC');
+      setTheme(user.theme || 'dark');
+      setLanguage(user.locale || 'en');
+      setOccupation((user as any).occupation || '');
+    }
+
+    // Always sync persona & categories when they change
     setSelectedPersona(persona);
     setEditingPersona(!persona);
-    setOccupation((user as any).occupation || '');
 
-    const prefs = (user as any).taskPreferences;
     if (Array.isArray(prefs) && prefs.length > 0) {
       setMyCategoryIds(prefs as string[]);
     }

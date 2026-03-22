@@ -248,15 +248,22 @@ export default function RegisterPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => api.auth.register({
-      ...data,
-      categories:      selInterests,
-      profession:      profession || profQuery.trim(),
-      country:         selectedCountry,
-      languages:       selLangs,
-      profile_category: useCase,
-      locale:          uiLocale,
-    } as any),
+    mutationFn: (data: FormData) => {
+      // Map selected profession label → persona slug (e.g. "Nurse" → "nurse")
+      const personaSlug = professions.find(
+        p => p.label.toLowerCase() === (profession || profQuery).toLowerCase()
+      )?.value;
+      return api.auth.register({
+        ...data,
+        categories:       selInterests,
+        profession:       profession || profQuery.trim(),
+        persona:          personaSlug,
+        country:          selectedCountry,
+        languages:        selLangs,
+        profile_category: useCase,
+        locale:           uiLocale,
+      } as any);
+    },
     onSuccess: (res: any) => {
       const u = res.data.user;
       setUser({ ...u, avatarUrl: u.avatar_url ?? null, taskPreferences: u.taskPreferences ?? selInterests });
