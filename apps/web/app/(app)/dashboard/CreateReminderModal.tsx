@@ -49,26 +49,31 @@ export function CreateReminderModal({ onClose, startWithVoice }: { onClose: () =
     };
   }, []);
 
-  // Auto-open voice panel and start listening when launched from mic button
+  // Auto-open voice panel when launched from mic button
+  // We don't auto-start listening because Chrome requires a user gesture
+  // for SpeechRecognition — the user clicks "Start Listening" instead
   useEffect(() => {
     if (startWithVoice) {
       setVoiceOpen(true);
-      // Small delay so the panel renders before we call startListening
-      const t = setTimeout(() => startListening(), 300);
-      return () => clearTimeout(t);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startListening = async () => {
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRec) return;
+    if (!SpeechRec) {
+      toast.error('Voice input is not supported — please use Chrome or Edge.');
+      return;
+    }
 
+    // Explicitly request mic permission before starting SpeechRecognition.
+    // Chrome caches a previous denial — getUserMedia forces a fresh permission check.
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.getTracks().forEach(t => t.stop());
-    } catch {
-      toast.error('Microphone access denied — click the 🔒 icon in your address bar to allow it, then try again.');
+      console.log('[MIC] getUserMedia: OK');
+    } catch (err: any) {
+      console.error('[MIC] getUserMedia failed:', err?.name, err?.message);
+      toast.error(`Mic blocked [getUserMedia: ${err?.name}] — allow in browser settings, reload the page and try again.`);
       return;
     }
 
@@ -106,22 +111,22 @@ export function CreateReminderModal({ onClose, startWithVoice }: { onClose: () =
     };
 
     rec.onerror = (e: any) => {
+      console.error('[MIC] SpeechRecognition error:', e.error);
+      isStoppingRef.current = true;
       if (e.error === 'not-allowed') {
-        toast.error('Microphone access denied — allow it in your browser settings and try again.');
-        setVoiceState('idle');
+        toast.error('Speech API blocked [not-allowed] — hard reload the page (Ctrl+Shift+R) and try again.');
       } else if (e.error === 'service-not-available') {
         toast.error('Speech service unavailable — use Chrome or Edge with an internet connection.');
-        setVoiceState('idle');
       } else if (e.error === 'audio-capture') {
         toast.error('No microphone found — plug one in and try again.');
-        setVoiceState('idle');
       } else if (e.error === 'network') {
         toast.error('Network error — check your connection and try again.');
-        setVoiceState('idle');
       } else if (e.error !== 'no-speech') {
-        toast.error('Voice recognition failed. Please try again.');
-        setVoiceState('idle');
+        toast.error(`Voice error [${e.error}] — please try again.`);
+      } else {
+        isStoppingRef.current = false;
       }
+      if (e.error !== 'no-speech') setVoiceState('idle');
     };
 
     recognitionRef.current = rec;

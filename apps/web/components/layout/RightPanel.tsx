@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useAllCategories } from '../../hooks/useAllCategories';
@@ -63,6 +63,8 @@ export function RightPanel() {
   const [category, setCategory] = useState('');
   const [note, setNote]       = useState('');
   const [quote, setQuote]     = useState(QUOTES[0]);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const allCategories = useAllCategories();
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear,  setCalYear]  = useState(new Date().getFullYear());
@@ -123,6 +125,36 @@ export function RightPanel() {
 
   const selectedColor = TYPE_BTNS.find(b => b.type === selType)?.color ?? '#C4B5FD';
 
+  const startVoice = async () => {
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRec) { toast.error('Voice not supported in this browser'); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop());
+    } catch {
+      toast.error('Microphone access denied — allow it in browser settings, then reload the page and try again.');
+      return;
+    }
+    const rec = new SpeechRec();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = 'en-US';
+    rec.onstart = () => setListening(true);
+    rec.onend   = () => setListening(false);
+    rec.onerror = () => { setListening(false); toast.error('Voice error — try again'); };
+    rec.onresult = (e: any) => {
+      const text = e.results[0]?.[0]?.transcript?.trim();
+      if (text) setTitle(text);
+    };
+    recognitionRef.current = rec;
+    rec.start();
+  };
+
+  const stopVoice = () => {
+    recognitionRef.current?.stop();
+    setListening(false);
+  };
+
   return (
     <aside
       className="dark-surface"
@@ -178,15 +210,31 @@ export function RightPanel() {
         {/* Title */}
         <div style={{ marginBottom: 12 }}>
           <label style={glassLabel}>What needs remembering?</label>
-          <input
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="Title…"
-            onKeyDown={e => { if (e.key === 'Enter' && title.trim()) createMutation.mutate(); }}
-            style={{ ...glassInput, color: title ? '#ffffff' : 'rgba(255,255,255,0.35)' }}
-            onFocus={e => { e.target.style.background = 'rgba(255,255,255,0.11)'; e.target.style.borderColor = `${selectedColor}66`; e.target.style.color = '#fff'; }}
-            onBlur={e  => { e.target.style.background = 'rgba(255,255,255,0.07)'; e.target.style.borderColor = 'rgba(255,255,255,0.14)'; }}
-          />
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Title…"
+              onKeyDown={e => { if (e.key === 'Enter' && title.trim()) createMutation.mutate(); }}
+              style={{ ...glassInput, flex: 1, color: title ? '#ffffff' : 'rgba(255,255,255,0.35)' }}
+              onFocus={e => { e.target.style.background = 'rgba(255,255,255,0.11)'; e.target.style.borderColor = `${selectedColor}66`; e.target.style.color = '#fff'; }}
+              onBlur={e  => { e.target.style.background = 'rgba(255,255,255,0.07)'; e.target.style.borderColor = 'rgba(255,255,255,0.14)'; }}
+            />
+            <button
+              onClick={listening ? stopVoice : startVoice}
+              title={listening ? 'Stop listening' : 'Voice input'}
+              style={{
+                flexShrink: 0,
+                width: 36, height: 36, borderRadius: 10,
+                border: listening ? '1.5px solid #f87171' : '1.5px solid rgba(255,255,255,0.18)',
+                background: listening ? 'rgba(248,113,113,0.2)' : 'rgba(255,255,255,0.07)',
+                color: listening ? '#f87171' : 'rgba(255,255,255,0.7)',
+                fontSize: 16, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                animation: listening ? 'pulse 1s infinite' : 'none',
+              }}
+            >{listening ? '⏹' : '🎤'}</button>
+          </div>
         </div>
 
         {/* Date + Time */}
