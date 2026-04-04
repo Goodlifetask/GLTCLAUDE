@@ -1,0 +1,107 @@
+#cloud-config
+# GoodLifeTask — Dev Droplet Bootstrap
+# Runs on first boot: installs Docker, clones repo, starts API + Workers.
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose
+  - git
+  - curl
+  - unzip
+
+runcmd:
+  # Enable Docker
+  - systemctl enable docker
+  - systemctl start docker
+
+  # Install Node.js 20
+  - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  - apt-get install -y nodejs
+
+  # Install pnpm
+  - npm install -g pnpm
+
+  # Create app directory
+  - mkdir -p /opt/goodlifetask
+  - cd /opt/goodlifetask
+
+  # Clone repo
+  - git clone https://github.com/Goodlifetask/GLTCLAUDE.git /opt/goodlifetask
+
+  # Write .env for API
+  - |
+    cat > /opt/goodlifetask/services/api/.env << 'ENVEOF'
+    NODE_ENV=${environment}
+    PORT=3001
+    LOG_LEVEL=info
+    API_URL=http://0.0.0.0:3001
+    DATABASE_URL=${database_url}
+    REDIS_URL=${redis_url}
+    JWT_SECRET=${jwt_secret}
+    JWT_ISSUER=goodlifetask.com
+    JWT_AUDIENCE=goodlifetask-api
+    ACCESS_TOKEN_TTL=900
+    REFRESH_TOKEN_TTL=2592000
+    AWS_REGION=${spaces_region}
+    AWS_ACCESS_KEY_ID=${spaces_key}
+    AWS_SECRET_ACCESS_KEY=${spaces_secret}
+    S3_BUCKET_NAME=${spaces_bucket}
+    S3_CDN_URL=https://${spaces_bucket}.${spaces_region}.cdn.digitaloceanspaces.com
+    ANTHROPIC_API_KEY=${anthropic_key}
+    CORS_ORIGINS=${frontend_url}
+    FRONTEND_URL=${frontend_url}
+    ENVEOF
+
+  # Install dependencies and run migrations
+  - cd /opt/goodlifetask && pnpm install --frozen-lockfile
+  - cd /opt/goodlifetask && pnpm db:migrate
+
+  # Write systemd service for API
+  - |
+    cat > /etc/systemd/system/glt-api.service << 'SVCEOF'
+    [Unit]
+    Description=GoodLifeTask API
+    After=network.target
+
+    [Service]
+    Type=simple
+    WorkingDirectory=/opt/goodlifetask/services/api
+    ExecStart=/usr/bin/node /opt/goodlifetask/node_modules/tsx/dist/cli.mjs src/server.ts
+    Restart=always
+    RestartSec=5
+    StandardOutput=journal
+    StandardError=journal
+    SyslogIdentifier=glt-api
+
+    [Install]
+    WantedBy=multi-user.target
+    SVCEOF
+
+  # Write systemd service for Workers
+  - |
+    cat > /etc/systemd/system/glt-workers.service << 'SVCEOF'
+    [Unit]
+    Description=GoodLifeTask Workers
+    After=network.target
+
+    [Service]
+    Type=simple
+    WorkingDirectory=/opt/goodlifetask/services/workers
+    ExecStart=/usr/bin/node /opt/goodlifetask/node_modules/tsx/dist/cli.mjs src/index.ts
+    Restart=always
+    RestartSec=5
+    StandardOutput=journal
+    StandardError=journal
+    SyslogIdentifier=glt-workers
+
+    [Install]
+    WantedBy=multi-user.target
+    SVCEOF
+
+  # Start services
+  - systemctl daemon-reload
+  - systemctl enable glt-api glt-workers
+  - systemctl start glt-api glt-workers

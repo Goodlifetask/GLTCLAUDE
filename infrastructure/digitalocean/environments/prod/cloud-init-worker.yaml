@@ -1,0 +1,50 @@
+#cloud-config
+# GoodLifeTask — Prod Worker Droplet Bootstrap
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - git
+  - curl
+
+runcmd:
+  - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  - apt-get install -y nodejs
+  - npm install -g pnpm
+
+  - git clone https://github.com/Goodlifetask/GLTCLAUDE.git /opt/goodlifetask
+
+  - |
+    cat > /opt/goodlifetask/services/workers/.env << 'ENVEOF'
+    NODE_ENV=${environment}
+    DATABASE_URL=${database_url}
+    REDIS_URL=${redis_url}
+    JWT_SECRET=${jwt_secret}
+    ENVEOF
+
+  - cd /opt/goodlifetask && pnpm install --frozen-lockfile
+
+  - |
+    cat > /etc/systemd/system/glt-workers.service << 'SVCEOF'
+    [Unit]
+    Description=GoodLifeTask Workers
+    After=network.target
+
+    [Service]
+    Type=simple
+    WorkingDirectory=/opt/goodlifetask/services/workers
+    ExecStart=/usr/bin/node /opt/goodlifetask/node_modules/tsx/dist/cli.mjs src/index.ts
+    Restart=always
+    RestartSec=5
+    StandardOutput=journal
+    StandardError=journal
+    SyslogIdentifier=glt-workers
+
+    [Install]
+    WantedBy=multi-user.target
+    SVCEOF
+
+  - systemctl daemon-reload
+  - systemctl enable glt-workers
+  - systemctl start glt-workers

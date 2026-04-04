@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars — DO NOT commit to git
+
+do_token      = "dop_v1_your_token_here"
+region        = "nyc3"
+domain        = "goodlifetask.com"
+ssh_key_ids   = ["12345678"]
+jwt_secret    = "change-me-64-char-random-string"
+spaces_key    = "your_spaces_access_key"
+spaces_secret = "your_spaces_secret_key"
+anthropic_key = "sk-ant-api03-your-key-here"
