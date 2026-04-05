@@ -2138,34 +2138,49 @@ function darkenHex(hex: string, amt = 18): string {
   const [r, g, b] = hexToRgb(hex);
   return '#' + [r, g, b].map(v => Math.max(0, v - amt).toString(16).padStart(2, '0')).join('');
 }
+const THEME_STORAGE_KEY = 'glt_admin_active_theme';
+
 function applyTheme(theme: ThemeEntry) {
   const root = document.documentElement;
   const [bg, primary, accent] = theme.c;
   const [pr, pg, pb] = hexToRgb(primary);
+  const [ar, ag, ab] = hexToRgb(accent);
   const dark = theme.t === 'Dark';
+
+  // Brand / primary
   root.style.setProperty('--brand', primary);
   root.style.setProperty('--brand-dark', darkenHex(primary));
   root.style.setProperty('--brand-soft', `rgba(${pr},${pg},${pb},0.08)`);
   root.style.setProperty('--brand-light', `rgba(${pr},${pg},${pb},0.18)`);
   root.style.setProperty('--border-focus', primary);
+  root.style.setProperty('--btn-shadow-sm', `rgba(${pr},${pg},${pb},0.3)`);
+  root.style.setProperty('--btn-shadow-md', `rgba(${pr},${pg},${pb},0.4)`);
+
+  // Accent / CTA
+  root.style.setProperty('--cta', accent);
+  root.style.setProperty('--cta-soft', `rgba(${ar},${ag},${ab},0.12)`);
+
+  // Sidebar
   root.style.setProperty('--sidebar-active', primary);
   root.style.setProperty('--sidebar-accent', primary);
   root.style.setProperty('--sidebar-hover', `rgba(${pr},${pg},${pb},0.07)`);
+
   if (dark) {
-    root.style.setProperty('--bg', bg);
+    root.style.setProperty('--bg', bg || '#0f172a');
     root.style.setProperty('--bg-white', '#1e293b');
-    root.style.setProperty('--bg-subtle', '#0f172a');
-    root.style.setProperty('--bg-muted', '#0f172a');
+    root.style.setProperty('--bg-subtle', '#162032');
+    root.style.setProperty('--bg-muted', '#0d1520');
     root.style.setProperty('--sidebar-bg', '#111827');
     root.style.setProperty('--sidebar-border', '#1e293b');
-    root.style.setProperty('--sidebar-text', '#e2e8f0');
+    root.style.setProperty('--sidebar-text', '#cbd5e1');
     root.style.setProperty('--text-primary', '#f1f5f9');
     root.style.setProperty('--text-secondary', '#94a3b8');
     root.style.setProperty('--text-muted', '#64748b');
+    root.style.setProperty('--text-subtle', '#334155');
     root.style.setProperty('--border', '#1e293b');
-    root.style.setProperty('--border-light', '#0f172a');
+    root.style.setProperty('--border-light', '#162032');
   } else {
-    root.style.setProperty('--bg', bg);
+    root.style.setProperty('--bg', bg || '#f8f9fb');
     root.style.setProperty('--bg-white', '#ffffff');
     root.style.setProperty('--bg-subtle', '#f3f4f6');
     root.style.setProperty('--bg-muted', '#eef0f3');
@@ -2175,11 +2190,15 @@ function applyTheme(theme: ThemeEntry) {
     root.style.setProperty('--text-primary', '#0f172a');
     root.style.setProperty('--text-secondary', '#475569');
     root.style.setProperty('--text-muted', '#94a3b8');
+    root.style.setProperty('--text-subtle', '#cbd5e1');
     root.style.setProperty('--border', '#e2e8f0');
     root.style.setProperty('--border-light', '#f1f5f9');
   }
-  // suppress unused accent warning
-  void accent;
+
+  // Persist to localStorage so it survives refresh
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme));
+  } catch (_) { /* ignore */ }
 }
 
 function ThemeColorPicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
@@ -2389,39 +2408,89 @@ function ThemeModal({
   );
 }
 
+const CUSTOM_THEMES_KEY = 'glt_admin_custom_themes';
+
 function ThemesPage() {
-  const [themes, setThemes] = useState<ThemeEntry[]>(
-    THEMES.map((t, i) => ({ ...t, id: i + 1, t: t.t as 'Light' | 'Dark', c: t.c as [string, string, string] }))
-  );
-  const [activeId, setActiveId] = useState<number>(1);
+  const builtIn = THEMES.map((t, i) => ({ ...t, id: i + 1, t: t.t as 'Light' | 'Dark', c: t.c as [string, string, string] }));
+
+  const [themes, setThemes] = useState<ThemeEntry[]>(() => {
+    // Restore any user-created themes from localStorage
+    try {
+      const saved = localStorage.getItem(CUSTOM_THEMES_KEY);
+      if (saved) {
+        const customs: ThemeEntry[] = JSON.parse(saved);
+        return [...builtIn, ...customs];
+      }
+    } catch (_) { /* ignore */ }
+    return builtIn;
+  });
+
+  const [activeId, setActiveId] = useState<number>(() => {
+    // Restore active theme id from localStorage
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved) {
+        const t: ThemeEntry = JSON.parse(saved);
+        return t.id ?? 1;
+      }
+    } catch (_) { /* ignore */ }
+    return 1;
+  });
+
   const [modal, setModal] = useState<{ open: boolean; editing?: ThemeEntry }>({ open: false });
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const nextId = useRef(THEMES.length + 1);
+  const nextId = useRef(Math.max(...builtIn.map(t => t.id), THEMES.length) + 1);
 
   const activeTheme = themes.find(t => t.id === activeId);
 
-  // Apply active theme on mount and whenever activeId changes
+  // On mount, restore + apply the saved theme
   useEffect(() => {
-    const t = themes.find(x => x.id === activeId);
-    if (t) applyTheme(t);
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved) {
+        const savedTheme: ThemeEntry = JSON.parse(saved);
+        // Merge saved theme data with current themes list (in case user edited it)
+        const match = themes.find(t => t.id === savedTheme.id);
+        applyTheme(match ?? savedTheme);
+        return;
+      }
+    } catch (_) { /* ignore */ }
+    // Default: apply first theme
+    if (themes[0]) applyTheme(themes[0]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId]);
+  }, []);
+
+  const builtInCount = THEMES.length;
+
+  function persistCustomThemes(updated: ThemeEntry[]) {
+    try {
+      const customs = updated.filter(t => t.id > builtInCount);
+      localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(customs));
+    } catch (_) { /* ignore */ }
+  }
 
   function handleSave(data: Omit<ThemeEntry, 'id' | 'a'>) {
     if (modal.editing) {
-      setThemes(prev => prev.map(t => t.id === modal.editing!.id ? { ...t, ...data } : t));
+      const updated = themes.map(t => t.id === modal.editing!.id ? { ...t, ...data } : t);
+      setThemes(updated);
+      persistCustomThemes(updated);
       if (modal.editing.id === activeId) applyTheme({ ...modal.editing, ...data });
     } else {
       nextId.current += 1;
-      setThemes(prev => [...prev, { id: nextId.current, ...data, a: false }]);
+      const newTheme: ThemeEntry = { id: nextId.current, ...data, a: false };
+      const updated = [...themes, newTheme];
+      setThemes(updated);
+      persistCustomThemes(updated);
     }
     setModal({ open: false });
   }
 
   function handleDelete(id: number) {
-    setThemes(prev => prev.filter(t => t.id !== id));
+    const updated = themes.filter(t => t.id !== id);
+    setThemes(updated);
+    persistCustomThemes(updated);
     if (activeId === id) {
-      const fallback = themes.find(t => t.id !== id);
+      const fallback = updated[0];
       if (fallback) { setActiveId(fallback.id); applyTheme(fallback); }
     }
     setDeleteId(null);
