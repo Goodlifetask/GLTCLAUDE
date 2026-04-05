@@ -12,7 +12,7 @@ type NavEntry = {
   exact?: boolean;
 };
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -63,10 +63,9 @@ export function Sidebar() {
 
   return (
     <aside
-      className="dark-surface"
       style={{
-        background: 'linear-gradient(180deg, #3D2BB8 0%, #2D1E8A 100%)',
-        borderRight: '1px solid var(--b1)',
+        background: 'var(--sidebar-bg)',
+        borderRight: '1px solid var(--sidebar-border)',
         display: 'flex',
         flexDirection: 'column',
         position: 'sticky',
@@ -76,20 +75,18 @@ export function Sidebar() {
       }}
     >
       {/* ── Brand ─────────────────────────────────────────────────── */}
-      <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid var(--b1)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid var(--sidebar-border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
               width: 34, height: 34,
-              background: 'rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(8px)',
+              background: 'var(--grad-deep)',
               borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.28)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: '#FDE68A',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)',
+              fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 17, color: '#ffffff',
+              boxShadow: 'var(--sh-amber)',
               flexShrink: 0,
-              textShadow: '0 1px 6px rgba(253,230,138,0.6)',
             }}
           >
             G
@@ -102,11 +99,24 @@ export function Sidebar() {
               {t('nav.tagline')}
             </div>
           </div>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              style={{
+                width: 28, height: 28, borderRadius: 7,
+                background: 'var(--bg)', border: '1px solid var(--b1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', fontSize: 14, color: 'var(--t3)',
+                flexShrink: 0,
+              }}
+            >✕</button>
+          )}
         </div>
       </div>
 
       {/* ── Search ────────────────────────────────────────────────── */}
-      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--b1)' }}>
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--sidebar-border)' }}>
         <div
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
@@ -133,20 +143,20 @@ export function Sidebar() {
           return (
             <div
               key={item.href}
-              onClick={() => router.push(item.href)}
+              onClick={() => { router.push(item.href); onClose?.(); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 11,
                 padding: '10px 12px', borderRadius: 'var(--r-sm)',
                 cursor: 'pointer',
-                color: active ? 'var(--amber)' : 'var(--t2)',
+                color: active ? 'var(--amber)' : 'var(--sidebar-text)',
                 fontSize: 13, fontWeight: active ? 600 : 500,
-                background: active ? 'var(--amber-soft)' : 'transparent',
+                background: active ? 'var(--sidebar-active)' : 'transparent',
                 marginBottom: 2,
                 position: 'relative',
                 transition: 'all 0.12s',
               }}
               onMouseEnter={e => {
-                if (!active) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.04)';
+                if (!active) (e.currentTarget as HTMLDivElement).style.background = 'var(--sidebar-active)';
               }}
               onMouseLeave={e => {
                 if (!active) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
@@ -190,7 +200,7 @@ export function Sidebar() {
       </nav>
 
       {/* ── Footer ────────────────────────────────────────────────── */}
-      <div style={{ padding: '14px 16px', borderTop: '1px solid var(--b1)' }}>
+      <div style={{ padding: '14px 16px', borderTop: '1px solid var(--sidebar-border)' }}>
         {/* User row */}
         <div
           onClick={() => router.push('/settings')}
@@ -203,14 +213,11 @@ export function Sidebar() {
           <div
             style={{
               width: 30, height: 30, borderRadius: 8,
-              background: 'rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.28)',
+              background: 'var(--amber-glow)',
+              border: '1px solid rgba(13,148,136,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 700, color: '#FDE68A', flexShrink: 0,
+              fontSize: 12, fontWeight: 700, color: 'var(--amber)', flexShrink: 0,
               fontFamily: 'var(--font-display)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.25)',
-              textShadow: '0 1px 4px rgba(253,230,138,0.5)',
             }}
           >
             {initials}

@@ -1,75 +1,93 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design System: Blue-Violet / Purple ────────────────────────────────── */
+/* ─── Design System: Clean Teal / Flat ──────────────────────────────────── */
 :root {
   /* Surfaces */
-  --bg:          #EEEEF4;
-  --bg-raised:   #3D2BB8;
+  --bg:          #F0F4F8;
+  --bg-raised:   #FFFFFF;
   --card:        #FFFFFF;
-  --card-hover:  #F7F6FF;
-  --card-border: rgba(108,78,255,0.14);
-  --overlay:     rgba(61,43,184,0.72);
+  --card-hover:  #F8FAFC;
+  --card-border: rgba(15,118,110,0.12);
+  --overlay:     rgba(15,118,110,0.72);
 
-  /* Brand — blue-violet */
-  --amber:       #6C4EFF;
-  --amber-dim:   #5B3DE0;
-  --amber-glow:  rgba(108,78,255,0.13);
-  --amber-soft:  rgba(108,78,255,0.07);
+  /* Brand — teal */
+  --amber:       #0D9488;
+  --amber-dim:   #0F766E;
+  --amber-glow:  rgba(13,148,136,0.12);
+  --amber-soft:  rgba(13,148,136,0.07);
 
-  /* Gradient tokens for cards */
-  --grad-deep:   linear-gradient(135deg, #4B3BD8 0%, #7B5AF8 100%);
-  --grad-mid:    linear-gradient(135deg, #6C50F0 0%, #9E7BFF 100%);
-  --grad-light:  linear-gradient(135deg, rgba(108,80,240,0.55) 0%, rgba(158,123,255,0.55) 100%);
+  /* CTA — orange */
+  --cta:         #F97316;
+  --cta-dim:     #EA6C0A;
+  --cta-glow:    rgba(249,115,22,0.15);
+
+  /* Gradients — subtle, flat-friendly */
+  --grad-deep:   linear-gradient(135deg, #0D9488 0%, #14B8A6 100%);
+  --grad-mid:    linear-gradient(135deg, #0F766E 0%, #0D9488 100%);
+  --grad-light:  linear-gradient(135deg, rgba(13,148,136,0.12) 0%, rgba(20,184,166,0.08) 100%);
 
   /* Semantic */
   --sage:        #16a34a;
   --sage-bg:     rgba(22,163,74,0.09);
   --coral:       #dc2626;
   --coral-bg:    rgba(220,38,38,0.09);
-  --sky:         #818CF8;
-  --sky-bg:      rgba(129,140,248,0.1);
-  --mauve:       #A78BFA;
-  --mauve-bg:    rgba(167,139,250,0.1);
-  --rose:        #db2777;
-  --rose-bg:     rgba(219,39,119,0.09);
+  --sky:         #0EA5E9;
+  --sky-bg:      rgba(14,165,233,0.09);
+  --mauve:       #8B5CF6;
+  --mauve-bg:    rgba(139,92,246,0.09);
+  --rose:        #F43F5E;
+  --rose-bg:     rgba(244,63,94,0.09);
+  --amber-warm:  #F59E0B;
+  --amber-warm-bg: rgba(245,158,11,0.09);
 
   /* Text */
-  --t1:  #1A1040;
-  --t2:  #4A3BAA;
-  --t3:  #7B6FB8;
-  --t4:  #B8B0D8;
+  --t1:  #0F172A;
+  --t2:  #334155;
+  --t3:  #64748B;
+  --t4:  #94A3B8;
 
   /* Borders */
-  --b1:  rgba(108,78,255,0.14);
-  --b2:  rgba(108,78,255,0.07);
-  --b3:  rgba(108,78,255,0.24);
+  --b1:  #E2E8F0;
+  --b2:  #F1F5F9;
+  --b3:  #CBD5E1;
 
-  /* Misc */
-  --r:    12px;
-  --r-sm: 8px;
-  --r-lg: 16px;
-  --r-xl: 22px;
-  --font-body: 'Sora', sans-serif;
-  --font-display: 'Playfair Display', serif;
-  --sh-card: 0 2px 8px rgba(108,78,255,0.07), 0 6px 24px rgba(108,78,255,0.05);
-  --sh-lg:   0 4px 28px rgba(108,78,255,0.13);
-  --sh-xl:   0 12px 52px rgba(108,78,255,0.16);
-  --sh-amber: 0 4px 22px rgba(108,78,255,0.38);
+  /* Radius */
+  --r:    10px;
+  --r-sm: 7px;
+  --r-lg: 14px;
+  --r-xl: 20px;
 
-  /* Legacy color vars */
-  --color-primary:      #6C4EFF;
-  --color-primary-dark: #5B3DE0;
-  --color-accent:       #9E7BFF;
-  --color-bg:           #EEEEF4;
-  --color-bg-dark:      #3D2BB8;
-  --color-surface:      #ffffff;
-  --color-text:         #1A1040;
-  --color-text-muted:   #4A3BAA;
-  --color-border:       rgba(108,78,255,0.14);
+  /* Fonts */
+  --font-body:    'DM Sans', sans-serif;
+  --font-display: 'Sora', sans-serif;
+
+  /* Shadows — flat design: very subtle */
+  --sh-card: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+  --sh-lg:   0 4px 16px rgba(15,23,42,0.08);
+  --sh-xl:   0 8px 32px rgba(15,23,42,0.10);
+  --sh-amber: 0 2px 12px rgba(13,148,136,0.28);
+
+  /* Sidebar specific */
+  --sidebar-bg:     #FFFFFF;
+  --sidebar-border: #E2E8F0;
+  --sidebar-active: rgba(13,148,136,0.08);
+  --sidebar-text:   #334155;
+  --sidebar-muted:  #94A3B8;
+
+  /* Legacy compat */
+  --color-primary:      #0D9488;
+  --color-primary-dark: #0F766E;
+  --color-accent:       #14B8A6;
+  --color-bg:           #F0F4F8;
+  --color-bg-dark:      #0F172A;
+  --color-surface:      #FFFFFF;
+  --color-text:         #0F172A;
+  --color-text-muted:   #64748B;
+  --color-border:       #E2E8F0;
 }
 
 /* ─── Base Styles ──────────────────────────────────────────────────────────── */
@@ -105,37 +123,140 @@
   }
 
   ::selection {
-    background-color: var(--amber);
-    color: #ffffff;
+    background-color: rgba(13,148,136,0.18);
+    color: var(--t1);
   }
 
   input[type="date"]::-webkit-calendar-picker-indicator,
   input[type="time"]::-webkit-calendar-picker-indicator {
     filter: none;
     cursor: pointer;
-    opacity: 0.6;
+    opacity: 0.5;
   }
 }
 
-/* ─── Dark Surface Overrides (sidebar, right panel) ───────────────────────── */
-/* Applied via className="dark-surface" on any element with --bg-raised background */
+/* ─── Responsive Layout ────────────────────────────────────────────────────── */
+
+/* App shell — 3-column on desktop */
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr 288px;
+  grid-template-rows: 100vh;
+  min-height: 100vh;
+}
+
+/* Sidebar & right panel visibility */
+.sidebar-panel  { display: flex; flex-direction: column; }
+.right-panel    { display: flex; flex-direction: column; }
+.mobile-header  { display: none; }
+.mobile-nav     { display: none; }
+
+/* ── Tablet: hide right panel ──────────────────────────── */
+@media (max-width: 1200px) {
+  .app-shell {
+    grid-template-columns: 260px 1fr;
+    grid-template-rows: 100vh;
+  }
+  .right-panel { display: none; }
+}
+
+/* ── Mobile: single column, drawer sidebar ─────────────── */
+@media (max-width: 768px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+    height: 100%;
+  }
+  .sidebar-panel {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    height: 100vh;
+    width: 260px;
+    z-index: 1000;
+    transition: left 0.25s ease;
+    box-shadow: var(--sh-xl);
+  }
+  .sidebar-panel.open { left: 0; }
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 999;
+  }
+  .sidebar-overlay.open { display: block; }
+  .right-panel { display: none; }
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--sidebar-border);
+    position: sticky; top: 0; z-index: 100;
+    height: 54px;
+  }
+  .mobile-header-brand {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mobile-header-logo {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--grad-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 14px; color: #fff;
+  }
+  .mobile-header-title {
+    font-family: var(--font-display); font-size: 15px;
+    font-weight: 600; color: var(--t1);
+  }
+  .hamburger {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: transparent; border: 1px solid var(--b1);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px; color: var(--t2);
+  }
+  .mobile-nav {
+    display: flex;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--sidebar-bg);
+    border-top: 1px solid var(--sidebar-border);
+    z-index: 100;
+    padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  }
+  .mobile-nav-item {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 4px;
+    cursor: pointer;
+    font-family: var(--font-body); font-size: 10px;
+    color: var(--sidebar-muted);
+    border: none; background: none;
+    transition: color 0.12s;
+  }
+  .mobile-nav-item.active { color: var(--amber); }
+  .mobile-nav-icon { font-size: 20px; }
+  /* push content above bottom nav */
+  .app-main { padding-bottom: 70px; }
+}
+
+/* ─── Dark Surface — no longer used for sidebar, kept for legacy ──────────── */
 .dark-surface {
   --t1: #FFFFFF;
-  --t2: rgba(255,255,255,0.88);
-  --t3: rgba(255,255,255,0.56);
-  --t4: rgba(255,255,255,0.34);
-  --b1: rgba(255,255,255,0.13);
-  --b2: rgba(255,255,255,0.07);
-  --b3: rgba(255,255,255,0.24);
-  --card: rgba(255,255,255,0.08);
-  --card-hover: rgba(255,255,255,0.13);
-  /* Lighter blue-violet so active/accent items are readable on dark */
-  --amber:      #C4B5FD;
-  --amber-dim:  #A78BFA;
-  --amber-glow: rgba(196,181,253,0.18);
-  --amber-soft: rgba(196,181,253,0.11);
+  --t2: rgba(255,255,255,0.85);
+  --t3: rgba(255,255,255,0.55);
+  --t4: rgba(255,255,255,0.32);
+  --b1: rgba(255,255,255,0.12);
+  --b2: rgba(255,255,255,0.06);
+  --b3: rgba(255,255,255,0.22);
+  --card: rgba(255,255,255,0.07);
+  --card-hover: rgba(255,255,255,0.12);
+  --amber: #2DD4BF;
+  --amber-dim: #14B8A6;
+  --amber-glow: rgba(45,212,191,0.18);
+  --amber-soft: rgba(45,212,191,0.10);
 }
-/* Default text color for form controls on dark surfaces (no !important — inline styles override) */
 .dark-surface input,
 .dark-surface select,
 .dark-surface textarea {
@@ -143,10 +264,10 @@
 }
 .dark-surface input::placeholder,
 .dark-surface textarea::placeholder {
-  color: rgba(196,181,253,0.55);  /* lavender — matches purple theme */
+  color: rgba(255,255,255,0.38);
 }
 .dark-surface select option {
-  background: #2D1E8A;
+  background: #1E293B;
   color: #ffffff;
 }
 
@@ -183,6 +304,7 @@
 
   .btn-secondary:hover {
     background: var(--card-hover);
+    border-color: var(--b3);
     color: var(--t1);
   }
 
@@ -197,11 +319,11 @@
   }
 
   .input::placeholder {
-    color: var(--t3);
+    color: var(--t4);
   }
 
   .input:focus {
-    border-color: rgba(108,78,255,0.45);
+    border-color: var(--amber);
     box-shadow: 0 0 0 3px var(--amber-glow);
   }
 

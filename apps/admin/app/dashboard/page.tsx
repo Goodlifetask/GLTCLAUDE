@@ -37,7 +37,8 @@ const LOGS = [
 ];
 
 const THEMES = [
-  { n: 'Light Professional', t: 'Light', c: ['#f8f9fb', '#6366f1', '#f59e0b'], a: true },
+  { n: 'Clean Teal', t: 'Light', c: ['#F0F4F8', '#0D9488', '#F97316'], a: true },
+  { n: 'Light Professional', t: 'Light', c: ['#f8f9fb', '#6366f1', '#f59e0b'], a: false },
   { n: 'Dark Precision', t: 'Dark', c: ['#0f172a', '#6366f1', '#f59e0b'], a: false },
   { n: 'Ocean Blue', t: 'Light', c: ['#eff6ff', '#3b82f6', '#10b981'], a: false },
   { n: 'Emerald Green', t: 'Light', c: ['#f0fdf4', '#10b981', '#6366f1'], a: false },

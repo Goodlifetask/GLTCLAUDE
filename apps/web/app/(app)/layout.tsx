@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { RightPanel } from '../../components/layout/RightPanel';
 import { useQuery } from '@tanstack/react-query';
@@ -126,18 +126,73 @@ function UrgentRemindersPopup() {
   );
 }
 
+const MOBILE_NAV = [
+  { label: 'Home',     icon: '⊞', href: '/dashboard', exact: true },
+  { label: 'Tasks',    icon: '◎', href: '/tasks' },
+  { label: 'Calendar', icon: '📅', href: '/calendar' },
+  { label: 'Alarms',   icon: '⚡', href: '/fly-alarms' },
+  { label: 'Settings', icon: '⊙', href: '/settings' },
+];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  const isActive = (href: string, exact?: boolean) =>
+    exact ? pathname === href : pathname?.startsWith(href) ?? false;
+
+  const router = useRouter();
+
   return (
     <I18nProvider>
-      <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 288px', minHeight: '100vh' }}>
-        <Sidebar />
-        <main style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      {/* Mobile header — only visible on small screens */}
+      <header className="mobile-header">
+        <div className="mobile-header-brand">
+          <div className="mobile-header-logo">G</div>
+          <span className="mobile-header-title">GoodLifeTask</span>
+        </div>
+        <button className="hamburger" onClick={() => setSidebarOpen(true)}>☰</button>
+      </header>
+
+      {/* Sidebar overlay (mobile) */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? ' open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      <div className="app-shell">
+        {/* Sidebar */}
+        <div className={`sidebar-panel${sidebarOpen ? ' open' : ''}`}>
+          <Sidebar onClose={() => setSidebarOpen(false)} />
+        </div>
+
+        {/* Main content */}
+        <main className="app-main" style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
           {children}
         </main>
-        <RightPanel />
-        <UrgentRemindersPopup />
-        <FiringAlarm />
+
+        {/* Right panel — hidden on tablet/mobile */}
+        <div className="right-panel">
+          <RightPanel />
+        </div>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <nav className="mobile-nav">
+        {MOBILE_NAV.map(item => (
+          <button
+            key={item.href}
+            className={`mobile-nav-item${isActive(item.href, item.exact) ? ' active' : ''}`}
+            onClick={() => router.push(item.href)}
+          >
+            <span className="mobile-nav-icon">{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <UrgentRemindersPopup />
+      <FiringAlarm />
     </I18nProvider>
   );
 }
