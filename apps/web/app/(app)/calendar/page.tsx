@@ -161,7 +161,7 @@ export default function CalendarPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['cal', view, from, to],
-    queryFn: () => api.reminders.list({ limit:500, from, to }),
+    queryFn: () => api.reminders.list({ limit:100, from, to }),
     staleTime: 30_000,
   });
 

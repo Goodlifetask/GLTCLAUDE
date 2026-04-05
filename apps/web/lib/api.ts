@@ -16,6 +16,9 @@ function getAuthStore() {
 
 const BASE_URL = process.env['NEXT_PUBLIC_API_URL'] ?? '/api/v1';
 
+// Single shared refresh promise — prevents concurrent refresh storms
+let _refreshPromise: Promise<string> | null = null;
+
 function createApiClient(): AxiosInstance {
   const instance = axios.create({
     baseURL: BASE_URL,
@@ -35,6 +38,8 @@ function createApiClient(): AxiosInstance {
   });
 
   // Response interceptor: auto-refresh on 401
+  // Uses a shared promise so concurrent 401s all wait for the same refresh
+  // instead of each firing their own, which burns through refresh tokens.
   instance.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
@@ -43,17 +48,29 @@ function createApiClient(): AxiosInstance {
       if (error.response?.status === 401 && !original._retry) {
         original._retry = true;
 
+        if (!_refreshPromise) {
+          _refreshPromise = instance.post('/auth/refresh')
+            .then(({ data }) => {
+              const token = data.data.access_token;
+              getAuthStore()?.getState().setAccessToken(token);
+              return token;
+            })
+            .catch((err) => {
+              getAuthStore()?.getState().logout();
+              if (typeof window !== 'undefined') window.location.href = '/login';
+              throw err;
+            })
+            .finally(() => {
+              _refreshPromise = null;
+            });
+        }
+
         try {
-          const { data } = await instance.post('/auth/refresh');
-          const { access_token } = data.data;
-          const store = getAuthStore();
-          store?.getState().setAccessToken(access_token);
-          original.headers.Authorization = `Bearer ${access_token}`;
+          const token = await _refreshPromise;
+          original.headers.Authorization = `Bearer ${token}`;
           return instance(original);
         } catch {
-          const store = getAuthStore();
-          store?.getState().logout();
-          window.location.href = '/login';
+          return Promise.reject(error);
         }
       }
 

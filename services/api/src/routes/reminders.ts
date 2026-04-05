@@ -63,16 +63,17 @@ function parseIdParam(id: string, reply: FastifyReply): string | null {
 }
 
 const listQuerySchema = z.object({
-  status:   z.enum(['pending', 'completed', 'snoozed']).optional(),
-  type:     z.enum(['call', 'task', 'email', 'location', 'event']).optional(),
-  list_id:  z.string().uuid().optional(),
-  from:     z.string().datetime().optional(),
-  to:       z.string().datetime().optional(),
-  q:        z.string().max(100).optional(),
-  page:     z.coerce.number().int().min(1).default(1),
-  limit:    z.coerce.number().int().min(1).max(100).default(20),
-  sort:     z.enum(['fireAt', 'createdAt', 'priority']).default('fireAt'),
-  order:    z.enum(['asc', 'desc']).default('asc'),
+  status:       z.enum(['pending', 'completed', 'snoozed']).optional(),
+  type:         z.enum(['call', 'task', 'email', 'location', 'event']).optional(),
+  list_id:      z.string().uuid().optional(),
+  from:         z.string().datetime().optional(),
+  to:           z.string().datetime().optional(),
+  q:            z.string().max(100).optional(),
+  is_recurring: z.coerce.boolean().optional(),
+  page:         z.coerce.number().int().min(1).default(1),
+  limit:        z.coerce.number().int().min(1).max(500).default(20),
+  sort:         z.enum(['fireAt', 'createdAt', 'priority']).default('fireAt'),
+  order:        z.enum(['asc', 'desc']).default('asc'),
 });
 
 export async function remindersRoutes(server: FastifyInstance) {
@@ -99,19 +100,25 @@ export async function remindersRoutes(server: FastifyInstance) {
     '/',
     { preHandler: [authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const query = listQuerySchema.parse(request.query);
+      let query: ReturnType<typeof listQuerySchema.parse>;
+      try {
+        query = listQuerySchema.parse(request.query);
+      } catch (err: any) {
+        return reply.status(400).send({ error: 'VALIDATION_ERROR', message: err.errors?.[0]?.message ?? 'Invalid query parameters' });
+      }
       const result = await reminderService.list({
-        userId:  request.user.sub,
-        status:  query.status,
-        type:    query.type,
-        listId:  query.list_id,
-        from:    query.from ? new Date(query.from) : undefined,
-        to:      query.to   ? new Date(query.to)   : undefined,
-        q:       query.q,
-        page:    query.page,
-        limit:   query.limit,
-        sort:    query.sort,
-        order:   query.order,
+        userId:      request.user.sub,
+        status:      query.status,
+        type:        query.type,
+        listId:      query.list_id,
+        from:        query.from ? new Date(query.from) : undefined,
+        to:          query.to   ? new Date(query.to)   : undefined,
+        q:           query.q,
+        isRecurring: query.is_recurring,
+        page:        query.page,
+        limit:       query.limit,
+        sort:        query.sort,
+        order:       query.order,
       });
       return reply.send(result);
     },

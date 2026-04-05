@@ -47,17 +47,18 @@ interface UpdateReminderInput {
 }
 
 interface ListRemindersInput {
-  userId:     string;
-  status?:    string;
-  type?:      string;
-  listId?:    string;
-  from?:      Date;
-  to?:        Date;
-  q?:         string;
-  page?:      number;
-  limit?:     number;
-  sort?:      string;
-  order?:     'asc' | 'desc';
+  userId:      string;
+  status?:     string;
+  type?:       string;
+  listId?:     string;
+  from?:       Date;
+  to?:         Date;
+  q?:          string;
+  isRecurring?: boolean;
+  page?:       number;
+  limit?:      number;
+  sort?:       string;
+  order?:      'asc' | 'desc';
 }
 
 export class ReminderService {
@@ -160,9 +161,10 @@ export class ReminderService {
       { OR: [{ userId: input.userId }, { assigneeId: input.userId }] },
     ];
 
-    if (input.status) andClauses.push({ status: input.status });
-    if (input.type)   andClauses.push({ type: input.type });
-    if (input.listId) andClauses.push({ listId: input.listId });
+    if (input.status)      andClauses.push({ status: input.status });
+    if (input.type)        andClauses.push({ type: input.type });
+    if (input.listId)      andClauses.push({ listId: input.listId });
+    if (input.isRecurring) andClauses.push({ recurrenceId: { not: null } });
 
     if (input.from || input.to) {
       const fireAt: Record<string, unknown> = {};
