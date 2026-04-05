@@ -329,9 +329,24 @@ export const adminApi = {
     me: () => request<LoginResponse['user']>('GET', '/users/me'),
 
     // Returns stats for the current user (not aggregate admin stats)
-    // NOTE: For real aggregate admin stats (total users, etc.), a dedicated
-    //       admin endpoint would be needed on the backend.
     myStats: () => request<UserStats>('GET', '/users/me/stats'),
+
+    updateProfile: (data: { name?: string; locale?: string; timezone?: string }) =>
+      request<LoginResponse['user']>('PATCH', '/users/me', data),
+
+    changePassword: (currentPassword: string, newPassword: string) =>
+      request<void>('PATCH', '/users/me/password', { currentPassword, newPassword }),
+
+    uploadAvatar: (file: File): Promise<{ data: { avatarUrl: string } }> => {
+      const form = new FormData();
+      form.append('file', file);
+      const token = getToken();
+      return fetch(`${BASE}/users/me/avatar`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: form,
+      }).then(r => r.json());
+    },
   },
 
   reminders: {

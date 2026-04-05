@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { adminApi } from '../lib/api';
 
 const NAV = [
   { section: 'Overview', items: [
@@ -36,10 +37,38 @@ const NAV = [
     { label: 'Settings', icon: '⊙', page: 'settings', badge: null, badgeClass: null },
     { label: 'Security', icon: '⊗', page: 'security', badge: null, badgeClass: null },
     { label: 'Backup & Restore', icon: '◫', page: 'backup', badge: null, badgeClass: null },
+    { label: 'My Profile', icon: '◎', page: 'profile', badge: null, badgeClass: null },
   ]},
 ];
 
 export function AdminSidebar({ activePage, onNavigate }: { activePage: string; onNavigate: (page: string) => void }) {
+  const [admin, setAdmin] = useState<{ name: string; email: string; avatarUrl?: string | null } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    adminApi.users.me()
+      .then(u => setAdmin({ name: u.name, email: u.email, avatarUrl: (u as any).avatarUrl }))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  const initials = admin?.name
+    ? admin.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'SA';
+
+  function handleLogout() {
+    localStorage.removeItem('admin_token');
+    window.location.href = '/login';
+  }
+
   return (
     <aside className="sidebar">
       {/* Header */}
@@ -88,15 +117,67 @@ export function AdminSidebar({ activePage, onNavigate }: { activePage: string; o
       </nav>
 
       {/* Footer */}
-      <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="user-ava">SA</div>
+      <div className="sidebar-footer" ref={menuRef} style={{ position: 'relative' }}>
+        <div
+          className="sidebar-user"
+          onClick={() => setMenuOpen(v => !v)}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="user-ava">
+            {admin?.avatarUrl
+              ? <img src={admin.avatarUrl} alt={initials} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              : initials}
+          </div>
           <div className="user-info">
-            <div className="user-name">Super Admin</div>
-            <div className="user-role">admin@goodlifetask.com</div>
+            <div className="user-name">{admin?.name ?? 'Admin'}</div>
+            <div className="user-role">{admin?.email ?? '…'}</div>
           </div>
           <div className="user-menu">⋯</div>
         </div>
+
+        {/* Pop-up menu */}
+        {menuOpen && (
+          <div style={{
+            position: 'absolute', bottom: '100%', left: 12, right: 12, marginBottom: 6,
+            background: 'var(--card)', border: '1px solid var(--b1)',
+            borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+            overflow: 'hidden', zIndex: 200,
+          }}>
+            {[
+              { icon: '◎', label: 'My Profile', page: 'profile' },
+              { icon: '⊙', label: 'Settings', page: 'settings' },
+            ].map(item => (
+              <div
+                key={item.page}
+                onClick={() => { onNavigate(item.page); setMenuOpen(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 16px', fontSize: 13, color: 'var(--text-primary)',
+                  cursor: 'pointer', transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span style={{ fontSize: 14 }}>{item.icon}</span>
+                {item.label}
+              </div>
+            ))}
+            <div style={{ height: 1, background: 'var(--b1)', margin: '4px 0' }} />
+            <div
+              onClick={handleLogout}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 16px', fontSize: 13, color: '#ef4444',
+                cursor: 'pointer', transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.06)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <span style={{ fontSize: 14 }}>⊘</span>
+              Sign Out
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );

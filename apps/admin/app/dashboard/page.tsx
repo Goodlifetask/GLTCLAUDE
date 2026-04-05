@@ -4036,6 +4036,271 @@ function BillingPage() {
   );
 }
 
+// ── PROFILE PAGE ─────────────────────────────────────────────────────────────
+function ProfilePage({ showToast }: { showToast: (m: string, t?: 'success' | 'error') => void }) {
+  const [profile, setProfile] = useState<{ name: string; email: string; plan: string; avatarUrl?: string | null } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [name, setName] = useState('');
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    adminApi.users.me()
+      .then(u => {
+        setProfile(u as any);
+        setName((u as any).name ?? '');
+      })
+      .catch(() => showToast('Failed to load profile', 'error'))
+      .finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSaveName() {
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await adminApi.users.updateProfile({ name: name.trim() });
+      setProfile(p => p ? { ...p, name: name.trim() } : p);
+      showToast('Name updated successfully');
+    } catch {
+      showToast('Failed to update name', 'error');
+    } finally { setSaving(false); }
+  }
+
+  async function handleChangePassword() {
+    if (!curPw || !newPw) { showToast('Fill all password fields', 'error'); return; }
+    if (newPw !== confirmPw) { showToast('New passwords do not match', 'error'); return; }
+    if (newPw.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+    setPwSaving(true);
+    try {
+      await adminApi.users.changePassword(curPw, newPw);
+      setCurPw(''); setNewPw(''); setConfirmPw('');
+      showToast('Password changed successfully');
+    } catch {
+      showToast('Failed to change password — check current password', 'error');
+    } finally { setPwSaving(false); }
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setAvatarPreview(preview);
+    setAvatarUploading(true);
+    try {
+      const res = await adminApi.users.uploadAvatar(file);
+      const url = res?.data?.avatarUrl ?? null;
+      setProfile(p => p ? { ...p, avatarUrl: url } : p);
+      showToast('Avatar updated');
+    } catch {
+      showToast('Failed to upload avatar', 'error');
+      setAvatarPreview(null);
+    } finally { setAvatarUploading(false); }
+  }
+
+  const initials = profile?.name
+    ? profile.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'SA';
+
+  const avatarSrc = avatarPreview ?? profile?.avatarUrl ?? null;
+
+  const card: React.CSSProperties = {
+    background: 'var(--card)', border: '1px solid var(--b1)',
+    borderRadius: 'var(--r)', padding: 28, marginBottom: 20,
+  };
+  const label: React.CSSProperties = {
+    fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
+    textTransform: 'uppercase', letterSpacing: '0.07em',
+    display: 'block', marginBottom: 6,
+  };
+  const inp: React.CSSProperties = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid var(--b1)', background: 'var(--bg-body)',
+    color: 'var(--text-primary)', fontSize: 13, boxSizing: 'border-box',
+  };
+
+  if (loading) return <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Loading profile…</div>;
+
+  return (
+    <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="page-header">
+        <div className="page-title">My Profile</div>
+        <div className="page-desc">Manage your admin account details and security settings.</div>
+      </div>
+
+      {/* Avatar + Identity */}
+      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 24 }}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: 'var(--brand)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 28, fontWeight: 700, overflow: 'hidden',
+          }}>
+            {avatarSrc
+              ? <img src={avatarSrc} alt={initials} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : initials}
+          </div>
+          {avatarUploading && (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.5)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff',
+            }}>…</div>
+          )}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+            {profile?.name || 'Admin'}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>
+            {profile?.email}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={avatarUploading}
+            >
+              {avatarUploading ? 'Uploading…' : 'Change Photo'}
+            </button>
+            {(avatarPreview || profile?.avatarUrl) && (
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ color: '#ef4444' }}
+                onClick={() => {
+                  setAvatarPreview(null);
+                  setProfile(p => p ? { ...p, avatarUrl: null } : p);
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+        <div style={{
+          padding: '6px 16px', borderRadius: 20, fontSize: 11, fontWeight: 700,
+          background: 'var(--brand-soft)', color: 'var(--brand)',
+          textTransform: 'uppercase', letterSpacing: '0.06em', alignSelf: 'flex-start',
+        }}>
+          {profile?.plan ?? 'Admin'}
+        </div>
+      </div>
+
+      {/* Edit Name */}
+      <div style={card}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 18 }}>
+          Display Name
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={label}>Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              style={inp}
+              placeholder="Your display name"
+              maxLength={100}
+            />
+          </div>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleSaveName}
+            disabled={saving || !name.trim() || name.trim() === profile?.name}
+          >
+            {saving ? 'Saving…' : 'Save Name'}
+          </button>
+        </div>
+      </div>
+
+      {/* Email (read-only) */}
+      <div style={card}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 18 }}>
+          Email Address
+        </div>
+        <label style={label}>Email</label>
+        <input
+          type="email"
+          value={profile?.email ?? ''}
+          readOnly
+          style={{ ...inp, opacity: 0.6, cursor: 'not-allowed' }}
+        />
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
+          Email cannot be changed. Contact a super admin if needed.
+        </div>
+      </div>
+
+      {/* Change Password */}
+      <div style={card}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 18 }}>
+          Change Password
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={label}>Current Password</label>
+            <input type="password" value={curPw} onChange={e => setCurPw(e.target.value)} style={inp} placeholder="••••••••" />
+          </div>
+          <div>
+            <label style={label}>New Password</label>
+            <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} style={inp} placeholder="Min. 8 characters" />
+          </div>
+          <div>
+            <label style={label}>Confirm New Password</label>
+            <input
+              type="password"
+              value={confirmPw}
+              onChange={e => setConfirmPw(e.target.value)}
+              style={{ ...inp, borderColor: confirmPw && confirmPw !== newPw ? '#ef4444' : undefined }}
+              placeholder="Re-enter new password"
+            />
+            {confirmPw && confirmPw !== newPw && (
+              <div style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>Passwords do not match</div>
+            )}
+          </div>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleChangePassword}
+            disabled={pwSaving || !curPw || !newPw || newPw !== confirmPw}
+          >
+            {pwSaving ? 'Updating…' : 'Update Password'}
+          </button>
+        </div>
+      </div>
+
+      {/* Account Info */}
+      <div style={card}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 18 }}>
+          Account Information
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {[
+            { l: 'Account Type', v: 'Administrator' },
+            { l: 'Plan', v: profile?.plan ?? '—' },
+            { l: 'Email', v: profile?.email ?? '—' },
+            { l: 'Status', v: 'Active' },
+          ].map(({ l, v }) => (
+            <div key={l}>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{l}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── PAGE LABELS FOR BREADCRUMB ──
 const PAGE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard', analytics: 'Analytics', logs: 'Activity Logs',
@@ -4045,6 +4310,7 @@ const PAGE_LABELS: Record<string, string> = {
   integrations: 'Integrations', voice: 'Voice Assistants', calsync: 'Calendar Sync',
   emailint: 'Email Clients', apikeys: 'API Keys',
   settings: 'App Settings', security: 'Security', backup: 'Backup & Restore',
+  profile: 'My Profile',
 };
 
 // ── MAIN COMPONENT ──
@@ -4107,6 +4373,7 @@ export default function AdminDashboard() {
       case 'subs':         return <SubsPage />;
       case 'backup':       return <BackupPage showToast={showToast} />;
       case 'billing':      return <BillingPage />;
+      case 'profile':      return <ProfilePage showToast={showToast} />;
       default: return (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🚧</div>
