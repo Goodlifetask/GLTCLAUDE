@@ -2411,79 +2411,88 @@ function ThemeModal({
   );
 }
 
-const CUSTOM_THEMES_KEY = 'glt_admin_custom_themes';
+// Single source of truth: one key stores { activeId, customs }
+const THEMES_STATE_KEY = 'glt_admin_themes_v2';
+
+interface PersistedThemesState { activeId: number; customs: ThemeEntry[]; }
+
+function loadPersistedState(): PersistedThemesState {
+  try {
+    const raw = localStorage.getItem(THEMES_STATE_KEY);
+    if (raw) return JSON.parse(raw) as PersistedThemesState;
+    // Migrate from old split keys if present
+    const oldCustoms = localStorage.getItem('glt_admin_custom_themes');
+    const oldActive  = localStorage.getItem(THEME_STORAGE_KEY);
+    if (oldCustoms || oldActive) {
+      const customs: ThemeEntry[] = oldCustoms ? JSON.parse(oldCustoms) : [];
+      const activeId: number = oldActive ? (JSON.parse(oldActive) as ThemeEntry).id ?? 1 : 1;
+      // Replace old keys with new unified key
+      localStorage.removeItem('glt_admin_custom_themes');
+      localStorage.removeItem(THEME_STORAGE_KEY);
+      const state: PersistedThemesState = { activeId, customs };
+      localStorage.setItem(THEMES_STATE_KEY, JSON.stringify(state));
+      return state;
+    }
+  } catch (_) { /* ignore */ }
+  return { activeId: 1, customs: [] };
+}
+
+function savePersistedState(activeId: number, allThemes: ThemeEntry[], builtInCount: number) {
+  try {
+    const customs = allThemes.filter(t => t.id > builtInCount);
+    localStorage.setItem(THEMES_STATE_KEY, JSON.stringify({ activeId, customs }));
+  } catch (_) { /* ignore */ }
+}
 
 function ThemesPage() {
   const builtIn = THEMES.map((t, i) => ({ ...t, id: i + 1, t: t.t as 'Light' | 'Dark', c: t.c as [string, string, string] }));
+  const builtInCount = THEMES.length;
+
+  const persisted = loadPersistedState();
 
   const [themes, setThemes] = useState<ThemeEntry[]>(() => {
-    // Restore any user-created themes from localStorage
-    try {
-      const saved = localStorage.getItem(CUSTOM_THEMES_KEY);
-      if (saved) {
-        const customs: ThemeEntry[] = JSON.parse(saved);
-        return [...builtIn, ...customs];
-      }
-    } catch (_) { /* ignore */ }
-    return builtIn;
+    return [...builtIn, ...persisted.customs];
   });
 
-  const [activeId, setActiveId] = useState<number>(() => {
-    // Restore active theme id from localStorage
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved) {
-        const t: ThemeEntry = JSON.parse(saved);
-        return t.id ?? 1;
-      }
-    } catch (_) { /* ignore */ }
-    return 1;
-  });
+  const [activeId, setActiveId] = useState<number>(() => persisted.activeId ?? 1);
 
   const [modal, setModal] = useState<{ open: boolean; editing?: ThemeEntry }>({ open: false });
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const nextId = useRef(Math.max(...builtIn.map(t => t.id), THEMES.length) + 1);
+  const nextId = useRef(Math.max(...builtIn.map(t => t.id), ...persisted.customs.map(t => t.id), builtInCount) + 1);
 
   const activeTheme = themes.find(t => t.id === activeId);
 
-  // On mount, restore + apply the saved theme
+  // On mount: apply the active theme from current React state (not a stale snapshot)
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY);
-      if (saved) {
-        const savedTheme: ThemeEntry = JSON.parse(saved);
-        // Merge saved theme data with current themes list (in case user edited it)
-        const match = themes.find(t => t.id === savedTheme.id);
-        applyTheme(match ?? savedTheme);
-        return;
-      }
-    } catch (_) { /* ignore */ }
-    // Default: apply first theme
-    if (themes[0]) applyTheme(themes[0]);
+    const t = themes.find(x => x.id === activeId);
+    if (t) applyTheme(t);
+    else if (themes[0]) applyTheme(themes[0]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const builtInCount = THEMES.length;
-
-  function persistCustomThemes(updated: ThemeEntry[]) {
-    try {
-      const customs = updated.filter(t => t.id > builtInCount);
-      localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(customs));
-    } catch (_) { /* ignore */ }
+  function persist(updatedThemes: ThemeEntry[], updatedActiveId: number) {
+    savePersistedState(updatedActiveId, updatedThemes, builtInCount);
+    // Also write active theme snapshot so applyTheme on next mount is instant
+    const active = updatedThemes.find(t => t.id === updatedActiveId);
+    if (active) {
+      try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(active)); } catch (_) { /* ignore */ }
+    }
   }
 
   function handleSave(data: Omit<ThemeEntry, 'id' | 'a'>) {
     if (modal.editing) {
-      const updated = themes.map(t => t.id === modal.editing!.id ? { ...t, ...data } : t);
+      const merged: ThemeEntry = { ...modal.editing, ...data };
+      const updated = themes.map(t => t.id === merged.id ? merged : t);
       setThemes(updated);
-      persistCustomThemes(updated);
-      if (modal.editing.id === activeId) applyTheme({ ...modal.editing, ...data });
+      // If editing the active theme, re-apply immediately so page matches card
+      if (merged.id === activeId) applyTheme(merged);
+      persist(updated, activeId);
     } else {
       nextId.current += 1;
       const newTheme: ThemeEntry = { id: nextId.current, ...data, a: false };
       const updated = [...themes, newTheme];
       setThemes(updated);
-      persistCustomThemes(updated);
+      persist(updated, activeId);
     }
     setModal({ open: false });
   }
@@ -2491,18 +2500,21 @@ function ThemesPage() {
   function handleDelete(id: number) {
     const updated = themes.filter(t => t.id !== id);
     setThemes(updated);
-    persistCustomThemes(updated);
+    let newActiveId = activeId;
     if (activeId === id) {
       const fallback = updated[0];
-      if (fallback) { setActiveId(fallback.id); applyTheme(fallback); }
+      if (fallback) { newActiveId = fallback.id; setActiveId(fallback.id); applyTheme(fallback); }
     }
+    persist(updated, newActiveId);
     setDeleteId(null);
   }
 
   function handleSetActive(t: ThemeEntry) {
     setActiveId(t.id);
-    setThemes(prev => prev.map(x => ({ ...x, a: x.id === t.id })));
+    const updated = themes.map(x => ({ ...x, a: x.id === t.id }));
+    setThemes(updated);
     applyTheme(t);
+    persist(updated, t.id);
   }
 
   return (
