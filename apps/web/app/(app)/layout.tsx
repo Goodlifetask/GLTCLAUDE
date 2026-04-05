@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 import { useAuthStore } from '../../store/auth';
 import { I18nProvider } from '../../components/I18nProvider';
+import { FiringAlarm } from '../../components/layout/FiringAlarm';
 
 function UrgentRemindersPopup() {
   const { user } = useAuthStore();
@@ -135,6 +136,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
         <RightPanel />
         <UrgentRemindersPopup />
+        <FiringAlarm />
       </div>
     </I18nProvider>
   );
