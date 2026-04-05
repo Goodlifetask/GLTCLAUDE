@@ -67,6 +67,13 @@ export const PLAN_CONFIG: Record<UserPlan, PlanConfig> = {
   },
 };
 
+export const FAMILY_ALARM_FREE_LIMIT = 2;
+
+export function canCreateFamilyAlarm(plan: UserPlan, currentCount: number): boolean {
+  if (plan !== 'free') return true;
+  return currentCount < FAMILY_ALARM_FREE_LIMIT;
+}
+
 export function canCreateReminder(plan: UserPlan, currentCount: number): boolean {
   const limit = PLAN_CONFIG[plan].reminderLimit;
   if (limit === -1) return true;

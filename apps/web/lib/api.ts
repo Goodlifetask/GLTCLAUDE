@@ -223,6 +223,30 @@ export const api = {
     },
   },
 
+  familyAlarms: {
+    list: (params?: { page?: number; limit?: number }) =>
+      client.get('/family-alarms', { params }).then((r) => r.data),
+    get: (id: string) =>
+      client.get(`/family-alarms/${id}`).then((r) => r.data),
+    create: (data: Record<string, unknown>) =>
+      client.post('/family-alarms', data).then((r) => r.data),
+    update: (id: string, data: Record<string, unknown>) =>
+      client.patch(`/family-alarms/${id}`, data).then((r) => r.data),
+    delete: (id: string) =>
+      client.delete(`/family-alarms/${id}`).then((r) => r.data),
+    planStatus: () =>
+      client.get('/family-alarms/plan-status').then((r) => r.data),
+    voiceLabels: () =>
+      client.get('/family-alarms/voice-labels').then((r) => r.data),
+    uploadVoice: (id: string, file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return client.post(`/family-alarms/${id}/voice`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data);
+    },
+  },
+
   team: {
     workspaces: {
       list: () =>

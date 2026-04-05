@@ -9,6 +9,11 @@ const TYPE_ICON: Record<string, string> = {
   call: '📞', task: '✓', email: '✉️', location: '📍', event: '📅',
 };
 
+const VOICE_LABEL_EMOJI: Record<string, string> = {
+  Dad: '👨', Mom: '👩', Wife: '👩', Husband: '👨', Son: '👦', Daughter: '👧',
+  Friend: '🤝', Partner: '💑', Grandpa: '👴', Grandma: '👵', Other: '❤️', 'Loved One': '❤️',
+};
+
 /* ── Audio helpers ──────────────────────────────────────────────────────── */
 function playBeep() {
   try {
@@ -39,45 +44,94 @@ function speak(text: string) {
   window.speechSynthesis.speak(utt);
 }
 
-const STORAGE_KEY = 'glt_alarm_shown';
+/* ── Session deduplication ──────────────────────────────────────────────── */
+const STORAGE_KEY     = 'glt_alarm_shown';
+const FAM_STORAGE_KEY = 'glt_fam_alarm_shown';
 
-function getShownIds(): Set<string> {
-  try {
-    return new Set(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? '[]'));
-  } catch { return new Set(); }
+function getShownIds(key: string): Set<string> {
+  try { return new Set(JSON.parse(sessionStorage.getItem(key) ?? '[]')); }
+  catch { return new Set(); }
 }
-function markShown(id: string) {
+function markShown(key: string, id: string) {
   try {
-    const arr = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? '[]');
+    const arr = JSON.parse(sessionStorage.getItem(key) ?? '[]');
     arr.push(id);
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    sessionStorage.setItem(key, JSON.stringify(arr));
   } catch {}
 }
 
+/* ── Discriminated union ────────────────────────────────────────────────── */
+type FiringItem =
+  | { kind: 'reminder'; data: any }
+  | { kind: 'family';   data: any };
+
+const API_BASE = process.env['NEXT_PUBLIC_API_URL']?.replace('/v1', '') ?? '';
+
 /* ── Component ──────────────────────────────────────────────────────────── */
 export function FiringAlarm() {
-  const { user }         = useAuthStore();
-  const qc               = useQueryClient();
-  const shownRef         = useRef<Set<string>>(new Set());
-  const [queue, setQueue] = useState<any[]>([]);
+  const { user }          = useAuthStore();
+  const qc                = useQueryClient();
+  const shownRef          = useRef<Set<string>>(new Set());
+  const famShownRef       = useRef<Set<string>>(new Set());
+  const [queue, setQueue] = useState<FiringItem[]>([]);
   const current           = queue[0] ?? null;
+
+  // Voice playback refs
+  const audioRef        = useRef<HTMLAudioElement | null>(null);
+  const volIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function playVoice(url: string, gradual: boolean) {
+    stopVoice();
+    const audio = new Audio(`${API_BASE}${url}`);
+    audioRef.current = audio;
+    audio.volume = gradual ? 0.05 : 1;
+    audio.play().catch(() => playBeep());
+    if (gradual) {
+      let v = 0.05;
+      volIntervalRef.current = setInterval(() => {
+        v = Math.min(v + 0.05, 1);
+        if (audioRef.current) audioRef.current.volume = v;
+        if (v >= 1 && volIntervalRef.current) {
+          clearInterval(volIntervalRef.current);
+          volIntervalRef.current = null;
+        }
+      }, 1000);
+    }
+  }
+
+  function stopVoice() {
+    if (volIntervalRef.current) { clearInterval(volIntervalRef.current); volIntervalRef.current = null; }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+  }
 
   // Hydrate shown-IDs from sessionStorage on mount
   useEffect(() => {
-    shownRef.current = getShownIds();
+    shownRef.current    = getShownIds(STORAGE_KEY);
+    famShownRef.current = getShownIds(FAM_STORAGE_KEY);
   }, []);
 
-  // Poll every 30 s for pending reminders
-  const { data } = useQuery({
+  // Cleanup audio on unmount
+  useEffect(() => () => stopVoice(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll reminders
+  const { data: remindersData } = useQuery({
     queryKey: ['firing-alarms'],
     queryFn:  () => api.reminders.list({ status: 'pending', limit: 100, sort: 'fireAt', order: 'asc' }),
     enabled:  !!user,
     refetchInterval: 30_000,
   });
 
-  // Detect newly-fired reminders (fireAt <= now, not yet shown)
+  // Poll family alarms
+  const { data: famData } = useQuery({
+    queryKey: ['firing-family-alarms'],
+    queryFn:  () => api.familyAlarms.list({ limit: 100 }),
+    enabled:  !!user,
+    refetchInterval: 30_000,
+  });
+
+  // Enqueue newly-fired reminders
   useEffect(() => {
-    const raw: any[] = (data as any)?.data?.reminders ?? (data as any)?.reminders ?? (data as any)?.data ?? [];
+    const raw: any[] = (remindersData as any)?.data?.reminders ?? (remindersData as any)?.reminders ?? (remindersData as any)?.data ?? [];
     const reminders  = Array.isArray(raw) ? raw : [];
     const now = Date.now();
 
@@ -87,24 +141,58 @@ export function FiringAlarm() {
     });
 
     if (firing.length === 0) return;
-
     setQueue(prev => {
-      const existing = new Set(prev.map((r: any) => r.id));
-      return [...prev, ...firing.filter((r: any) => !existing.has(r.id))];
+      const existing = new Set(prev.map(i => i.data.id));
+      const newItems: FiringItem[] = firing
+        .filter((r: any) => !existing.has(r.id))
+        .map((r: any) => ({ kind: 'reminder', data: r }));
+      return [...prev, ...newItems];
     });
-  }, [data]);
+  }, [remindersData]);
 
-  // Play sound + speak when alarm shows
+  // Enqueue newly-fired family alarms
+  useEffect(() => {
+    const raw: any[] = (famData as any)?.data ?? [];
+    const alarms = Array.isArray(raw) ? raw : [];
+    const now = Date.now();
+
+    const firing = alarms.filter((a: any) => {
+      if (!a.active || a.deletedAt || famShownRef.current.has(a.id)) return false;
+      return a.fireAt && new Date(a.fireAt).getTime() <= now;
+    });
+
+    if (firing.length === 0) return;
+    setQueue(prev => {
+      const existing = new Set(prev.map(i => i.data.id));
+      const newItems: FiringItem[] = firing
+        .filter((a: any) => !existing.has(a.id))
+        .map((a: any) => ({ kind: 'family', data: a }));
+      return [...prev, ...newItems];
+    });
+  }, [famData]);
+
+  // Play sound when alarm shows
   useEffect(() => {
     if (!current) return;
-    markShown(current.id);
-    shownRef.current.add(current.id);
 
-    playBeep();
-    setTimeout(() => speak(`Reminder: ${current.title}`), 700);
-  }, [current?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (current.kind === 'reminder') {
+      markShown(STORAGE_KEY, current.data.id);
+      shownRef.current.add(current.data.id);
+      playBeep();
+      setTimeout(() => speak(`Reminder: ${current.data.title}`), 700);
+    } else {
+      markShown(FAM_STORAGE_KEY, current.data.id);
+      famShownRef.current.add(current.data.id);
+      if (current.data.voiceFileUrl) {
+        setTimeout(() => playVoice(current.data.voiceFileUrl, current.data.gradualVolume ?? true), 400);
+      } else {
+        playBeep();
+        setTimeout(() => speak(`${current.data.voiceLabel} says: ${current.data.title}`), 700);
+      }
+    }
+  }, [current?.data?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Mutations */
+  /* Mutations — reminders */
   const completeMutation = useMutation({
     mutationFn: (id: string) => api.reminders.complete(id),
     onSuccess: () => {
@@ -126,28 +214,74 @@ export function FiringAlarm() {
     onError: () => toast.error('Failed to snooze'),
   });
 
-  const next = () => {
-    window.speechSynthesis?.cancel();
-    setQueue(prev => prev.slice(1));
-  };
+  /* Mutations — family alarms */
+  const famDoneMut = useMutation({
+    mutationFn: (id: string) => api.familyAlarms.update(id, { active: false }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['family-alarms'] });
+      qc.invalidateQueries({ queryKey: ['firing-family-alarms'] });
+      toast.success('Alarm dismissed!');
+    },
+    onError: () => toast.error('Failed to dismiss'),
+  });
 
-  const handleDone = () => {
-    if (!current) return;
-    window.speechSynthesis?.cancel();
-    completeMutation.mutate(current.id);
-    setQueue(prev => prev.slice(1));
-  };
+  const famSnoozeMut = useMutation({
+    mutationFn: (id: string) => {
+      const snoozedUntil = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      return api.familyAlarms.update(id, { fire_at: snoozedUntil });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['family-alarms'] });
+      qc.invalidateQueries({ queryKey: ['firing-family-alarms'] });
+      toast.success('Snoozed 10 min');
+    },
+    onError: () => toast.error('Failed to snooze'),
+  });
 
-  const handleSnooze = () => {
-    if (!current) return;
+  function advance() {
+    stopVoice();
     window.speechSynthesis?.cancel();
-    snoozeMutation.mutate(current.id);
     setQueue(prev => prev.slice(1));
-  };
+  }
+
+  function handleDone() {
+    if (!current) return;
+    stopVoice();
+    window.speechSynthesis?.cancel();
+    if (current.kind === 'family') {
+      famDoneMut.mutate(current.data.id);
+    } else {
+      completeMutation.mutate(current.data.id);
+    }
+    setQueue(prev => prev.slice(1));
+  }
+
+  function handleSnooze() {
+    if (!current) return;
+    stopVoice();
+    window.speechSynthesis?.cancel();
+    if (current.kind === 'family') {
+      famSnoozeMut.mutate(current.data.id);
+    } else {
+      snoozeMutation.mutate(current.data.id);
+    }
+    setQueue(prev => prev.slice(1));
+  }
 
   if (!current) return null;
 
-  const fireAt = current.fireAt ? new Date(current.fireAt) : null;
+  const isFamilyAlarm = current.kind === 'family';
+  const fireAt = current.data.fireAt ? new Date(current.data.fireAt) : null;
+
+  const accentColor = isFamilyAlarm ? '#f43f5e' : 'var(--amber)';
+  const shadowColor = isFamilyAlarm ? 'rgba(244,63,94,0.25)' : 'rgba(240,162,2,0.25)';
+  const borderStyle = isFamilyAlarm ? '2px solid #f43f5e' : '2px solid var(--amber)';
+  const doneStyle   = isFamilyAlarm
+    ? { background: '#f43f5e', boxShadow: '0 4px 14px rgba(244,63,94,0.4)' }
+    : { background: 'var(--amber)', boxShadow: 'var(--sh-amber)' };
+
+  const isActing = completeMutation.isPending || snoozeMutation.isPending
+    || famDoneMut.isPending || famSnoozeMut.isPending;
 
   return (
     <div style={{
@@ -158,16 +292,18 @@ export function FiringAlarm() {
     }}>
       <div style={{
         background: 'var(--card)',
-        border: '2px solid var(--amber)',
+        border: borderStyle,
         borderRadius: 22,
         padding: '36px 32px 28px',
         maxWidth: 440, width: '90%',
-        boxShadow: '0 0 80px rgba(240,162,2,0.25), 0 24px 64px rgba(0,0,0,0.45)',
+        boxShadow: `0 0 80px ${shadowColor}, 0 24px 64px rgba(0,0,0,0.45)`,
         textAlign: 'center',
       }}>
         {/* Icon — animated */}
         <div style={{ fontSize: 52, marginBottom: 4, display: 'inline-block', animation: 'glt-ring 0.55s ease-in-out infinite alternate' }}>
-          {TYPE_ICON[current.type] ?? '🔔'}
+          {isFamilyAlarm
+            ? (VOICE_LABEL_EMOJI[current.data.voiceLabel] || '❤️')
+            : (TYPE_ICON[current.data.type] ?? '🔔')}
         </div>
 
         {/* Queue badge */}
@@ -182,19 +318,26 @@ export function FiringAlarm() {
           </div>
         )}
 
+        {/* Subtitle for family alarms */}
+        {isFamilyAlarm && (
+          <div style={{ fontSize: 12, color: accentColor, fontWeight: 700, marginTop: 8, letterSpacing: '0.04em' }}>
+            {VOICE_LABEL_EMOJI[current.data.voiceLabel] || '❤️'} {current.data.voiceLabel} is waking you up
+          </div>
+        )}
+
         {/* Title */}
         <div style={{
           fontFamily: 'var(--font-display)',
           fontSize: 22, fontWeight: 700,
-          color: 'var(--t1)', margin: '16px 0 6px',
+          color: 'var(--t1)', margin: '12px 0 6px',
           lineHeight: 1.3,
         }}>
-          {current.title}
+          {current.data.title}
         </div>
 
         {/* Time */}
         {fireAt && (
-          <div style={{ fontSize: 13, color: 'var(--amber)', fontWeight: 600, marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginBottom: 20 }}>
             🕐{' '}
             {fireAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
             {' · '}
@@ -203,7 +346,7 @@ export function FiringAlarm() {
         )}
 
         {/* Notes */}
-        {current.notes && (
+        {current.data.notes && (
           <div style={{
             fontSize: 13, color: 'var(--t2)',
             background: 'rgba(255,255,255,0.04)',
@@ -212,48 +355,60 @@ export function FiringAlarm() {
             marginBottom: 20, textAlign: 'left',
             lineHeight: 1.5,
           }}>
-            {current.notes}
+            {current.data.notes}
           </div>
         )}
 
-        {/* Read again */}
+        {/* Read again / Play again */}
         <button
-          onClick={() => speak(`Reminder: ${current.title}`)}
+          onClick={() => {
+            if (isFamilyAlarm && current.data.voiceFileUrl) {
+              playVoice(current.data.voiceFileUrl, current.data.gradualVolume ?? true);
+            } else {
+              const text = isFamilyAlarm
+                ? `${current.data.voiceLabel} says: ${current.data.title}`
+                : `Reminder: ${current.data.title}`;
+              speak(text);
+            }
+          }}
           style={{
-            background: 'none', border: '1px solid var(--b1)',
+            background: 'none',
+            border: `1px solid ${isFamilyAlarm ? 'rgba(244,63,94,0.3)' : 'var(--b1)'}`,
             borderRadius: 8, padding: '5px 14px',
-            cursor: 'pointer', fontSize: 12, color: 'var(--t3)',
+            cursor: 'pointer', fontSize: 12,
+            color: isFamilyAlarm ? '#f43f5e' : 'var(--t3)',
             marginBottom: 22,
           }}
         >
-          🔊 Read again
+          {isFamilyAlarm && current.data.voiceFileUrl ? '▶ Play Again' : '🔊 Read again'}
         </button>
 
         {/* Main actions */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
           <button
             onClick={handleSnooze}
-            disabled={snoozeMutation.isPending}
+            disabled={isActing}
             style={{
               flex: 1, padding: '13px 0', borderRadius: 12,
               background: 'rgba(255,255,255,0.06)',
               border: '1px solid var(--b1)', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
               color: 'var(--t2)',
-              opacity: snoozeMutation.isPending ? 0.6 : 1,
+              opacity: isActing ? 0.6 : 1,
             }}
           >
             😴 Snooze 10 min
           </button>
           <button
             onClick={handleDone}
-            disabled={completeMutation.isPending}
+            disabled={isActing}
             style={{
               flex: 1, padding: '13px 0', borderRadius: 12,
-              background: 'var(--amber)', border: 'none', cursor: 'pointer',
+              border: 'none', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
-              color: '#fff', boxShadow: 'var(--sh-amber)',
-              opacity: completeMutation.isPending ? 0.6 : 1,
+              color: '#fff',
+              opacity: isActing ? 0.6 : 1,
+              ...doneStyle,
             }}
           >
             ✓ Done
@@ -262,7 +417,7 @@ export function FiringAlarm() {
 
         {/* Dismiss */}
         <button
-          onClick={next}
+          onClick={advance}
           style={{
             background: 'none', border: 'none',
             cursor: 'pointer', fontSize: 12, color: 'var(--t4)',
