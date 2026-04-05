@@ -2128,53 +2128,495 @@ function CategoriesPage({ showToast }: { showToast: (msg: string, type?: 'succes
   );
 }
 
+type ThemeEntry = { id: number; n: string; t: 'Light' | 'Dark'; c: [string, string, string]; a: boolean };
+
+function hexToRgb(hex: string): [number, number, number] {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? [parseInt(r[1], 16), parseInt(r[2], 16), parseInt(r[3], 16)] : [0, 0, 0];
+}
+function darkenHex(hex: string, amt = 18): string {
+  const [r, g, b] = hexToRgb(hex);
+  return '#' + [r, g, b].map(v => Math.max(0, v - amt).toString(16).padStart(2, '0')).join('');
+}
+function applyTheme(theme: ThemeEntry) {
+  const root = document.documentElement;
+  const [bg, primary, accent] = theme.c;
+  const [pr, pg, pb] = hexToRgb(primary);
+  const dark = theme.t === 'Dark';
+  root.style.setProperty('--brand', primary);
+  root.style.setProperty('--brand-dark', darkenHex(primary));
+  root.style.setProperty('--brand-soft', `rgba(${pr},${pg},${pb},0.08)`);
+  root.style.setProperty('--brand-light', `rgba(${pr},${pg},${pb},0.18)`);
+  root.style.setProperty('--border-focus', primary);
+  root.style.setProperty('--sidebar-active', primary);
+  root.style.setProperty('--sidebar-accent', primary);
+  root.style.setProperty('--sidebar-hover', `rgba(${pr},${pg},${pb},0.07)`);
+  if (dark) {
+    root.style.setProperty('--bg', bg);
+    root.style.setProperty('--bg-white', '#1e293b');
+    root.style.setProperty('--bg-subtle', '#0f172a');
+    root.style.setProperty('--bg-muted', '#0f172a');
+    root.style.setProperty('--sidebar-bg', '#111827');
+    root.style.setProperty('--sidebar-border', '#1e293b');
+    root.style.setProperty('--sidebar-text', '#e2e8f0');
+    root.style.setProperty('--text-primary', '#f1f5f9');
+    root.style.setProperty('--text-secondary', '#94a3b8');
+    root.style.setProperty('--text-muted', '#64748b');
+    root.style.setProperty('--border', '#1e293b');
+    root.style.setProperty('--border-light', '#0f172a');
+  } else {
+    root.style.setProperty('--bg', bg);
+    root.style.setProperty('--bg-white', '#ffffff');
+    root.style.setProperty('--bg-subtle', '#f3f4f6');
+    root.style.setProperty('--bg-muted', '#eef0f3');
+    root.style.setProperty('--sidebar-bg', '#ffffff');
+    root.style.setProperty('--sidebar-border', '#e2e8f0');
+    root.style.setProperty('--sidebar-text', '#334155');
+    root.style.setProperty('--text-primary', '#0f172a');
+    root.style.setProperty('--text-secondary', '#475569');
+    root.style.setProperty('--text-muted', '#94a3b8');
+    root.style.setProperty('--border', '#e2e8f0');
+    root.style.setProperty('--border-light', '#f1f5f9');
+  }
+  // suppress unused accent warning
+  void accent;
+}
+
+function ThemeColorPicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+      <div
+        onClick={() => ref.current?.click()}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          border: '1.5px solid var(--border)', borderRadius: 10,
+          padding: '8px 12px', cursor: 'pointer', background: 'var(--bg-white)',
+          transition: 'border-color 0.15s',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand)')}
+        onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+      >
+        <div style={{
+          width: 28, height: 28, borderRadius: 8, background: value,
+          border: '2px solid rgba(0,0,0,0.08)', flexShrink: 0,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+        }} />
+        <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>{value.toUpperCase()}</span>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>Click to change</span>
+        <input ref={ref} type="color" value={value} onChange={e => onChange(e.target.value)}
+          style={{ opacity: 0, width: 0, height: 0, position: 'absolute', pointerEvents: 'none' }} />
+      </div>
+    </div>
+  );
+}
+
+/* Mini admin-UI mockup inside a theme card */
+function ThemeMiniPreview({ bg, primary, accent, dark }: { bg: string; primary: string; accent: string; dark: boolean }) {
+  const sidebar = dark ? '#111827' : '#ffffff';
+  const cardBg  = dark ? '#1e293b' : '#ffffff';
+  const textCol = dark ? '#e2e8f0' : '#1e293b';
+  const mutedCol = dark ? '#475569' : '#cbd5e1';
+  return (
+    <div style={{ display: 'flex', height: '100%', background: bg, overflow: 'hidden' }}>
+      {/* Sidebar strip */}
+      <div style={{ width: 28, background: sidebar, borderRight: `1px solid ${dark ? '#1e293b' : '#e2e8f0'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 8, gap: 4, flexShrink: 0 }}>
+        <div style={{ width: 14, height: 14, borderRadius: 4, background: primary, marginBottom: 4 }} />
+        {[1,2,3,4].map(i => (
+          <div key={i} style={{ width: 16, height: 4, borderRadius: 2, background: i === 1 ? primary : mutedCol, opacity: i === 1 ? 1 : 0.5 }} />
+        ))}
+      </div>
+      {/* Content area */}
+      <div style={{ flex: 1, padding: '8px 6px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {/* Top bar */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <div style={{ height: 5, flex: 1, background: cardBg, borderRadius: 3, border: `1px solid ${dark ? '#1e293b' : '#e2e8f0'}` }} />
+          <div style={{ width: 16, height: 16, borderRadius: 4, background: primary, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 6, height: 6, borderRadius: 2, background: '#fff', opacity: 0.8 }} />
+          </div>
+        </div>
+        {/* Stat cards row */}
+        <div style={{ display: 'flex', gap: 3 }}>
+          {[primary, accent, mutedCol].map((c, i) => (
+            <div key={i} style={{ flex: 1, height: 18, borderRadius: 3, background: cardBg, border: `1px solid ${dark ? '#1e293b' : '#e2e8f0'}`, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: c, opacity: 0.2, borderRadius: 2 }} />
+              <div style={{ position: 'absolute', top: 3, left: 3, width: 6, height: 3, borderRadius: 1.5, background: c }} />
+            </div>
+          ))}
+        </div>
+        {/* Table rows */}
+        {[1,2,3].map(i => (
+          <div key={i} style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+            <div style={{ width: 8, height: 8, borderRadius: 2, background: i === 1 ? primary : mutedCol, flexShrink: 0, opacity: i === 1 ? 1 : 0.4 }} />
+            <div style={{ flex: 1, height: 4, borderRadius: 2, background: textCol, opacity: 0.12 }} />
+            <div style={{ width: 16, height: 4, borderRadius: 2, background: i === 1 ? accent : mutedCol, opacity: i === 1 ? 0.7 : 0.25 }} />
+          </div>
+        ))}
+        {/* CTA button */}
+        <div style={{ height: 8, borderRadius: 3, background: primary, marginTop: 2, opacity: 0.9 }} />
+      </div>
+    </div>
+  );
+}
+
+function ThemeModal({
+  theme,
+  onSave,
+  onClose,
+}: {
+  theme?: ThemeEntry;
+  onSave: (t: Omit<ThemeEntry, 'id' | 'a'>) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(theme?.n ?? '');
+  const [mode, setMode] = useState<'Light' | 'Dark'>(theme?.t ?? 'Light');
+  const [bg, setBg] = useState(theme?.c[0] ?? '#F0F4F8');
+  const [primary, setPrimary] = useState(theme?.c[1] ?? '#0D9488');
+  const [accent, setAccent] = useState(theme?.c[2] ?? '#F97316');
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+      backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 20, width: 560, maxWidth: '94vw',
+        boxShadow: '0 32px 80px rgba(0,0,0,0.22)', overflow: 'hidden',
+      }}>
+        {/* Modal header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '20px 24px', borderBottom: '1px solid #f1f5f9',
+        }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{theme ? 'Edit Theme' : 'Create New Theme'}</div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Customize colours and appearance</div>
+          </div>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 8, border: '1px solid #e2e8f0',
+            background: '#f8fafc', cursor: 'pointer', fontSize: 14, color: '#64748b',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>✕</button>
+        </div>
+
+        <div style={{ padding: '20px 24px', display: 'flex', gap: 20 }}>
+          {/* Left — form */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Name */}
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Theme Name</label>
+              <input
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. Ocean Breeze"
+                style={{
+                  width: '100%', padding: '10px 13px', borderRadius: 10,
+                  border: '1.5px solid #e2e8f0', fontSize: 13, color: '#0f172a',
+                  outline: 'none', fontFamily: 'inherit',
+                }}
+                onFocus={e => (e.target.style.borderColor = primary)}
+                onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+              />
+            </div>
+
+            {/* Mode */}
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Mode</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['Light', 'Dark'] as const).map(m => (
+                  <button key={m} onClick={() => setMode(m)} style={{
+                    flex: 1, padding: '9px 0', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    border: `2px solid ${mode === m ? primary : '#e2e8f0'}`,
+                    background: mode === m ? `rgba(${hexToRgb(primary).join(',')},0.08)` : '#fff',
+                    color: mode === m ? primary : '#94a3b8',
+                    transition: 'all 0.15s',
+                  }}>
+                    {m === 'Light' ? '☀️  Light' : '🌙  Dark'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Colors */}
+            <ThemeColorPicker label="Background" value={bg} onChange={setBg} />
+            <ThemeColorPicker label="Primary colour" value={primary} onChange={setPrimary} />
+            <ThemeColorPicker label="Accent / CTA colour" value={accent} onChange={setAccent} />
+          </div>
+
+          {/* Right — live preview */}
+          <div style={{ width: 160, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Preview</label>
+            <div style={{
+              flex: 1, borderRadius: 12, overflow: 'hidden',
+              border: '1.5px solid #e2e8f0', minHeight: 220,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+            }}>
+              <ThemeMiniPreview bg={bg} primary={primary} accent={accent} dark={mode === 'Dark'} />
+            </div>
+            {/* Palette strip */}
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[bg, primary, accent].map((col, i) => (
+                <div key={i} title={['Background', 'Primary', 'Accent'][i]} style={{
+                  flex: 1, height: 8, borderRadius: 4, background: col,
+                  border: '1px solid rgba(0,0,0,0.08)',
+                }} />
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center' }}>bg · primary · accent</div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', gap: 10, padding: '16px 24px', borderTop: '1px solid #f1f5f9', background: '#fafafa' }}>
+          <button
+            onClick={() => { if (name.trim()) onSave({ n: name.trim(), t: mode, c: [bg, primary, accent] }); }}
+            disabled={!name.trim()}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 10, cursor: name.trim() ? 'pointer' : 'not-allowed',
+              background: primary, border: 'none', color: '#fff', fontWeight: 700, fontSize: 13,
+              opacity: name.trim() ? 1 : 0.5, transition: 'opacity 0.15s',
+            }}
+          >{theme ? 'Save Changes' : 'Create Theme'}</button>
+          <button onClick={onClose} style={{
+            flex: 1, padding: '11px 0', borderRadius: 10, cursor: 'pointer',
+            background: '#fff', border: '1.5px solid #e2e8f0', color: '#64748b', fontWeight: 600, fontSize: 13,
+          }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ThemesPage() {
-  const [activeTheme, setActiveTheme] = useState(0);
+  const [themes, setThemes] = useState<ThemeEntry[]>(
+    THEMES.map((t, i) => ({ ...t, id: i + 1, t: t.t as 'Light' | 'Dark', c: t.c as [string, string, string] }))
+  );
+  const [activeId, setActiveId] = useState<number>(1);
+  const [modal, setModal] = useState<{ open: boolean; editing?: ThemeEntry }>({ open: false });
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const nextId = useRef(THEMES.length + 1);
+
+  const activeTheme = themes.find(t => t.id === activeId);
+
+  // Apply active theme on mount and whenever activeId changes
+  useEffect(() => {
+    const t = themes.find(x => x.id === activeId);
+    if (t) applyTheme(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
+
+  function handleSave(data: Omit<ThemeEntry, 'id' | 'a'>) {
+    if (modal.editing) {
+      setThemes(prev => prev.map(t => t.id === modal.editing!.id ? { ...t, ...data } : t));
+      if (modal.editing.id === activeId) applyTheme({ ...modal.editing, ...data });
+    } else {
+      nextId.current += 1;
+      setThemes(prev => [...prev, { id: nextId.current, ...data, a: false }]);
+    }
+    setModal({ open: false });
+  }
+
+  function handleDelete(id: number) {
+    setThemes(prev => prev.filter(t => t.id !== id));
+    if (activeId === id) {
+      const fallback = themes.find(t => t.id !== id);
+      if (fallback) { setActiveId(fallback.id); applyTheme(fallback); }
+    }
+    setDeleteId(null);
+  }
+
+  function handleSetActive(t: ThemeEntry) {
+    setActiveId(t.id);
+    setThemes(prev => prev.map(x => ({ ...x, a: x.id === t.id })));
+    applyTheme(t);
+  }
+
   return (
     <div>
+      {/* ── Page header ── */}
       <div className="page-header">
-        <div><div className="page-title">Themes & UI</div><div className="page-desc">Manage visual themes, colour schemes, and interface preferences.</div></div>
+        <div>
+          <div className="page-title">Themes & UI</div>
+          <div className="page-desc">Create, manage, and apply visual themes across the platform.</div>
+        </div>
         <div className="page-actions">
-          <button className="btn btn-secondary">✏ Builder</button>
-          <button className="btn btn-primary">Publish Theme</button>
+          <button className="btn btn-primary" onClick={() => setModal({ open: true })}>+ New Theme</button>
         </div>
       </div>
-      <div className="alert alert-info">
-        <span className="alert-icon">ℹ</span>
-        <span><strong>Active theme:</strong> Dark Precision — deployed to all 24,831 users. Changes publish instantly across all platforms.</span>
-      </div>
+
+      {/* ── Active theme banner ── */}
+      {activeTheme && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 14,
+          background: 'var(--bg-white)', border: '1px solid var(--border)',
+          borderRadius: 14, padding: '14px 18px', marginBottom: 20,
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          {/* Mini preview strip */}
+          <div style={{ width: 56, height: 36, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
+            <ThemeMiniPreview bg={activeTheme.c[0]} primary={activeTheme.c[1]} accent={activeTheme.c[2]} dark={activeTheme.t === 'Dark'} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+              Active: <span style={{ color: 'var(--brand)' }}>{activeTheme.n}</span>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>
+              {activeTheme.t} mode · Applied to admin panel · Palette:&nbsp;
+              {activeTheme.c.map((col, i) => (
+                <span key={i} style={{
+                  display: 'inline-block', width: 10, height: 10, borderRadius: 3,
+                  background: col, border: '1px solid rgba(0,0,0,0.08)',
+                  marginRight: 3, verticalAlign: 'middle',
+                }} />
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={() => setModal({ open: true, editing: activeTheme })}
+            style={{
+              padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)',
+              background: 'var(--bg-white)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              color: 'var(--text-secondary)',
+            }}
+          >✏ Edit</button>
+        </div>
+      )}
+
+      {/* ── Theme grid ── */}
       <div className="card">
         <div className="card-header">
-          <div className="card-title">Available Themes</div>
-          <span className="badge badge-brand">6 themes</span>
+          <div className="card-title">All Themes</div>
+          <span className="badge badge-brand">{themes.length} theme{themes.length !== 1 ? 's' : ''}</span>
         </div>
         <div className="card-body">
-          <div className="theme-grid">
-            {THEMES.map((t, i) => (
-              <div key={i} className={`theme-card${i === activeTheme ? ' active' : ''}`} onClick={() => setActiveTheme(i)}>
-                <div className="theme-preview" style={{ background: t.c[0] }}>
-                  <div style={{ position: 'absolute', top: 8, left: 8, width: 24, height: 6, borderRadius: 3, background: t.c[1] }} />
-                  <div style={{ position: 'absolute', top: 20, left: 8, width: 40, height: 4, borderRadius: 2, background: t.c[2], opacity: 0.7 }} />
-                  <div style={{ position: 'absolute', bottom: 8, left: 8, right: 8, height: 20, borderRadius: 4, background: t.c[1], opacity: 0.15 }} />
-                  {i === activeTheme && <div className="theme-check">✓</div>}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+            {themes.map(t => {
+              const isActive = t.id === activeId;
+              return (
+                <div key={t.id} style={{
+                  border: `2px solid ${isActive ? t.c[1] : 'var(--border)'}`,
+                  borderRadius: 14, overflow: 'hidden',
+                  boxShadow: isActive ? `0 0 0 3px ${t.c[1]}22, var(--shadow-md)` : 'var(--shadow-xs)',
+                  transition: 'all 0.18s',
+                  cursor: 'pointer',
+                  background: 'var(--bg-white)',
+                }}
+                  onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = t.c[1]; }}
+                  onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; }}
+                >
+                  {/* Mini UI preview */}
+                  <div
+                    style={{ height: 110, position: 'relative', overflow: 'hidden' }}
+                    onClick={() => handleSetActive(t)}
+                  >
+                    <ThemeMiniPreview bg={t.c[0]} primary={t.c[1]} accent={t.c[2]} dark={t.t === 'Dark'} />
+                    {/* Active badge */}
+                    {isActive && (
+                      <div style={{
+                        position: 'absolute', top: 8, right: 8,
+                        background: t.c[1], color: '#fff',
+                        borderRadius: 20, padding: '2px 9px',
+                        fontSize: 10, fontWeight: 700, letterSpacing: '0.03em',
+                      }}>✓ Active</div>
+                    )}
+                    {/* Mode badge */}
+                    <div style={{
+                      position: 'absolute', top: 8, left: 8,
+                      background: 'rgba(0,0,0,0.35)', color: '#fff',
+                      borderRadius: 20, padding: '2px 8px',
+                      fontSize: 9, fontWeight: 600, backdropFilter: 'blur(4px)',
+                    }}>{t.t}</div>
+                  </div>
+
+                  {/* Card info */}
+                  <div style={{ padding: '10px 12px', borderTop: '1px solid var(--border-light)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      {/* Colour swatches */}
+                      <div style={{ display: 'flex', gap: 3, flex: 1 }}>
+                        {t.c.map((col, i) => (
+                          <div key={i} title={['Background', 'Primary', 'Accent'][i]}
+                            style={{ width: 14, height: 14, borderRadius: 4, background: col, border: '1.5px solid rgba(0,0,0,0.08)' }} />
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.n}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>{t.c[1].toUpperCase()}</div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        onClick={() => handleSetActive(t)}
+                        style={{
+                          flex: 1, padding: '6px 0', borderRadius: 7, cursor: 'pointer',
+                          border: `1.5px solid ${isActive ? t.c[1] : 'var(--border)'}`,
+                          background: isActive ? `${t.c[1]}15` : 'var(--bg-subtle)',
+                          fontSize: 11, fontWeight: 700,
+                          color: isActive ? t.c[1] : 'var(--text-secondary)',
+                          transition: 'all 0.15s',
+                        }}
+                      >{isActive ? '✓ Active' : 'Apply'}</button>
+                      <button
+                        onClick={() => setModal({ open: true, editing: t })}
+                        style={{
+                          padding: '6px 10px', borderRadius: 7, cursor: 'pointer',
+                          border: '1.5px solid var(--border)', background: 'var(--bg-subtle)',
+                          fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)',
+                        }}
+                      >✏</button>
+                      <button
+                        onClick={() => !isActive && setDeleteId(t.id)}
+                        disabled={isActive}
+                        style={{
+                          padding: '6px 10px', borderRadius: 7,
+                          cursor: isActive ? 'not-allowed' : 'pointer',
+                          border: '1.5px solid var(--border)',
+                          background: 'var(--bg-subtle)',
+                          fontSize: 11, fontWeight: 600,
+                          color: isActive ? 'var(--text-muted)' : '#ef4444',
+                          opacity: isActive ? 0.35 : 1,
+                        }}
+                      >🗑</button>
+                    </div>
+                  </div>
                 </div>
-                <div className="theme-info">
-                  <div className="theme-name">{t.n}</div>
-                  <div className="theme-type">{t.t}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
+
+            {/* Add new theme tile */}
+            <div
+              onClick={() => setModal({ open: true })}
+              style={{
+                border: '2px dashed var(--border)', borderRadius: 14,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                minHeight: 200, cursor: 'pointer', gap: 8,
+                transition: 'all 0.15s', color: 'var(--text-muted)',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--brand)'; (e.currentTarget as HTMLElement).style.color = 'var(--brand)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 10, border: '2px dashed currentColor', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>+</div>
+              <span style={{ fontSize: 12, fontWeight: 600 }}>New Theme</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ── Customisation settings ── */}
       <div className="card">
-        <div className="card-header"><div className="card-title">Customisation Settings</div></div>
+        <div className="card-header"><div className="card-title">Global UI Settings</div></div>
         <div className="card-body">
           <div className="form-grid-2">
-            <div className="form-group"><label className="form-label">Primary Accent Colour</label><input className="form-input" type="color" defaultValue="#6366f1" style={{ padding: 4, height: 38 }} /></div>
-            <div className="form-group"><label className="form-label">Application Font</label><select className="form-select"><option>Inter</option><option>Manrope</option><option>DM Sans</option><option>Nunito</option></select></div>
-            <div className="form-group"><label className="form-label">Border Radius Style</label><select className="form-select"><option>Rounded (8px)</option><option>Sharp (4px)</option><option>Pill (16px)</option></select></div>
-            <div className="form-group"><label className="form-label">Default Mode</label><select className="form-select"><option>Light</option><option>Dark</option><option>System Default</option></select></div>
+            <div className="form-group"><label className="form-label">Application Font</label>
+              <select className="form-select"><option>Inter</option><option>Manrope</option><option>DM Sans</option><option>Nunito</option></select>
+            </div>
+            <div className="form-group"><label className="form-label">Border Radius</label>
+              <select className="form-select"><option>Rounded (8px)</option><option>Sharp (4px)</option><option>Pill (16px)</option></select>
+            </div>
+            <div className="form-group"><label className="form-label">Default Mode</label>
+              <select className="form-select"><option>Light</option><option>Dark</option><option>System Default</option></select>
+            </div>
           </div>
           <div className="divider" />
           <ToggleItem title="Allow User Theme Overrides" desc="Let users choose from available themes" defaultOn />
@@ -2183,6 +2625,47 @@ function ThemesPage() {
           <div style={{ marginTop: 16 }}><button className="btn btn-primary">Save Settings</button></div>
         </div>
       </div>
+
+      {/* Create / Edit modal */}
+      {modal.open && (
+        <ThemeModal
+          theme={modal.editing}
+          onSave={handleSave}
+          onClose={() => setModal({ open: false })}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      {deleteId !== null && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+          backdropFilter: 'blur(4px)',
+        }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: 380, boxShadow: '0 32px 80px rgba(0,0,0,0.22)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🗑</div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#dc2626' }}>Delete Theme</div>
+                <div style={{ fontSize: 12, color: '#94a3b8' }}>This action cannot be undone</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 13, color: '#475569', marginBottom: 22, padding: '12px 14px', background: '#fef2f2', borderRadius: 10, border: '1px solid #fecaca' }}>
+              <strong>"{themes.find(t => t.id === deleteId)?.n}"</strong> will be permanently removed.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                style={{ flex: 1, padding: '10px 0', borderRadius: 10, cursor: 'pointer', background: '#dc2626', border: 'none', color: '#fff', fontWeight: 700, fontSize: 13 }}
+                onClick={() => handleDelete(deleteId)}
+              >Delete Theme</button>
+              <button
+                style={{ flex: 1, padding: '10px 0', borderRadius: 10, cursor: 'pointer', background: '#fff', border: '1.5px solid #e2e8f0', color: '#64748b', fontWeight: 600, fontSize: 13 }}
+                onClick={() => setDeleteId(null)}
+              >Keep It</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

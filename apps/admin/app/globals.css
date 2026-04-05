@@ -665,7 +665,7 @@ tbody tr:hover { background: #fafafa; }
   transition: all 0.15s;
 }
 .theme-card:hover { border-color: var(--brand); box-shadow: var(--shadow-md); }
-.theme-card.active { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.theme-card.active { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 .theme-preview { height: 80px; position: relative; overflow: hidden; }
 .theme-check {
   position: absolute; top: 8px; right: 8px;
