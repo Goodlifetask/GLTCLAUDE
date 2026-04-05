@@ -2156,9 +2156,12 @@ function applyTheme(theme: ThemeEntry) {
   root.style.setProperty('--btn-shadow-sm', `rgba(${pr},${pg},${pb},0.3)`);
   root.style.setProperty('--btn-shadow-md', `rgba(${pr},${pg},${pb},0.4)`);
 
-  // Accent / CTA
+  // Accent / CTA — also drives success colour (checkmarks, badges, connected states)
   root.style.setProperty('--cta', accent);
   root.style.setProperty('--cta-soft', `rgba(${ar},${ag},${ab},0.12)`);
+  root.style.setProperty('--success', accent);
+  root.style.setProperty('--success-rgb', `${ar},${ag},${ab}`);
+  root.style.setProperty('--success-bg', `rgba(${ar},${ag},${ab},0.09)`);
 
   // Sidebar
   root.style.setProperty('--sidebar-active', primary);
