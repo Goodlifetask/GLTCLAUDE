@@ -9,11 +9,16 @@ terraform {
   }
 }
 
-variable "name"        { type = string }
-variable "environment" { type = string }
-variable "region"      { type = string }
+variable "name" {
+  type = string
+}
+variable "environment" {
+  type = string
+}
+variable "region" {
+  type = string
+}
 
-# ─── Spaces Bucket ────────────────────────────────────────────────────────────
 resource "digitalocean_spaces_bucket" "uploads" {
   name   = "${var.name}-${var.environment}-uploads"
   region = var.region
@@ -27,13 +32,11 @@ resource "digitalocean_spaces_bucket" "uploads" {
   }
 }
 
-# ─── CDN for Spaces ───────────────────────────────────────────────────────────
 resource "digitalocean_cdn" "uploads" {
   origin = digitalocean_spaces_bucket.uploads.bucket_domain_name
   ttl    = 3600
 }
 
-# ─── Outputs ─────────────────────────────────────────────────────────────────
 output "bucket_name"   { value = digitalocean_spaces_bucket.uploads.name }
 output "bucket_region" { value = digitalocean_spaces_bucket.uploads.region }
 output "endpoint"      { value = digitalocean_spaces_bucket.uploads.endpoint }

@@ -1,17 +1,18 @@
 terraform {
   required_version = ">= 1.8"
 
-  # Store state in DigitalOcean Spaces
-  backend "s3" {
-    endpoint                    = "https://nyc3.digitaloceanspaces.com"
-    bucket                      = "glt-terraform-state"
-    key                         = "dev/terraform.tfstate"
-    region                      = "us-east-1"    # Required field, ignored by DO
-    skip_credentials_validation = true
-    skip_metadata_api_check     = true
-    skip_region_validation      = true
-    force_path_style            = true
-  }
+  # Using local state for dev — migrate to remote (Spaces) later if needed
+  # To use remote state: create a Spaces bucket "glt-terraform-state" and uncomment below
+  # backend "s3" {
+  #   endpoint                    = "https://nyc3.digitaloceanspaces.com"
+  #   bucket                      = "glt-terraform-state"
+  #   key                         = "dev/terraform.tfstate"
+  #   region                      = "us-east-1"
+  #   skip_credentials_validation = true
+  #   skip_metadata_api_check     = true
+  #   skip_region_validation      = true
+  #   force_path_style            = true
+  # }
 
   required_providers {
     digitalocean = {
@@ -91,18 +92,47 @@ module "api" {
 }
 
 # ─── Variables ────────────────────────────────────────────────────────────────
-variable "do_token"       { type = string  sensitive = true  description = "DigitalOcean API token" }
-variable "region"         { type = string  default = "nyc3"  description = "DO region slug" }
-variable "ssh_key_ids"    { type = list(string)               description = "SSH key IDs from DO account" }
-variable "jwt_secret"     { type = string  sensitive = true }
-variable "spaces_key"     { type = string  sensitive = true  description = "DO Spaces access key" }
-variable "spaces_secret"  { type = string  sensitive = true  description = "DO Spaces secret key" }
-variable "frontend_url"   { type = string  default = "http://localhost:3000" }
-variable "anthropic_key"  { type = string  sensitive = true }
+variable "do_token" {
+  type      = string
+  sensitive = true
+}
+variable "region" {
+  type    = string
+  default = "nyc3"
+}
+variable "ssh_key_ids" {
+  type = list(string)
+}
+variable "jwt_secret" {
+  type      = string
+  sensitive = true
+}
+variable "spaces_key" {
+  type      = string
+  sensitive = true
+}
+variable "spaces_secret" {
+  type      = string
+  sensitive = true
+}
+variable "frontend_url" {
+  type    = string
+  default = "http://localhost:3000"
+}
+variable "anthropic_key" {
+  type      = string
+  sensitive = true
+}
 
 # ─── Outputs ─────────────────────────────────────────────────────────────────
-output "api_ip"          { value = module.api.ipv4s[0] }
-output "api_url"         { value = "http://${module.api.ipv4s[0]}:3001" }
-output "database_url"    { value = module.database.database_url  sensitive = true }
-output "redis_url"       { value = module.redis.redis_url        sensitive = true }
+output "api_ip"  { value = module.api.ipv4s[0] }
+output "api_url" { value = "http://${module.api.ipv4s[0]}:3001" }
+output "database_url" {
+  value     = module.database.database_url
+  sensitive = true
+}
+output "redis_url" {
+  value     = module.redis.redis_url
+  sensitive = true
+}
 output "spaces_endpoint" { value = module.spaces.cdn_endpoint }
