@@ -277,6 +277,53 @@ function FamilyAlarmModal({
   const fileRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
+  // ── Recorder state ──
+  const [recState, setRecState] = useState<'idle' | 'recording' | 'done'>('idle');
+  const [recSeconds, setRecSeconds] = useState(0);
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const chunksRef   = useRef<BlobPart[]>([]);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function startRecording() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Microphone not supported in this browser'); return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      chunksRef.current = [];
+      const mr = new MediaRecorder(stream);
+      mediaRecRef.current = mr;
+      mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const file = new File([blob], `voice-recording-${Date.now()}.webm`, { type: 'audio/webm' });
+        if (voicePreview) URL.revokeObjectURL(voicePreview);
+        setVoiceFile(file);
+        setVoicePreview(URL.createObjectURL(blob));
+        setRecState('done');
+      };
+      mr.start();
+      setRecState('recording');
+      setRecSeconds(0);
+      timerRef.current = setInterval(() => setRecSeconds(s => s + 1), 1000);
+    }).catch(() => setError('Microphone access denied — please allow mic permission'));
+  }
+
+  function stopRecording() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    mediaRecRef.current?.stop();
+  }
+
+  function discardRecording() {
+    stopRecording();
+    if (voicePreview) { URL.revokeObjectURL(voicePreview); setVoicePreview(null); }
+    setVoiceFile(null);
+    setRecState('idle');
+    setRecSeconds(0);
+  }
+
+  const fmtSec = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
   const set = (k: keyof FamilyAlarmForm, v: any) => setForm(f => ({ ...f, [k]: v }));
 
   const createMut = useMutation({
@@ -350,6 +397,7 @@ function FamilyAlarmModal({
         }}
         onClick={e => e.stopPropagation()}
       >
+        <style>{`@keyframes glt-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }`}</style>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
           <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--t1)' }}>
             {alarm ? 'Edit Family Alarm' : 'New Family Alarm'}
@@ -456,37 +504,114 @@ function FamilyAlarmModal({
             </button>
           </div>
 
-          {/* Voice File Upload */}
+          {/* Voice Recording — record mic OR upload file */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>
               Voice Recording
             </label>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="audio/*"
-              onChange={handleFile}
-              style={{ display: 'none' }}
-            />
-            <button
-              onClick={() => fileRef.current?.click()}
-              style={{
-                width: '100%', padding: '10px', borderRadius: 8,
-                border: '2px dashed var(--b1)', background: 'transparent',
-                color: 'var(--t3)', cursor: 'pointer', fontSize: 12,
-                transition: 'border-color 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = '#f43f5e')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--b1)')}
-            >
-              {voiceFile ? `🎙 ${voiceFile.name}` : (alarm?.voiceFileUrl ? '🎙 Replace voice file' : '🎙 Upload voice file (MP3, WAV, M4A…)')}
-            </button>
+
+            {/* Record / Stop bar */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 14px', borderRadius: 10,
+              background: recState === 'recording' ? 'rgba(244,63,94,0.08)' : 'var(--b1)',
+              border: `1.5px solid ${recState === 'recording' ? '#f43f5e' : 'var(--b1)'}`,
+              transition: 'all 0.2s',
+            }}>
+              {recState === 'idle' && (
+                <button
+                  onClick={startRecording}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                    background: 'linear-gradient(135deg,#f43f5e,#e11d48)',
+                    color: '#fff', border: 'none', cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>🎙</span> Record
+                </button>
+              )}
+
+              {recState === 'recording' && (
+                <>
+                  {/* Pulsing dot */}
+                  <span style={{
+                    width: 10, height: 10, borderRadius: '50%', background: '#f43f5e', flexShrink: 0,
+                    animation: 'glt-pulse 1s ease-in-out infinite',
+                  }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f43f5e', minWidth: 44 }}>
+                    {fmtSec(recSeconds)}
+                  </span>
+                  <span style={{ flex: 1, fontSize: 12, color: 'var(--t3)' }}>Recording…</span>
+                  <button
+                    onClick={stopRecording}
+                    style={{
+                      padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                      background: '#fff', color: '#f43f5e',
+                      border: '1.5px solid #f43f5e', cursor: 'pointer',
+                    }}
+                  >
+                    ⏹ Stop
+                  </button>
+                </>
+              )}
+
+              {recState === 'done' && (
+                <>
+                  <span style={{ fontSize: 14 }}>✅</span>
+                  <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: 'var(--t2)' }}>
+                    Recording ready ({fmtSec(recSeconds)})
+                  </span>
+                  <button
+                    onClick={discardRecording}
+                    style={{
+                      padding: '5px 12px', borderRadius: 7, fontSize: 11, fontWeight: 600,
+                      background: 'transparent', color: '#f43f5e',
+                      border: '1px solid rgba(244,63,94,0.35)', cursor: 'pointer',
+                    }}
+                  >
+                    Re-record
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Audio preview */}
             {voicePreview && (
               <audio controls src={voicePreview} style={{ width: '100%', marginTop: 8, borderRadius: 8, height: 36 }} />
             )}
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--b1)' }} />
+              <span style={{ fontSize: 11, color: 'var(--t4)', fontWeight: 600 }}>or upload</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--b1)' }} />
+            </div>
+
+            {/* Upload button */}
+            <input ref={fileRef} type="file" accept="audio/*" onChange={handleFile} style={{ display: 'none' }} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={recState === 'recording'}
+              style={{
+                width: '100%', padding: '9px', borderRadius: 8,
+                border: '1.5px dashed var(--b1)', background: 'transparent',
+                color: 'var(--t3)', cursor: recState === 'recording' ? 'not-allowed' : 'pointer',
+                fontSize: 12, opacity: recState === 'recording' ? 0.4 : 1,
+                transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={e => { if (recState !== 'recording') e.currentTarget.style.borderColor = '#f43f5e'; }}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--b1)')}
+            >
+              {voiceFile && recState !== 'done'
+                ? `📎 ${voiceFile.name}`
+                : (alarm?.voiceFileUrl && !voiceFile ? '📎 Replace file' : '📎 Upload MP3 / WAV / M4A…')}
+            </button>
+
             {!voicePreview && alarm?.voiceFileUrl && (
               <div style={{ fontSize: 11, color: 'var(--t4)', marginTop: 6 }}>
-                Current: {alarm.voiceFileUrl.split('/').pop()}
+                Current file: {alarm.voiceFileUrl.split('/').pop()}
               </div>
             )}
           </div>
