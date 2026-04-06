@@ -451,9 +451,9 @@ function FamilyAlarmModal({
             </div>
           </div>
 
-          {/* Fire At */}
+          {/* Date, Time & Repeat */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>
               Date &amp; Time *
             </label>
             <input
@@ -461,8 +461,67 @@ function FamilyAlarmModal({
               value={form.fire_at}
               onChange={e => set('fire_at', e.target.value)}
               min={new Date().toISOString().slice(0, 16)}
-              style={inputStyle}
+              style={{ ...inputStyle, marginBottom: 10 }}
             />
+
+            {/* Repeat picker */}
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>
+              Repeat
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+              {[
+                { label: 'Once',     value: '',                     icon: '1️⃣' },
+                { label: 'Daily',    value: 'RRULE:FREQ=DAILY',     icon: '📅' },
+                { label: 'Weekdays', value: 'RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', icon: '💼' },
+                { label: 'Weekends', value: 'RRULE:FREQ=WEEKLY;BYDAY=SA,SU', icon: '🌅' },
+                { label: 'Weekly',   value: 'RRULE:FREQ=WEEKLY',    icon: '🔁' },
+                { label: 'Monthly',  value: 'RRULE:FREQ=MONTHLY',   icon: '🗓' },
+                { label: 'Yearly',   value: 'RRULE:FREQ=YEARLY',    icon: '🎂' },
+              ].map(opt => {
+                const active = form.repeat_rule === opt.value;
+                return (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() => set('repeat_rule', opt.value)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      padding: '6px 13px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      border: `1.5px solid ${active ? '#f43f5e' : 'var(--b1)'}`,
+                      background: active ? 'rgba(244,63,94,0.1)' : 'transparent',
+                      color: active ? '#f43f5e' : 'var(--t2)',
+                      cursor: 'pointer', transition: 'all 0.12s',
+                    }}
+                  >
+                    <span style={{ fontSize: 13 }}>{opt.icon}</span>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Show end date only for repeating alarms */}
+            {form.repeat_rule && (
+              <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <label style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  End date (optional)
+                </label>
+                <input
+                  type="date"
+                  min={new Date().toISOString().slice(0, 10)}
+                  style={{ ...inputStyle, flex: 1 }}
+                  onChange={e => {
+                    if (e.target.value) {
+                      const base = form.repeat_rule.split(';UNTIL=')[0];
+                      const until = e.target.value.replace(/-/g, '') + 'T235959Z';
+                      set('repeat_rule', `${base};UNTIL=${until}`);
+                    } else {
+                      set('repeat_rule', form.repeat_rule.split(';UNTIL=')[0]);
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Notes */}
