@@ -228,6 +228,45 @@ export const api = {
       client.get('/menu-config').then((r) => r.data),
   },
 
+  fridge: {
+    list: (params?: Record<string, unknown>) =>
+      client.get('/fridge-items', { params }).then((r) => r.data),
+    stats: () =>
+      client.get('/fridge-items/stats').then((r) => r.data),
+    family: (params?: Record<string, unknown>) =>
+      client.get('/fridge-items/family', { params }).then((r) => r.data),
+    get: (id: string) =>
+      client.get(`/fridge-items/${id}`).then((r) => r.data),
+    create: (data: Record<string, unknown>) =>
+      client.post('/fridge-items', data).then((r) => r.data),
+    update: (id: string, data: Record<string, unknown>) =>
+      client.patch(`/fridge-items/${id}`, data).then((r) => r.data),
+    delete: (id: string) =>
+      client.delete(`/fridge-items/${id}`).then((r) => r.data),
+    setStatus: (id: string, status: string) =>
+      client.post(`/fridge-items/${id}/status`, { status }).then((r) => r.data),
+    move: (id: string, to: 'fridge' | 'freezer') =>
+      client.post(`/fridge-items/${id}/move`, { to }).then((r) => r.data),
+    notifyFamily: (id: string) =>
+      client.post(`/fridge-items/${id}/notify-family`).then((r) => r.data),
+    uploadImage: (id: string, file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return client.post(`/fridge-items/${id}/image`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data);
+    },
+    analyze: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return client.post('/fridge-items/analyze', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data);
+    },
+    saveBatch: (data: { capture_image_url?: string; family_group_id?: string; items: Record<string, unknown>[] }) =>
+      client.post('/fridge-items/batch', data).then((r) => r.data),
+  },
+
   familyAlarms: {
     list: (params?: { page?: number; limit?: number }) =>
       client.get('/family-alarms', { params }).then((r) => r.data),

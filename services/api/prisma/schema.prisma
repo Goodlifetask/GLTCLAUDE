@@ -251,6 +251,7 @@ model User {
   assignedReminders   Reminder[]       @relation("AssignedReminders")
   userCategories      UserCategory[]
   familyAlarms        FamilyAlarm[]
+  fridgeItems         FridgeItem[]
 
   @@index([email])
   @@index([plan])
@@ -611,10 +612,11 @@ model Family {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
-  owner     User           @relation("FamilyOwner", fields: [ownerId], references: [id])
-  members   FamilyMember[]
-  invites   FamilyInvite[]
-  reminders Reminder[]
+  owner       User           @relation("FamilyOwner", fields: [ownerId], references: [id])
+  members     FamilyMember[]
+  invites     FamilyInvite[]
+  reminders   Reminder[]
+  fridgeItems FridgeItem[]
 
   @@map("families")
 }
@@ -818,6 +820,58 @@ model Translation {
   @@index([langCode])
   @@index([keyId])
   @@map("translations")
+}
+
+// ─── FRIDGE ───────────────────────────────────────────────────────────────────
+
+enum FridgeStorage {
+  fridge
+  freezer
+}
+
+enum FridgeItemStatus {
+  fresh
+  use_soon
+  expiring_soon
+  expired
+  donated
+  used
+  discarded
+}
+
+enum ExpiryType {
+  exact
+  estimated
+}
+
+model FridgeItem {
+  id                String           @id @default(uuid()) @db.Uuid
+  userId            String           @map("user_id") @db.Uuid
+  familyGroupId     String?          @map("family_group_id") @db.Uuid
+  name              String           @db.VarChar(255)
+  quantity          String?          @db.VarChar(100)
+  storageType       FridgeStorage    @default(fridge) @map("storage_type")
+  imageUrl          String?          @map("image_url") @db.VarChar(500)
+  captureImageUrl   String?          @map("capture_image_url") @db.VarChar(500)
+  expirationDate    DateTime?        @map("expiration_date") @db.Timestamptz
+  expiryType        ExpiryType       @default(estimated) @map("expiry_type")
+  status            FridgeItemStatus @default(fresh)
+  notes             String?          @db.Text
+  detectedFromImage Boolean          @default(false) @map("detected_from_image")
+  reminderIds       Json             @default("[]") @map("reminder_ids")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  deletedAt         DateTime?        @map("deleted_at")
+
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyGroup       Family?          @relation(fields: [familyGroupId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([userId, storageType])
+  @@index([expirationDate])
+  @@index([familyGroupId])
+  @@index([deletedAt])
+  @@map("fridge_items")
 }
 
 model ApiKey {
