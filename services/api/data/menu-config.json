@@ -1,0 +1,36 @@
+{
+  "web": [
+    { "id": "dashboard",  "label": "Dashboard",  "icon": "⊞",  "href": "/dashboard",  "target": "_self", "visible": true, "order": 0, "badge": null },
+    { "id": "tasks",      "label": "Tasks",       "icon": "◎",  "href": "/tasks",      "target": "_self", "visible": true, "order": 1, "badge": null },
+    { "id": "calendar",   "label": "Calendar",    "icon": "📅", "href": "/calendar",   "target": "_self", "visible": true, "order": 2, "badge": null },
+    { "id": "fly-alarms", "label": "Fly-Alarms",  "icon": "⚡", "href": "/fly-alarms", "target": "_self", "visible": true, "order": 3, "badge": null },
+    { "id": "settings",   "label": "Settings",    "icon": "⊙",  "href": "/settings",   "target": "_self", "visible": true, "order": 4, "badge": null }
+  ],
+  "admin": [
+    { "id": "dashboard",    "label": "Dashboard",        "icon": "⊞",       "page": "dashboard",    "section": "Overview",      "visible": true, "order": 0,  "badge": null,   "badgeClass": null },
+    { "id": "analytics",    "label": "Analytics",        "icon": "↗",       "page": "analytics",    "section": "Overview",      "visible": true, "order": 1,  "badge": "Live", "badgeClass": "nb-brand" },
+    { "id": "logs",         "label": "Activity Logs",    "icon": "≡",       "page": "logs",         "section": "Overview",      "visible": true, "order": 2,  "badge": null,   "badgeClass": null },
+    { "id": "users",        "label": "All Users",        "icon": "◎",       "page": "users",        "section": "Users",         "visible": true, "order": 3,  "badge": "24.8k","badgeClass": "nb-gray" },
+    { "id": "roles",        "label": "Roles & Permissions","icon": "⬡",     "page": "roles",        "section": "Users",         "visible": true, "order": 4,  "badge": null,   "badgeClass": null },
+    { "id": "families",     "label": "Family Groups",    "icon": "👨‍👩‍👧",    "page": "families",     "section": "Users",         "visible": true, "order": 5,  "badge": null,   "badgeClass": null },
+    { "id": "subs",         "label": "Subscriptions",    "icon": "◈",       "page": "subs",         "section": "Users",         "visible": true, "order": 6,  "badge": "3",    "badgeClass": "nb-red" },
+    { "id": "categories",   "label": "Categories",       "icon": "⊛",       "page": "categories",   "section": "Application",   "visible": true, "order": 7,  "badge": null,   "badgeClass": null },
+    { "id": "themes",       "label": "Themes & UI",      "icon": "◑",       "page": "themes",       "section": "Application",   "visible": true, "order": 8,  "badge": null,   "badgeClass": null },
+    { "id": "language",     "label": "Languages",        "icon": "⊕",       "page": "language",     "section": "Application",   "visible": true, "order": 9,  "badge": null,   "badgeClass": null },
+    { "id": "translations", "label": "Translations",     "icon": "⟺",       "page": "translations", "section": "Application",   "visible": true, "order": 10, "badge": null,   "badgeClass": null },
+    { "id": "notifs",       "label": "Notifications",    "icon": "◉",       "page": "notifs",       "section": "Application",   "visible": true, "order": 11, "badge": null,   "badgeClass": null },
+    { "id": "webads",       "label": "Web Ads",          "icon": "□",       "page": "webads",       "section": "Monetisation",  "visible": true, "order": 12, "badge": null,   "badgeClass": null },
+    { "id": "mobileads",    "label": "Mobile Ads",       "icon": "▣",       "page": "mobileads",    "section": "Monetisation",  "visible": true, "order": 13, "badge": null,   "badgeClass": null },
+    { "id": "billing",      "label": "Billing & Revenue","icon": "◇",       "page": "billing",      "section": "Monetisation",  "visible": true, "order": 14, "badge": null,   "badgeClass": null },
+    { "id": "integrations", "label": "All Integrations", "icon": "⊞",       "page": "integrations", "section": "Integrations",  "visible": true, "order": 15, "badge": "8",    "badgeClass": "nb-green" },
+    { "id": "voice",        "label": "Voice Assistants", "icon": "◎",       "page": "voice",        "section": "Integrations",  "visible": true, "order": 16, "badge": null,   "badgeClass": null },
+    { "id": "calsync",      "label": "Calendar Sync",    "icon": "⊡",       "page": "calsync",      "section": "Integrations",  "visible": true, "order": 17, "badge": null,   "badgeClass": null },
+    { "id": "emailint",     "label": "Email Clients",    "icon": "⊠",       "page": "emailint",     "section": "Integrations",  "visible": true, "order": 18, "badge": null,   "badgeClass": null },
+    { "id": "apikeys",      "label": "API Keys",         "icon": "⊹",       "page": "apikeys",      "section": "Integrations",  "visible": true, "order": 19, "badge": null,   "badgeClass": null },
+    { "id": "settings",     "label": "Settings",         "icon": "⊙",       "page": "settings",     "section": "System",        "visible": true, "order": 20, "badge": null,   "badgeClass": null },
+    { "id": "security",     "label": "Security",         "icon": "⊗",       "page": "security",     "section": "System",        "visible": true, "order": 21, "badge": null,   "badgeClass": null },
+    { "id": "backup",       "label": "Backup & Restore", "icon": "◫",       "page": "backup",       "section": "System",        "visible": true, "order": 22, "badge": null,   "badgeClass": null },
+    { "id": "menulinks",    "label": "Menu Links",       "icon": "☰",       "page": "menulinks",    "section": "System",        "visible": true, "order": 23, "badge": null,   "badgeClass": null },
+    { "id": "profile",      "label": "My Profile",       "icon": "◎",       "page": "profile",      "section": "System",        "visible": true, "order": 24, "badge": null,   "badgeClass": null }
+  ]
+}

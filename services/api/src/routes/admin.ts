@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import { readMenuConfig, writeMenuConfig } from './menu-config';
 
 // ─── Admin-specific middleware ────────────────────────────────────────────────
 async function authenticateAdmin(request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -589,6 +590,56 @@ export async function adminRoutes(server: FastifyInstance) {
       await server.prisma.family.delete({ where: { id: familyId } });
 
       return reply.status(204).send();
+    },
+  );
+
+  // GET /admin/menu-config — returns current menu config (authenticated)
+  server.get(
+    '/menu-config',
+    { preHandler: [authenticateAdmin] },
+    async (_request: FastifyRequest, reply: FastifyReply) => {
+      return reply.send({ success: true, data: readMenuConfig() });
+    },
+  );
+
+  // PUT /admin/menu-config — saves new menu config (authenticated)
+  server.put(
+    '/menu-config',
+    { preHandler: [authenticateAdmin] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const WebLinkSchema = z.object({
+        id:      z.string(),
+        label:   z.string().min(1),
+        icon:    z.string(),
+        href:    z.string(),
+        target:  z.enum(['_self', '_blank']).default('_self'),
+        visible: z.boolean().default(true),
+        order:   z.number().int(),
+        badge:   z.string().nullable().optional(),
+      });
+      const AdminLinkSchema = z.object({
+        id:         z.string(),
+        label:      z.string().min(1),
+        icon:       z.string(),
+        page:       z.string(),
+        section:    z.string(),
+        visible:    z.boolean().default(true),
+        order:      z.number().int(),
+        badge:      z.string().nullable().optional(),
+        badgeClass: z.string().nullable().optional(),
+      });
+      const Body = z.object({
+        web:   z.array(WebLinkSchema),
+        admin: z.array(AdminLinkSchema),
+      });
+
+      const parsed = Body.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'INVALID_BODY', message: parsed.error.message });
+      }
+
+      writeMenuConfig(parsed.data);
+      return reply.send({ success: true });
     },
   );
 

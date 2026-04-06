@@ -4301,6 +4301,370 @@ function ProfilePage({ showToast }: { showToast: (m: string, t?: 'success' | 'er
   );
 }
 
+// ── MENU LINKS PAGE ────────────────────────────────────────────────────────────
+type WebLink = { id: string; label: string; icon: string; href: string; target: string; visible: boolean; order: number; badge: string | null };
+type AdminLink = { id: string; label: string; icon: string; page: string; section: string; visible: boolean; order: number; badge: string | null; badgeClass: string | null };
+
+const WEB_SECTIONS = [''] as const;
+const ADMIN_SECTIONS = ['Overview','Users','Application','Monetisation','Integrations','System'];
+
+function MenuLinksPage({ showToast }: { showToast: (m: string, t?: 'success'|'error') => void }) {
+  const [tab, setTab] = useState<'web' | 'admin'>('web');
+  const [webLinks, setWebLinks]   = useState<WebLink[]>([]);
+  const [adminLinks, setAdminLinks] = useState<AdminLink[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving, setSaving]       = useState(false);
+  const [editIdx, setEditIdx]     = useState<number | null>(null);
+  const [editVal, setEditVal]     = useState<any>({});
+  const [newWeb,   setNewWeb]     = useState<Partial<WebLink>>({ target: '_self', visible: true });
+  const [newAdmin, setNewAdmin]   = useState<Partial<AdminLink>>({ section: 'System', visible: true });
+
+  useEffect(() => {
+    adminApi.users.getMenuConfig()
+      .then((res: any) => {
+        const d = res?.data ?? res ?? {};
+        setWebLinks((d.web ?? []).sort((a: any,b: any) => a.order - b.order));
+        setAdminLinks((d.admin ?? []).sort((a: any,b: any) => a.order - b.order));
+      })
+      .catch(() => showToast('Failed to load menu config', 'error'))
+      .finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function save() {
+    setSaving(true);
+    try {
+      await adminApi.users.saveMenuConfig({ web: webLinks, admin: adminLinks });
+      showToast('Menu config saved — sidebars will update on next load');
+    } catch { showToast('Failed to save', 'error'); }
+    finally { setSaving(false); }
+  }
+
+  /* ── Web helpers ── */
+  function moveWeb(i: number, dir: -1 | 1) {
+    const arr = [...webLinks];
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    setWebLinks(arr.map((l, idx) => ({ ...l, order: idx })));
+  }
+  function toggleWebVisible(i: number) {
+    setWebLinks(arr => arr.map((l, idx) => idx === i ? { ...l, visible: !l.visible } : l));
+  }
+  function deleteWeb(i: number) {
+    setWebLinks(arr => arr.filter((_, idx) => idx !== i).map((l, idx) => ({ ...l, order: idx })));
+  }
+  function addWeb() {
+    if (!newWeb.label || !newWeb.href) return;
+    const id = newWeb.label!.toLowerCase().replace(/\s+/g, '-');
+    setWebLinks(arr => [...arr, { id, label: newWeb.label!, icon: newWeb.icon || '🔗', href: newWeb.href!, target: newWeb.target || '_self', visible: true, order: arr.length, badge: null }]);
+    setNewWeb({ target: '_self', visible: true });
+  }
+
+  /* ── Admin helpers ── */
+  function moveAdmin(i: number, dir: -1 | 1) {
+    const arr = [...adminLinks];
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    setAdminLinks(arr.map((l, idx) => ({ ...l, order: idx })));
+  }
+  function toggleAdminVisible(i: number) {
+    setAdminLinks(arr => arr.map((l, idx) => idx === i ? { ...l, visible: !l.visible } : l));
+  }
+  function deleteAdmin(i: number) {
+    setAdminLinks(arr => arr.filter((_, idx) => idx !== i).map((l, idx) => ({ ...l, order: idx })));
+  }
+  function addAdmin() {
+    if (!newAdmin.label || !newAdmin.page) return;
+    const id = newAdmin.page!;
+    setAdminLinks(arr => [...arr, { id, label: newAdmin.label!, icon: newAdmin.icon || '⊞', page: newAdmin.page!, section: newAdmin.section || 'System', visible: true, order: arr.length, badge: newAdmin.badge || null, badgeClass: newAdmin.badgeClass || null }]);
+    setNewAdmin({ section: 'System', visible: true });
+  }
+
+  const inp: React.CSSProperties = {
+    padding: '5px 8px', borderRadius: 6, border: '1px solid var(--b1)',
+    background: 'var(--bg-body)', color: 'var(--text-primary)', fontSize: 12,
+    outline: 'none',
+  };
+  const iconBtn = (color = 'var(--text-muted)'): React.CSSProperties => ({
+    background: 'none', border: 'none', cursor: 'pointer', color, fontSize: 13, padding: '3px 6px', borderRadius: 5,
+  });
+
+  if (loading) return <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>Loading…</div>;
+
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <div className="page-title">Menu Links</div>
+          <div className="page-desc">Manage navigation links for the Web App and Admin Panel sidebars.</div>
+        </div>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={save}
+          disabled={saving}
+          style={{ minWidth: 120 }}
+        >
+          {saving ? 'Saving…' : '💾 Save Changes'}
+        </button>
+      </div>
+
+      {/* Tab switcher */}
+      <div style={{ display: 'flex', gap: 4, background: 'var(--bg-body)', borderRadius: 10, padding: 4, marginBottom: 24, width: 'fit-content', border: '1px solid var(--b1)' }}>
+        {(['web', 'admin'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={{
+              padding: '7px 22px', borderRadius: 7, fontSize: 13, fontWeight: 700, border: 'none',
+              background: tab === t ? 'var(--brand)' : 'transparent',
+              color: tab === t ? '#fff' : 'var(--text-muted)',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+          >
+            {t === 'web' ? '🌐 Web App' : '⚙️ Admin Panel'}
+          </button>
+        ))}
+      </div>
+
+      {/* ── WEB LINKS TABLE ── */}
+      {tab === 'web' && (
+        <div style={{ background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-body)', borderBottom: '1px solid var(--b1)' }}>
+                {['Order','Icon','Label','Path (href)','Target','Badge','Visible','Actions'].map(h => (
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {webLinks.map((link, i) => (
+                <tr key={link.id} style={{ borderBottom: '1px solid var(--b1)', opacity: link.visible ? 1 : 0.45 }}>
+                  <td style={{ padding: '8px 14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <button onClick={() => moveWeb(i, -1)} disabled={i === 0} style={iconBtn()}>▲</button>
+                      <button onClick={() => moveWeb(i, 1)} disabled={i === webLinks.length - 1} style={iconBtn()}>▼</button>
+                    </div>
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'web'
+                      ? <input value={editVal.icon} onChange={e => setEditVal((v: any) => ({ ...v, icon: e.target.value }))} style={{ ...inp, width: 44, textAlign: 'center' }} />
+                      : <span style={{ fontSize: 18 }}>{link.icon}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'web'
+                      ? <input value={editVal.label} onChange={e => setEditVal((v: any) => ({ ...v, label: e.target.value }))} style={{ ...inp, width: 130 }} />
+                      : <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{link.label}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'web'
+                      ? <input value={editVal.href} onChange={e => setEditVal((v: any) => ({ ...v, href: e.target.value }))} style={{ ...inp, width: 160 }} />
+                      : <code style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-body)', padding: '2px 6px', borderRadius: 4 }}>{link.href}</code>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'web'
+                      ? <select value={editVal.target} onChange={e => setEditVal((v: any) => ({ ...v, target: e.target.value }))} style={{ ...inp }}>
+                          <option value="_self">_self</option>
+                          <option value="_blank">_blank</option>
+                        </select>
+                      : <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{link.target}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'web'
+                      ? <input value={editVal.badge ?? ''} onChange={e => setEditVal((v: any) => ({ ...v, badge: e.target.value || null }))} style={{ ...inp, width: 60 }} placeholder="—" />
+                      : <span style={{ fontSize: 11 }}>{link.badge ?? '—'}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    <button
+                      onClick={() => toggleWebVisible(i)}
+                      style={{
+                        width: 38, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+                        background: link.visible ? 'var(--brand)' : 'var(--b2)',
+                        position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <span style={{
+                        position: 'absolute', top: 2, left: link.visible ? 20 : 2,
+                        width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                      }} />
+                    </button>
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {editIdx === i && tab === 'web' ? (
+                        <>
+                          <button onClick={() => { setWebLinks(arr => arr.map((l, idx) => idx === i ? { ...l, ...editVal } : l)); setEditIdx(null); }} style={{ ...iconBtn('var(--brand)'), fontWeight: 700 }}>✓</button>
+                          <button onClick={() => setEditIdx(null)} style={iconBtn()}>✕</button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => { setEditIdx(i); setEditVal({ ...link }); }} style={iconBtn('var(--brand)')}>✎</button>
+                          <button onClick={() => deleteWeb(i)} style={iconBtn('#ef4444')}>🗑</button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {/* Add new row */}
+              <tr style={{ background: 'rgba(var(--brand-rgb,13,148,136),0.04)' }}>
+                <td style={{ padding: '8px 14px', color: 'var(--text-muted)', fontSize: 11, fontWeight: 700 }}>New</td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newWeb.icon ?? ''} onChange={e => setNewWeb(v => ({ ...v, icon: e.target.value }))} style={{ ...inp, width: 44, textAlign: 'center' }} placeholder="🔗" />
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newWeb.label ?? ''} onChange={e => setNewWeb(v => ({ ...v, label: e.target.value }))} style={{ ...inp, width: 130 }} placeholder="Label" />
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newWeb.href ?? ''} onChange={e => setNewWeb(v => ({ ...v, href: e.target.value }))} style={{ ...inp, width: 160 }} placeholder="/path" />
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <select value={newWeb.target ?? '_self'} onChange={e => setNewWeb(v => ({ ...v, target: e.target.value }))} style={inp}>
+                    <option value="_self">_self</option>
+                    <option value="_blank">_blank</option>
+                  </select>
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newWeb.badge ?? ''} onChange={e => setNewWeb(v => ({ ...v, badge: e.target.value || null }))} style={{ ...inp, width: 60 }} placeholder="—" />
+                </td>
+                <td />
+                <td style={{ padding: '8px 14px' }}>
+                  <button
+                    onClick={addWeb}
+                    disabled={!newWeb.label || !newWeb.href}
+                    className="btn btn-primary btn-sm"
+                  >+ Add</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* ── ADMIN LINKS TABLE ── */}
+      {tab === 'admin' && (
+        <div style={{ background: 'var(--card)', border: '1px solid var(--b1)', borderRadius: 'var(--r)', overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-body)', borderBottom: '1px solid var(--b1)' }}>
+                {['Order','Icon','Label','Page Key','Section','Badge','Visible','Actions'].map(h => (
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {adminLinks.map((link, i) => (
+                <tr key={link.id} style={{ borderBottom: '1px solid var(--b1)', opacity: link.visible ? 1 : 0.45 }}>
+                  <td style={{ padding: '8px 14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <button onClick={() => moveAdmin(i, -1)} disabled={i === 0} style={iconBtn()}>▲</button>
+                      <button onClick={() => moveAdmin(i, 1)} disabled={i === adminLinks.length - 1} style={iconBtn()}>▼</button>
+                    </div>
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'admin'
+                      ? <input value={editVal.icon} onChange={e => setEditVal((v: any) => ({ ...v, icon: e.target.value }))} style={{ ...inp, width: 44, textAlign: 'center' }} />
+                      : <span style={{ fontSize: 16 }}>{link.icon}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'admin'
+                      ? <input value={editVal.label} onChange={e => setEditVal((v: any) => ({ ...v, label: e.target.value }))} style={{ ...inp, width: 130 }} />
+                      : <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{link.label}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'admin'
+                      ? <input value={editVal.page} onChange={e => setEditVal((v: any) => ({ ...v, page: e.target.value }))} style={{ ...inp, width: 120 }} />
+                      : <code style={{ fontSize: 11, color: 'var(--text-muted)', background: 'var(--bg-body)', padding: '2px 6px', borderRadius: 4 }}>{link.page}</code>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'admin'
+                      ? <select value={editVal.section} onChange={e => setEditVal((v: any) => ({ ...v, section: e.target.value }))} style={inp}>
+                          {ADMIN_SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      : <span style={{
+                          fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8,
+                          background: 'var(--bg-body)', color: 'var(--text-muted)',
+                        }}>{link.section}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    {editIdx === i && tab === 'admin'
+                      ? <input value={editVal.badge ?? ''} onChange={e => setEditVal((v: any) => ({ ...v, badge: e.target.value || null }))} style={{ ...inp, width: 60 }} placeholder="—" />
+                      : <span style={{ fontSize: 11 }}>{link.badge ?? '—'}</span>}
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    <button
+                      onClick={() => toggleAdminVisible(i)}
+                      style={{
+                        width: 38, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+                        background: link.visible ? 'var(--brand)' : 'var(--b2)',
+                        position: 'relative', transition: 'background 0.2s',
+                      }}
+                    >
+                      <span style={{
+                        position: 'absolute', top: 2, left: link.visible ? 20 : 2,
+                        width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                      }} />
+                    </button>
+                  </td>
+                  <td style={{ padding: '8px 14px' }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {editIdx === i && tab === 'admin' ? (
+                        <>
+                          <button onClick={() => { setAdminLinks(arr => arr.map((l, idx) => idx === i ? { ...l, ...editVal } : l)); setEditIdx(null); }} style={{ ...iconBtn('var(--brand)'), fontWeight: 700 }}>✓</button>
+                          <button onClick={() => setEditIdx(null)} style={iconBtn()}>✕</button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => { setEditIdx(i); setEditVal({ ...link }); }} style={iconBtn('var(--brand)')}>✎</button>
+                          <button onClick={() => deleteAdmin(i)} style={iconBtn('#ef4444')}>🗑</button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              {/* Add new row */}
+              <tr style={{ background: 'rgba(var(--brand-rgb,13,148,136),0.04)' }}>
+                <td style={{ padding: '8px 14px', color: 'var(--text-muted)', fontSize: 11, fontWeight: 700 }}>New</td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newAdmin.icon ?? ''} onChange={e => setNewAdmin(v => ({ ...v, icon: e.target.value }))} style={{ ...inp, width: 44, textAlign: 'center' }} placeholder="⊞" />
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newAdmin.label ?? ''} onChange={e => setNewAdmin(v => ({ ...v, label: e.target.value }))} style={{ ...inp, width: 130 }} placeholder="Label" />
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newAdmin.page ?? ''} onChange={e => setNewAdmin(v => ({ ...v, page: e.target.value }))} style={{ ...inp, width: 120 }} placeholder="pagekey" />
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <select value={newAdmin.section ?? 'System'} onChange={e => setNewAdmin(v => ({ ...v, section: e.target.value }))} style={inp}>
+                    {ADMIN_SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </td>
+                <td style={{ padding: '8px 14px' }}>
+                  <input value={newAdmin.badge ?? ''} onChange={e => setNewAdmin(v => ({ ...v, badge: e.target.value || null }))} style={{ ...inp, width: 60 }} placeholder="—" />
+                </td>
+                <td />
+                <td style={{ padding: '8px 14px' }}>
+                  <button
+                    onClick={addAdmin}
+                    disabled={!newAdmin.label || !newAdmin.page}
+                    className="btn btn-primary btn-sm"
+                  >+ Add</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── PAGE LABELS FOR BREADCRUMB ──
 const PAGE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard', analytics: 'Analytics', logs: 'Activity Logs',
@@ -4310,7 +4674,7 @@ const PAGE_LABELS: Record<string, string> = {
   integrations: 'Integrations', voice: 'Voice Assistants', calsync: 'Calendar Sync',
   emailint: 'Email Clients', apikeys: 'API Keys',
   settings: 'App Settings', security: 'Security', backup: 'Backup & Restore',
-  profile: 'My Profile',
+  profile: 'My Profile', menulinks: 'Menu Links',
 };
 
 // ── MAIN COMPONENT ──
@@ -4374,6 +4738,7 @@ export default function AdminDashboard() {
       case 'backup':       return <BackupPage showToast={showToast} />;
       case 'billing':      return <BillingPage />;
       case 'profile':      return <ProfilePage showToast={showToast} />;
+      case 'menulinks':    return <MenuLinksPage showToast={showToast} />;
       default: return (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🚧</div>

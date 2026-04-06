@@ -223,6 +223,11 @@ export const api = {
     },
   },
 
+  menuConfig: {
+    get: () =>
+      client.get('/menu-config').then((r) => r.data),
+  },
+
   familyAlarms: {
     list: (params?: { page?: number; limit?: number }) =>
       client.get('/family-alarms', { params }).then((r) => r.data),

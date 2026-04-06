@@ -337,6 +337,11 @@ export const adminApi = {
     changePassword: (currentPassword: string, newPassword: string) =>
       request<void>('PATCH', '/users/me/password', { currentPassword, newPassword }),
 
+    getMenuConfig: () =>
+      request<{ web: any[]; admin: any[] }>('GET', '/admin/menu-config'),
+    saveMenuConfig: (config: { web: any[]; admin: any[] }) =>
+      request<{ success: boolean }>('PUT', '/admin/menu-config', config),
+
     uploadAvatar: (file: File): Promise<{ data: { avatarUrl: string } }> => {
       const form = new FormData();
       form.append('file', file);

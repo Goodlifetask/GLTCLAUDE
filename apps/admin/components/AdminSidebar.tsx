@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { adminApi } from '../lib/api';
 
-const NAV = [
+// ── Hardcoded fallback NAV (used if API is unavailable) ──────────────────────
+const DEFAULT_NAV = [
   { section: 'Overview', items: [
     { label: 'Dashboard', icon: '⊞', page: 'dashboard', badge: null, badgeClass: null },
     { label: 'Analytics', icon: '↗', page: 'analytics', badge: 'Live', badgeClass: 'nb-brand' },
@@ -37,20 +38,43 @@ const NAV = [
     { label: 'Settings', icon: '⊙', page: 'settings', badge: null, badgeClass: null },
     { label: 'Security', icon: '⊗', page: 'security', badge: null, badgeClass: null },
     { label: 'Backup & Restore', icon: '◫', page: 'backup', badge: null, badgeClass: null },
+    { label: 'Menu Links', icon: '☰', page: 'menulinks', badge: null, badgeClass: null },
     { label: 'My Profile', icon: '◎', page: 'profile', badge: null, badgeClass: null },
   ]},
 ];
 
+function groupBySection(flat: any[]): { section: string; items: any[] }[] {
+  const map = new Map<string, any[]>();
+  const sorted = [...flat].filter(i => i.visible !== false).sort((a, b) => a.order - b.order);
+  for (const item of sorted) {
+    if (!map.has(item.section)) map.set(item.section, []);
+    map.get(item.section)!.push(item);
+  }
+  return Array.from(map.entries()).map(([section, items]) => ({ section, items }));
+}
+
 export function AdminSidebar({ activePage, onNavigate }: { activePage: string; onNavigate: (page: string) => void }) {
   const [admin, setAdmin] = useState<{ name: string; email: string; avatarUrl?: string | null } | null>(null);
+  const [nav, setNav] = useState(DEFAULT_NAV);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Fetch admin profile
   useEffect(() => {
     adminApi.users.me()
-      .then(u => setAdmin({ name: u.name, email: u.email, avatarUrl: (u as any).avatarUrl }))
+      .then(u => setAdmin({ name: (u as any).name, email: (u as any).email, avatarUrl: (u as any).avatarUrl }))
       .catch(() => {});
   }, []);
+
+  // Fetch dynamic menu config
+  useEffect(() => {
+    adminApi.users.getMenuConfig()
+      .then((res: any) => {
+        const flat: any[] = res?.data?.admin ?? res?.admin ?? [];
+        if (flat.length > 0) setNav(groupBySection(flat));
+      })
+      .catch(() => {/* keep fallback */});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -91,7 +115,7 @@ export function AdminSidebar({ activePage, onNavigate }: { activePage: string; o
 
       {/* Nav */}
       <nav className="sidebar-nav">
-        {NAV.map(section => (
+        {nav.map(section => (
           <div key={section.section} className="nav-section">
             <div className="nav-section-label">{section.section}</div>
             {section.items.map(item => {
@@ -135,7 +159,6 @@ export function AdminSidebar({ activePage, onNavigate }: { activePage: string; o
           <div className="user-menu">⋯</div>
         </div>
 
-        {/* Pop-up menu */}
         {menuOpen && (
           <div style={{
             position: 'absolute', bottom: '100%', left: 12, right: 12, marginBottom: 6,
@@ -145,7 +168,8 @@ export function AdminSidebar({ activePage, onNavigate }: { activePage: string; o
           }}>
             {[
               { icon: '◎', label: 'My Profile', page: 'profile' },
-              { icon: '⊙', label: 'Settings', page: 'settings' },
+              { icon: '☰', label: 'Menu Links', page: 'menulinks' },
+              { icon: '⊙', label: 'Settings',   page: 'settings' },
             ].map(item => (
               <div
                 key={item.page}

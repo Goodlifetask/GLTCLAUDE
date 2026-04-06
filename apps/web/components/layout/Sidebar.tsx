@@ -18,6 +18,14 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
   const pathname = usePathname();
   const { t } = useTranslation();
 
+  /* ── Dynamic menu config from admin ───────────────────────────── */
+  const { data: menuConfigData } = useQuery({
+    queryKey: ['menu-config'],
+    queryFn: () => api.menuConfig.get(),
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
   /* ── Family pending count for badge ────────────────────────────── */
   const isFamilyUser = user?.plan === 'family' || user?.profileCategory === 'family';
   const { data: familyRemindersData } = useQuery({
@@ -38,15 +46,26 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
       ? { label: 'Community', icon: '🌐',    href: '/community' }
       : null;
 
-  /* ── Main nav items ────────────────────────────────────────────── */
-  const navItems: NavEntry[] = [
-    { label: t('nav.dashboard'),  icon: '⊞',  href: '/dashboard', exact: true },
-    { label: t('nav.tasks'),      icon: '◎',  href: '/tasks' },
-    ...(planItem ? [planItem] : []),
-    { label: t('nav.calendar'),   icon: '📅', href: '/calendar' },
-    { label: t('nav.flyAlarms'),  icon: '⚡', href: '/fly-alarms' },
-    { label: t('nav.settings'),   icon: '⊙',  href: '/settings' },
-  ];
+  /* ── Main nav items — from API config or fallback ─────────────── */
+  const apiWebLinks: any[] = menuConfigData?.data?.web ?? [];
+  const baseNavItems: NavEntry[] = apiWebLinks.length > 0
+    ? apiWebLinks
+        .filter((l: any) => l.visible !== false)
+        .sort((a: any, b: any) => a.order - b.order)
+        .map((l: any) => ({ label: l.label, icon: l.icon, href: l.href, exact: l.href === '/dashboard' }))
+    : [
+        { label: t('nav.dashboard'),  icon: '⊞',  href: '/dashboard', exact: true },
+        { label: t('nav.tasks'),      icon: '◎',  href: '/tasks' },
+        { label: t('nav.calendar'),   icon: '📅', href: '/calendar' },
+        { label: t('nav.flyAlarms'),  icon: '⚡', href: '/fly-alarms' },
+        { label: t('nav.settings'),   icon: '⊙',  href: '/settings' },
+      ];
+
+  // Inject plan-conditional item after tasks (index 1) if not already in API config
+  const hasPlanItem = baseNavItems.some(n => planItem && n.href === planItem.href);
+  const navItems: NavEntry[] = planItem && !hasPlanItem
+    ? [...baseNavItems.slice(0, 2), planItem, ...baseNavItems.slice(2)]
+    : baseNavItems;
 
   const isActive = (item: NavEntry) => {
     if (item.exact) return pathname === item.href;
