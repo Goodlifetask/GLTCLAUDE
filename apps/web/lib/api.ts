@@ -291,6 +291,27 @@ export const api = {
     },
   },
 
+  userSubscriptions: {
+    list: (params?: Record<string, unknown>) =>
+      client.get('/user-subscriptions', { params }).then((r) => r.data),
+    stats: () =>
+      client.get('/user-subscriptions/stats').then((r) => r.data),
+    get: (id: string) =>
+      client.get(`/user-subscriptions/${id}`).then((r) => r.data),
+    create: (data: Record<string, unknown>) =>
+      client.post('/user-subscriptions', data).then((r) => r.data),
+    update: (id: string, data: Record<string, unknown>) =>
+      client.patch(`/user-subscriptions/${id}`, data).then((r) => r.data),
+    cancel: (id: string) =>
+      client.post(`/user-subscriptions/${id}/cancel`).then((r) => r.data),
+    pause: (id: string) =>
+      client.post(`/user-subscriptions/${id}/pause`).then((r) => r.data),
+    resume: (id: string) =>
+      client.post(`/user-subscriptions/${id}/resume`).then((r) => r.data),
+    delete: (id: string) =>
+      client.delete(`/user-subscriptions/${id}`).then((r) => r.data),
+  },
+
   team: {
     workspaces: {
       list: () =>

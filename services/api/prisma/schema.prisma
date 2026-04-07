@@ -252,6 +252,7 @@ model User {
   userCategories      UserCategory[]
   familyAlarms        FamilyAlarm[]
   fridgeItems         FridgeItem[]
+  userSubscriptions   UserSubscription[]
 
   @@index([email])
   @@index([plan])
@@ -872,6 +873,56 @@ model FridgeItem {
   @@index([familyGroupId])
   @@index([deletedAt])
   @@map("fridge_items")
+}
+
+// ─── USER SUBSCRIPTIONS ───────────────────────────────────────────────────────
+
+enum SubBillingCycle {
+  weekly
+  monthly
+  quarterly
+  yearly
+}
+
+enum SubStatus {
+  active
+  trial
+  paused
+  cancelled
+  expired
+  pending
+}
+
+model UserSubscription {
+  id                  String          @id @default(uuid()) @db.Uuid
+  userId              String          @map("user_id") @db.Uuid
+  name                String          @db.VarChar(255)
+  description         String?         @db.Text
+  category            String?         @db.VarChar(100)     // e.g. streaming, software, fitness, utilities
+  billingCycle        SubBillingCycle @map("billing_cycle")
+  price               Decimal         @db.Decimal(10, 2)
+  currency            String          @default("USD") @db.VarChar(10)
+  status              SubStatus       @default(active)
+  startDate           DateTime        @map("start_date") @db.Timestamptz
+  nextBillingDate     DateTime?       @map("next_billing_date") @db.Timestamptz
+  trialEndDate        DateTime?       @map("trial_end_date") @db.Timestamptz
+  cancelledAt         DateTime?       @map("cancelled_at") @db.Timestamptz
+  reminderDaysBefore  Int             @default(3) @map("reminder_days_before")
+  reminderId          String?         @map("reminder_id") @db.Uuid   // linked reminder id
+  notes               String?         @db.Text
+  color               String?         @db.VarChar(20)
+  icon                String?         @db.VarChar(10)
+  website             String?         @db.VarChar(500)
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+  deletedAt           DateTime?       @map("deleted_at")
+
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, nextBillingDate])
+  @@index([deletedAt])
+  @@map("user_subscriptions")
 }
 
 model ApiKey {

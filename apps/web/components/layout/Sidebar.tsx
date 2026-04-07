@@ -59,6 +59,7 @@ export function Sidebar({ onClose }: { onClose?: () => void } = {}) {
         { label: t('nav.calendar'),   icon: '📅', href: '/calendar' },
         { label: t('nav.flyAlarms'),  icon: '⚡', href: '/fly-alarms' },
         { label: '🧊 Fridge',         icon: '🧊', href: '/fridge' },
+        { label: '💳 Subscriptions',  icon: '💳', href: '/subscriptions' },
         { label: t('nav.settings'),   icon: '⊙',  href: '/settings' },
       ];
 
