@@ -19,12 +19,13 @@ const CONFIG_PATH: string = (() => {
 
 const DEFAULT_CONFIG = {
   web: [
-    { id: 'dashboard',  label: 'Dashboard', icon: '⊞',  href: '/dashboard',  target: '_self', visible: true, order: 0, badge: null },
-    { id: 'tasks',      label: 'Tasks',     icon: '◎',  href: '/tasks',      target: '_self', visible: true, order: 1, badge: null },
-    { id: 'calendar',   label: 'Calendar',  icon: '📅', href: '/calendar',   target: '_self', visible: true, order: 2, badge: null },
-    { id: 'fly-alarms', label: 'Fly-Alarms',icon: '⚡', href: '/fly-alarms', target: '_self', visible: true, order: 3, badge: null },
-    { id: 'fridge',     label: '🧊 Fridge', icon: '🧊', href: '/fridge',     target: '_self', visible: true, order: 4, badge: null },
-    { id: 'settings',   label: 'Settings',  icon: '⊙',  href: '/settings',   target: '_self', visible: true, order: 5, badge: null },
+    { id: 'dashboard',     label: 'Dashboard',     icon: '⊞',  href: '/dashboard',     target: '_self', visible: true, order: 0, badge: null },
+    { id: 'tasks',         label: 'Tasks',         icon: '◎',  href: '/tasks',         target: '_self', visible: true, order: 1, badge: null },
+    { id: 'calendar',      label: 'Calendar',      icon: '📅', href: '/calendar',      target: '_self', visible: true, order: 2, badge: null },
+    { id: 'fly-alarms',    label: 'Fly-Alarms',    icon: '⚡', href: '/fly-alarms',    target: '_self', visible: true, order: 3, badge: null },
+    { id: 'fridge',        label: '🧊 Fridge',     icon: '🧊', href: '/fridge',        target: '_self', visible: true, order: 4, badge: null },
+    { id: 'subscriptions', label: '💳 Subscriptions', icon: '💳', href: '/subscriptions', target: '_self', visible: true, order: 5, badge: null },
+    { id: 'settings',      label: 'Settings',      icon: '⊙',  href: '/settings',      target: '_self', visible: true, order: 6, badge: null },
   ],
   admin: [] as any[],
 };
