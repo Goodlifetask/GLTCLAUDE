@@ -53,6 +53,88 @@ function buildApiParams(filter: string, type: string): Record<string, unknown> {
   return params;
 }
 
+function SubscriptionsWidget() {
+  const router = useRouter();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['user-subscriptions-dashboard'],
+    queryFn: () => api.userSubscriptions.list({ limit: 100 }),
+    staleTime: 2 * 60_000,
+  });
+
+  const subs: any[] = data?.data ?? [];
+  const stats       = data?.stats ?? { totalMonthly: 0, activeCount: 0 };
+
+  const now       = new Date();
+  const in7Days   = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const dueSoon   = subs.filter(s => {
+    if (!s.nextBillingDate || (s.status !== 'active' && s.status !== 'trial')) return false;
+    const d = new Date(s.nextBillingDate);
+    return d >= now && d <= in7Days;
+  });
+
+  function fmtCurrency(n: number, cur: string = 'USD') {
+    try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, maximumFractionDigits: 2 }).format(n); }
+    catch { return `$${n.toFixed(2)}`; }
+  }
+
+  if (isLoading) return null;
+
+  return (
+    <div style={{
+      background: 'var(--card)', border: '1px solid var(--b1)',
+      borderRadius: 'var(--r-xl)', padding: '16px 20px', marginBottom: 20,
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      flexWrap: 'wrap', gap: 12, cursor: 'pointer',
+    }} onClick={() => router.push('/subscriptions')}>
+      {/* Left: icon + label */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, background: 'rgba(99,102,241,0.12)',
+          border: '1px solid rgba(99,102,241,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0,
+        }}>💳</div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>Subscriptions</div>
+          <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>
+            {stats.activeCount} active · {fmtCurrency(stats.totalMonthly)}/mo
+          </div>
+        </div>
+      </div>
+
+      {/* Middle: due-soon list */}
+      <div style={{ display: 'flex', gap: 6, flex: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {dueSoon.length === 0 ? (
+          <span style={{ fontSize: 11, color: 'var(--t4)' }}>No payments due this week</span>
+        ) : dueSoon.slice(0, 3).map((s: any) => {
+          const days = Math.ceil((new Date(s.nextBillingDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return (
+            <div key={s.id} style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'var(--amber-glow)', border: '1px solid rgba(245,158,11,0.25)',
+              borderRadius: 8, padding: '4px 10px',
+            }}>
+              <span style={{ fontSize: 13 }}>{s.icon ?? '💳'}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--t1)' }}>{s.name}</span>
+              <span style={{ fontSize: 10, color: 'var(--amber)', fontWeight: 700 }}>
+                {days === 0 ? 'today' : `in ${days}d`}
+              </span>
+            </div>
+          );
+        })}
+        {dueSoon.length > 3 && (
+          <span style={{ fontSize: 11, color: 'var(--t3)', alignSelf: 'center' }}>+{dueSoon.length - 3} more</span>
+        )}
+      </div>
+
+      {/* Right: arrow */}
+      <div style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 600, flexShrink: 0 }}>
+        View all →
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const router = useRouter();
@@ -242,6 +324,9 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+
+        {/* Subscriptions widget */}
+        <SubscriptionsWidget />
 
         {/* Filter pills */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
