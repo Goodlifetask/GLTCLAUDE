@@ -57,6 +57,80 @@ const CATEGORIES = [
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'INR', 'NGN', 'ZAR', 'BRL', 'MXN', 'SGD'];
 
 const PRESET_ICONS = ['📱', '🎵', '📺', '🎮', '☁️', '💪', '📰', '🛒', '🏠', '💊', '📚', '💰', '🔧', '🍿', '✈️', '💳'];
+
+// ─── Suggestion Templates ─────────────────────────────────────────────────────
+interface SubTemplate {
+  name:         string;
+  icon:         string;
+  color:        string;
+  category:     string;
+  billing_cycle: BillingCycle;
+  price:        number;
+  currency:     string;
+  website:      string;
+  description:  string;
+}
+
+const SUGGESTION_CATEGORIES = ['All', 'Streaming', 'Music', 'Software', 'Cloud Storage', 'Gaming', 'Fitness', 'News & Media', 'Food & Delivery', 'Finance', 'Education'];
+
+const TEMPLATES: SubTemplate[] = [
+  // ── Streaming ──────────────────────────────────────────────────────────────
+  { name: 'Netflix',         icon: '🎬', color: '#e50914', category: 'Streaming',      billing_cycle: 'monthly',  price: 15.49, currency: 'USD', website: 'https://netflix.com',        description: 'Unlimited movies & TV shows' },
+  { name: 'Disney+',         icon: '🏰', color: '#0063e5', category: 'Streaming',      billing_cycle: 'monthly',  price: 7.99,  currency: 'USD', website: 'https://disneyplus.com',     description: 'Disney, Pixar, Marvel, Star Wars & National Geographic' },
+  { name: 'HBO Max',         icon: '👑', color: '#5822d5', category: 'Streaming',      billing_cycle: 'monthly',  price: 15.99, currency: 'USD', website: 'https://max.com',            description: 'HBO originals, movies & series' },
+  { name: 'Hulu',            icon: '🟢', color: '#1ce783', category: 'Streaming',      billing_cycle: 'monthly',  price: 7.99,  currency: 'USD', website: 'https://hulu.com',           description: 'Stream TV & movies' },
+  { name: 'Apple TV+',       icon: '🍎', color: '#555555', category: 'Streaming',      billing_cycle: 'monthly',  price: 9.99,  currency: 'USD', website: 'https://tv.apple.com',       description: 'Apple originals and exclusives' },
+  { name: 'Amazon Prime',    icon: '📦', color: '#ff9900', category: 'Streaming',      billing_cycle: 'yearly',   price: 139,   currency: 'USD', website: 'https://amazon.com/prime',   description: 'Prime Video, free shipping & more' },
+  { name: 'Peacock',         icon: '🦚', color: '#e9008c', category: 'Streaming',      billing_cycle: 'monthly',  price: 5.99,  currency: 'USD', website: 'https://peacocktv.com',      description: 'NBC, movies & originals' },
+  { name: 'Paramount+',      icon: '⭐', color: '#0064ff', category: 'Streaming',      billing_cycle: 'monthly',  price: 5.99,  currency: 'USD', website: 'https://paramountplus.com',  description: 'CBS, MTV & Paramount originals' },
+  // ── Music ──────────────────────────────────────────────────────────────────
+  { name: 'Spotify',         icon: '🎵', color: '#1db954', category: 'Music',          billing_cycle: 'monthly',  price: 10.99, currency: 'USD', website: 'https://spotify.com',        description: 'Music streaming & podcasts' },
+  { name: 'Apple Music',     icon: '🎼', color: '#fc3c44', category: 'Music',          billing_cycle: 'monthly',  price: 10.99, currency: 'USD', website: 'https://music.apple.com',    description: 'Music streaming by Apple' },
+  { name: 'YouTube Music',   icon: '▶️', color: '#ff0000', category: 'Music',          billing_cycle: 'monthly',  price: 10.99, currency: 'USD', website: 'https://music.youtube.com',  description: 'Stream music & videos' },
+  { name: 'Tidal',           icon: '🌊', color: '#000000', category: 'Music',          billing_cycle: 'monthly',  price: 10.99, currency: 'USD', website: 'https://tidal.com',          description: 'High-fidelity audio streaming' },
+  { name: 'Amazon Music',    icon: '🎶', color: '#25d1da', category: 'Music',          billing_cycle: 'monthly',  price: 8.99,  currency: 'USD', website: 'https://music.amazon.com',   description: 'Music included with Prime' },
+  // ── Cloud Storage ──────────────────────────────────────────────────────────
+  { name: 'iCloud+',         icon: '☁️', color: '#3478f6', category: 'Cloud Storage',  billing_cycle: 'monthly',  price: 2.99,  currency: 'USD', website: 'https://icloud.com',         description: 'Apple cloud storage' },
+  { name: 'Google One',      icon: '🔵', color: '#4285f4', category: 'Cloud Storage',  billing_cycle: 'monthly',  price: 2.99,  currency: 'USD', website: 'https://one.google.com',     description: 'Google storage & benefits' },
+  { name: 'Dropbox',         icon: '📂', color: '#0061ff', category: 'Cloud Storage',  billing_cycle: 'monthly',  price: 11.99, currency: 'USD', website: 'https://dropbox.com',        description: 'Cloud file storage & sharing' },
+  { name: 'Microsoft 365',   icon: '🪟', color: '#0078d4', category: 'Software',       billing_cycle: 'yearly',   price: 99.99, currency: 'USD', website: 'https://microsoft365.com',   description: 'Office apps + OneDrive' },
+  // ── Software ───────────────────────────────────────────────────────────────
+  { name: 'Adobe CC',        icon: '🎨', color: '#ff0000', category: 'Software',       billing_cycle: 'monthly',  price: 54.99, currency: 'USD', website: 'https://adobe.com',          description: 'Creative Cloud — Photoshop, Premiere & more' },
+  { name: 'Notion',          icon: '📝', color: '#000000', category: 'Software',       billing_cycle: 'monthly',  price: 10.00, currency: 'USD', website: 'https://notion.so',          description: 'All-in-one workspace & notes' },
+  { name: 'Figma',           icon: '🖌️', color: '#f24e1e', category: 'Software',       billing_cycle: 'monthly',  price: 15.00, currency: 'USD', website: 'https://figma.com',          description: 'Collaborative UI/UX design' },
+  { name: 'GitHub',          icon: '🐙', color: '#24292e', category: 'Software',       billing_cycle: 'monthly',  price: 4.00,  currency: 'USD', website: 'https://github.com',         description: 'Code hosting & collaboration' },
+  { name: 'Slack',           icon: '💬', color: '#4a154b', category: 'Software',       billing_cycle: 'monthly',  price: 8.75,  currency: 'USD', website: 'https://slack.com',          description: 'Team messaging & collaboration' },
+  { name: 'Zoom',            icon: '📹', color: '#2d8cff', category: 'Software',       billing_cycle: 'monthly',  price: 15.99, currency: 'USD', website: 'https://zoom.us',            description: 'Video conferencing' },
+  { name: 'ChatGPT Plus',    icon: '🤖', color: '#10a37f', category: 'Software',       billing_cycle: 'monthly',  price: 20.00, currency: 'USD', website: 'https://chat.openai.com',    description: 'AI assistant — GPT-4' },
+  { name: '1Password',       icon: '🔐', color: '#0094f5', category: 'Software',       billing_cycle: 'yearly',   price: 35.88, currency: 'USD', website: 'https://1password.com',      description: 'Password manager' },
+  { name: 'NordVPN',         icon: '🛡️', color: '#4687ff', category: 'Software',       billing_cycle: 'yearly',   price: 59.88, currency: 'USD', website: 'https://nordvpn.com',        description: 'VPN & online privacy' },
+  // ── Gaming ─────────────────────────────────────────────────────────────────
+  { name: 'Xbox Game Pass',  icon: '🎮', color: '#107c10', category: 'Gaming',         billing_cycle: 'monthly',  price: 14.99, currency: 'USD', website: 'https://xbox.com/gamepass',  description: 'Hundreds of games on console & PC' },
+  { name: 'PlayStation Plus',icon: '🕹️', color: '#003087', category: 'Gaming',         billing_cycle: 'yearly',   price: 79.99, currency: 'USD', website: 'https://playstation.com',    description: 'Online play & monthly games' },
+  { name: 'Nintendo Online', icon: '🔴', color: '#e60012', category: 'Gaming',         billing_cycle: 'yearly',   price: 19.99, currency: 'USD', website: 'https://nintendo.com',       description: 'Online play & classic games' },
+  { name: 'EA Play',         icon: '⚽', color: '#ff4500', category: 'Gaming',         billing_cycle: 'monthly',  price: 4.99,  currency: 'USD', website: 'https://ea.com/ea-play',     description: 'EA games library' },
+  // ── Fitness ────────────────────────────────────────────────────────────────
+  { name: 'Peloton',         icon: '🚴', color: '#e01a22', category: 'Fitness',        billing_cycle: 'monthly',  price: 44.00, currency: 'USD', website: 'https://onepeloton.com',     description: 'Live & on-demand fitness classes' },
+  { name: 'Apple Fitness+',  icon: '🍎', color: '#fa5f57', category: 'Fitness',        billing_cycle: 'monthly',  price: 9.99,  currency: 'USD', website: 'https://fitness.apple.com',  description: 'Workout classes from Apple' },
+  { name: 'MyFitnessPal',    icon: '💪', color: '#0070f3', category: 'Fitness',        billing_cycle: 'monthly',  price: 9.99,  currency: 'USD', website: 'https://myfitnesspal.com',   description: 'Calorie tracking & nutrition' },
+  { name: 'Calm',            icon: '🧘', color: '#3a3a8e', category: 'Fitness',        billing_cycle: 'yearly',   price: 69.99, currency: 'USD', website: 'https://calm.com',           description: 'Meditation & sleep app' },
+  { name: 'Headspace',       icon: '🧠', color: '#f47d31', category: 'Fitness',        billing_cycle: 'yearly',   price: 69.99, currency: 'USD', website: 'https://headspace.com',      description: 'Mindfulness & meditation' },
+  // ── News & Media ───────────────────────────────────────────────────────────
+  { name: 'The New York Times', icon: '📰', color: '#000000', category: 'News & Media', billing_cycle: 'monthly', price: 17.00, currency: 'USD', website: 'https://nytimes.com',       description: 'Digital news subscription' },
+  { name: 'YouTube Premium', icon: '▶️', color: '#ff0000', category: 'News & Media',   billing_cycle: 'monthly',  price: 13.99, currency: 'USD', website: 'https://youtube.com/premium','description': 'Ad-free YouTube + YouTube Music' },
+  { name: 'Audible',         icon: '🎧', color: '#f8991d', category: 'News & Media',   billing_cycle: 'monthly',  price: 14.95, currency: 'USD', website: 'https://audible.com',        description: 'Audiobooks & podcasts' },
+  // ── Food & Delivery ────────────────────────────────────────────────────────
+  { name: 'DoorDash DashPass', icon: '🍔', color: '#ff3008', category: 'Food & Delivery', billing_cycle: 'monthly', price: 9.99, currency: 'USD', website: 'https://doordash.com',    description: 'Free delivery on DoorDash orders' },
+  { name: 'Uber One',        icon: '🚗', color: '#000000', category: 'Food & Delivery', billing_cycle: 'monthly', price: 9.99,  currency: 'USD', website: 'https://uber.com',           description: 'Uber & Uber Eats membership' },
+  // ── Finance ────────────────────────────────────────────────────────────────
+  { name: 'Mint / Credit Karma', icon: '💰', color: '#00a651', category: 'Finance',   billing_cycle: 'monthly',  price: 0,     currency: 'USD', website: 'https://creditkarma.com',    description: 'Free credit monitoring' },
+  { name: 'QuickBooks',      icon: '📊', color: '#2ca01c', category: 'Finance',        billing_cycle: 'monthly',  price: 30.00, currency: 'USD', website: 'https://quickbooks.com',     description: 'Accounting & invoicing' },
+  // ── Education ──────────────────────────────────────────────────────────────
+  { name: 'Duolingo Plus',   icon: '🦉', color: '#58cc02', category: 'Education',      billing_cycle: 'monthly',  price: 6.99,  currency: 'USD', website: 'https://duolingo.com',       description: 'Language learning — ad-free' },
+  { name: 'Coursera Plus',   icon: '🎓', color: '#0056d2', category: 'Education',      billing_cycle: 'yearly',   price: 399,   currency: 'USD', website: 'https://coursera.org',       description: 'Unlimited online courses' },
+  { name: 'Skillshare',      icon: '✏️', color: '#00c4cc', category: 'Education',      billing_cycle: 'yearly',   price: 167.88,currency: 'USD', website: 'https://skillshare.com',     description: 'Creative & business courses' },
+  { name: 'MasterClass',     icon: '🏆', color: '#1a1a1a', category: 'Education',      billing_cycle: 'yearly',   price: 120,   currency: 'USD', website: 'https://masterclass.com',    description: 'Learn from world-class instructors' },
+];
 const PRESET_COLORS = [
   '#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f59e0b',
   '#10b981', '#06b6d4', '#3b82f6', '#64748b', '#d97706',
@@ -114,22 +188,158 @@ const emptyForm = () => ({
   website:             '',
 });
 
+// ─── Suggestions Panel ────────────────────────────────────────────────────────
+function SuggestionsPanel({
+  onSelect,
+}: {
+  onSelect: (t: SubTemplate) => void;
+}) {
+  const [cat, setCat]         = useState('All');
+  const [collapsed, setCollapsed] = useState(false);
+
+  const filtered = cat === 'All' ? TEMPLATES : TEMPLATES.filter(t => t.category === cat);
+
+  if (collapsed) {
+    return (
+      <div style={{ marginBottom: 22 }}>
+        <button
+          onClick={() => setCollapsed(false)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 14px', borderRadius: 10,
+            background: 'var(--card)', border: '1px solid var(--b1)',
+            cursor: 'pointer', fontFamily: 'var(--font-body)',
+            fontSize: 12, fontWeight: 600, color: 'var(--t3)',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>✨</span>
+          Show popular services ({TEMPLATES.length} templates)
+          <span style={{ marginLeft: 4, color: 'var(--t4)' }}>▼</span>
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      background: 'var(--card)', border: '1px solid var(--b1)',
+      borderRadius: 14, marginBottom: 24, overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 18px', borderBottom: '1px solid var(--b1)',
+        background: 'var(--bg-raised)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>✨</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>
+            Popular Services
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--t4)', marginLeft: 2 }}>
+            — click any to add instantly
+          </span>
+        </div>
+        <button
+          onClick={() => setCollapsed(true)}
+          style={{
+            width: 24, height: 24, borderRadius: 6, background: 'none',
+            border: '1px solid var(--b1)', cursor: 'pointer',
+            fontSize: 11, color: 'var(--t4)',
+          }}
+        >✕</button>
+      </div>
+
+      {/* Category tabs */}
+      <div style={{
+        display: 'flex', gap: 6, padding: '10px 16px',
+        overflowX: 'auto', borderBottom: '1px solid var(--b1)',
+        scrollbarWidth: 'none',
+      }}>
+        {SUGGESTION_CATEGORIES.map(c => (
+          <button
+            key={c}
+            onClick={() => setCat(c)}
+            style={{
+              padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+              border: `1px solid ${cat === c ? 'var(--amber)' : 'var(--b1)'}`,
+              background: cat === c ? 'var(--amber-glow)' : 'transparent',
+              color: cat === c ? 'var(--amber)' : 'var(--t3)',
+              cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+            }}
+          >{c}</button>
+        ))}
+      </div>
+
+      {/* Template grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+        gap: 8, padding: 14, maxHeight: 280, overflowY: 'auto',
+      }}>
+        {filtered.map(t => (
+          <button
+            key={t.name}
+            onClick={() => onSelect(t)}
+            title={t.description}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
+              background: 'var(--bg-raised)',
+              border: `1px solid ${t.color}28`,
+              borderLeft: `3px solid ${t.color}`,
+              textAlign: 'left', fontFamily: 'var(--font-body)',
+              transition: 'all 0.12s',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = `${t.color}12`;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = `${t.color}55`;
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-raised)';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = `${t.color}28`;
+              (e.currentTarget as HTMLButtonElement).style.borderLeftColor = t.color;
+            }}
+          >
+            <span style={{
+              width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+              background: `${t.color}18`, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 16,
+            }}>{t.icon}</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{
+                fontSize: 12, fontWeight: 600, color: 'var(--t1)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{t.name}</div>
+              <div style={{ fontSize: 10, color: 'var(--t4)', marginTop: 1 }}>
+                {t.currency} {t.price}/{t.billing_cycle === 'monthly' ? 'mo' : t.billing_cycle === 'yearly' ? 'yr' : t.billing_cycle === 'weekly' ? 'wk' : 'qtr'}
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 function SubModal({
   sub,
+  templateData,
   onClose,
   onSave,
   saving,
 }: {
   sub?: UserSub | null;
+  templateData?: SubTemplate | null;
   onClose: () => void;
   onSave: (data: Record<string, unknown>) => void;
   saving: boolean;
 }) {
   const isEdit = !!sub;
-  const [form, setForm] = useState(() =>
-    sub
-      ? {
+  const [form, setForm] = useState(() => {
+    if (sub) {
+      return {
           name:                sub.name,
           description:         sub.description ?? '',
           category:            sub.category    ?? '',
@@ -145,9 +355,25 @@ function SubModal({
           color:               sub.color    ?? '#6366f1',
           icon:                sub.icon     ?? '💳',
           website:             sub.website  ?? '',
-        }
-      : emptyForm()
-  );
+        };
+    }
+    if (templateData) {
+      const base = emptyForm();
+      return {
+        ...base,
+        name:          templateData.name,
+        icon:          templateData.icon,
+        color:         templateData.color,
+        category:      templateData.category,
+        billing_cycle: templateData.billing_cycle,
+        price:         String(templateData.price),
+        currency:      templateData.currency,
+        website:       templateData.website,
+        description:   templateData.description,
+      };
+    }
+    return emptyForm();
+  });
 
   function set(key: string, val: unknown) {
     setForm(f => ({ ...f, [key]: val }));
@@ -535,6 +761,7 @@ export default function SubscriptionsPage() {
   const [showModal, setShowModal]       = useState(false);
   const [editSub, setEditSub]           = useState<UserSub | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<UserSub | null>(null);
+  const [templateData, setTemplateData] = useState<SubTemplate | null>(null);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
@@ -633,7 +860,7 @@ export default function SubscriptionsPage() {
             background: 'var(--card)', cursor: 'pointer', fontFamily: 'var(--font-body)',
             fontSize: 12, fontWeight: 600, color: 'var(--t2)',
           }}>← Dashboard</button>
-          <button onClick={() => { setEditSub(null); setShowModal(true); }} style={{
+          <button onClick={() => { setEditSub(null); setTemplateData(null); setShowModal(true); }} style={{
             padding: '7px 16px', borderRadius: 8, border: 'none',
             background: 'var(--amber)', color: '#fff', cursor: 'pointer',
             fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700,
@@ -689,6 +916,15 @@ export default function SubscriptionsPage() {
           ))}
         </div>
 
+        {/* ── Suggestions Panel ───────────────────────────────────────────── */}
+        <SuggestionsPanel
+          onSelect={t => {
+            setEditSub(null);
+            setTemplateData(t);
+            setShowModal(true);
+          }}
+        />
+
         {/* ── Search & filters ────────────────────────────────────────────── */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 18, flexWrap: 'wrap' }}>
           {/* Search */}
@@ -742,7 +978,7 @@ export default function SubscriptionsPage() {
             <div style={{ fontSize: 13, color: 'var(--t4)', marginBottom: 20 }}>
               Add your first subscription to start tracking costs and due dates.
             </div>
-            <button onClick={() => { setEditSub(null); setShowModal(true); }} style={{
+            <button onClick={() => { setEditSub(null); setTemplateData(null); setShowModal(true); }} style={{
               padding: '10px 24px', borderRadius: 10, background: 'var(--amber)',
               border: 'none', color: '#fff', cursor: 'pointer',
               fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 700,
@@ -769,7 +1005,8 @@ export default function SubscriptionsPage() {
       {showModal && (
         <SubModal
           sub={editSub}
-          onClose={() => { setShowModal(false); setEditSub(null); }}
+          templateData={templateData}
+          onClose={() => { setShowModal(false); setEditSub(null); setTemplateData(null); }}
           onSave={data =>
             editSub
               ? updateMut.mutate({ id: editSub.id, data })
