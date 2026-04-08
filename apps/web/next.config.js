@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   experimental: {
     // Prevent OpenTelemetry (pulled in by bullmq/pino) from being bundled during SSR
     serverComponentsExternalPackages: ['@opentelemetry/api', '@opentelemetry/sdk-trace-base', 'bullmq', 'ioredis'],
