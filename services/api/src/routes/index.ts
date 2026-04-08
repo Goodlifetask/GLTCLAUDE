@@ -18,6 +18,7 @@ import { familyAlarmsRoutes } from './family-alarms';
 import { menuConfigPublicRoutes } from './menu-config';
 import { fridgeItemsRoutes } from './fridge-items';
 import { userSubscriptionsRoutes } from './user-subscriptions';
+import { userDocumentsRoutes } from './user-documents';
 
 export async function registerRoutes(server: FastifyInstance) {
   await server.register(authRoutes,         { prefix: '/v1/auth' });
@@ -39,4 +40,5 @@ export async function registerRoutes(server: FastifyInstance) {
   await server.register(fridgeItemsRoutes,       { prefix: '/v1/fridge-items' });
   await server.register(menuConfigPublicRoutes,       { prefix: '/v1' });
   await server.register(userSubscriptionsRoutes,      { prefix: '/v1/user-subscriptions' });
+  await server.register(userDocumentsRoutes,          { prefix: '/v1/user-documents' });
 }

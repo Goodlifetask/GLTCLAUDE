@@ -253,6 +253,7 @@ model User {
   familyAlarms        FamilyAlarm[]
   fridgeItems         FridgeItem[]
   userSubscriptions   UserSubscription[]
+  userDocuments       UserDocument[]
 
   @@index([email])
   @@index([plan])
@@ -940,4 +941,49 @@ model ApiKey {
 
   @@index([keyHash])
   @@map("api_keys")
+}
+
+// ─── DOCUMENTS ───────────────────────────────────────────────────────────────
+
+enum DocType {
+  passport
+  drivers_license
+  national_id
+  visa
+  insurance
+  vehicle_registration
+  health_card
+  work_permit
+  residence_permit
+  professional_license
+  birth_certificate
+  marriage_certificate
+  tax_document
+  other
+}
+
+model UserDocument {
+  id               String    @id @default(cuid())
+  userId           String    @map("user_id") @db.Uuid
+  name             String
+  docType          DocType   @default(other) @map("doc_type")
+  documentNumber   String?   @map("document_number")
+  holderName       String?   @map("holder_name")
+  issuingAuthority String?   @map("issuing_authority")
+  issuingCountry   String?   @map("issuing_country")
+  issueDate        DateTime? @map("issue_date")
+  expiryDate       DateTime? @map("expiry_date")
+  notes            String?
+  imagePath        String?   @map("image_path")
+  aiScanData       Json?     @map("ai_scan_data")
+  reminderIds      String[]  @default([]) @map("reminder_ids")
+  isArchived       Boolean   @default(false) @map("is_archived")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_documents")
 }

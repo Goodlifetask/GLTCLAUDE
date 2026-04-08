@@ -312,6 +312,28 @@ export const api = {
       client.delete(`/user-subscriptions/${id}`).then((r) => r.data),
   },
 
+  documents: {
+    list: () =>
+      client.get('/user-documents').then((r) => r.data),
+    get: (id: string) =>
+      client.get(`/user-documents/${id}`).then((r) => r.data),
+    scan: (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return client.post('/user-documents/scan', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }).then((r) => r.data);
+    },
+    create: (data: Record<string, unknown>) =>
+      client.post('/user-documents', data).then((r) => r.data),
+    update: (id: string, data: Record<string, unknown>) =>
+      client.patch(`/user-documents/${id}`, data).then((r) => r.data),
+    delete: (id: string) =>
+      client.delete(`/user-documents/${id}`).then((r) => r.data),
+    imageUrl: (filename: string) =>
+      `${client.defaults.baseURL}/user-documents/image/${filename}`,
+  },
+
   team: {
     workspaces: {
       list: () =>

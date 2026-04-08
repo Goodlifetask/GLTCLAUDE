@@ -6,7 +6,8 @@
     { "id": "fly-alarms",    "label": "Fly-Alarms",       "icon": "⚡", "href": "/fly-alarms",    "target": "_self", "visible": true, "order": 3, "badge": null },
     { "id": "fridge",        "label": "🧊 Fridge",        "icon": "🧊", "href": "/fridge",        "target": "_self", "visible": true, "order": 4, "badge": null },
     { "id": "subscriptions", "label": "💳 Subscriptions", "icon": "💳", "href": "/subscriptions", "target": "_self", "visible": true, "order": 5, "badge": null },
-    { "id": "settings",      "label": "Settings",         "icon": "⊙",  "href": "/settings",      "target": "_self", "visible": true, "order": 6, "badge": null }
+    { "id": "documents",    "label": "📋 Documents",     "icon": "📋", "href": "/documents",    "target": "_self", "visible": true, "order": 6, "badge": null },
+    { "id": "settings",     "label": "Settings",         "icon": "⊙",  "href": "/settings",     "target": "_self", "visible": true, "order": 7, "badge": null }
   ],
   "admin": []
 }
