@@ -9,6 +9,7 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 let _authStore: any = null;
 function getAuthStore() {
   if (!_authStore && typeof window !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     _authStore = require('../store/auth').useAuthStore;
   }
   return _authStore;

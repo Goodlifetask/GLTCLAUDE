@@ -33,7 +33,9 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "C:/tmp/glt-web-next/types/**/*.ts",
+    "C:\\tmp\\glt-web-next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
